@@ -76,6 +76,42 @@ public class TestMerge extends TestCase {
 		SVNFileUtil.setSleepForTimestamp(false);
 	}
 
+	public void testChangeInDirectoryThatDoesNotExistOnTargetBranch() throws IOException, SVNException {
+		Scenario s = moduleScenario();
+
+		// Create scenario base.
+		WC wc1 = s.wc("/branches/branch1");
+		wc1.file("module1/file1");
+		wc1.commit();
+
+		s.copy("/branches/branch2", "/branches/branch1");
+
+		wc1.mkdir("module1/some");
+		wc1.mkdir("module1/some/path");
+		wc1.file("module1/some/path/file2");
+		wc1.file("module1/some/path/file3");
+		wc1.commit();
+
+		// Trigger semantic move.
+		wc1.copy("module1/fileRenamed", "module1/file1");
+		// Touch file in directory that does not exist in target branch.
+		wc1.update("module1/some/path/file2");
+		// Delete file in directory that does not exist in target branch.
+		wc1.delete("module1/some/path/file3");
+		// Create file in directory that does not exist in target branch.
+		wc1.file("module1/some/path/file4");
+		long revision = wc1.commit();
+
+		WC wc2 = s.wc("/branches/branch2");
+		SVNLogEntry entry = s.log(revision);
+		Merge merge = createMerge(s, wc2, entry);
+		Map<File, List<SVNConflictDescription>> result = tryMerge(s, merge);
+
+		assertTrue(result.toString(), result.containsKey(wc2.toFile("module1/some/path/file2")));
+		assertTrue(result.toString(), result.containsKey(wc2.toFile("module1/some/path/file3")));
+		assertTrue(result.toString(), result.containsKey(wc2.toFile("module1/some/path/file4")));
+	}
+
 	public void testCrossBranchCopyWithExistingResourceWithSameName() throws IOException, SVNException {
 		Scenario s = moduleScenario();
 
@@ -784,9 +820,14 @@ public class TestMerge extends TestCase {
 	}
 
 	private void doMerge(Scenario s, WC wc, Merge merge) throws SVNException {
+		Map<File, List<SVNConflictDescription>> conflicts = tryMerge(s, merge);
+		assertTrue(MergeCommitHandler.toStringConflicts(wc.getDirectory(), conflicts), conflicts.isEmpty());
+	}
+
+	protected Map<File, List<SVNConflictDescription>> tryMerge(Scenario s, Merge merge) throws SVNException {
 		MergeContext context = new MergeContext(s.clientManager().getDiffClient());
 		Map<File, List<SVNConflictDescription>> conflicts = merge.run(context);
-		assertTrue(MergeCommitHandler.toStringConflicts(wc.getDirectory(), conflicts), conflicts.isEmpty());
+		return conflicts;
 	}
 
 	private Merge createMerge(Scenario s, WC wc, SVNLogEntry entry) throws SVNException {

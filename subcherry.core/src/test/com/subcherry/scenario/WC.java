@@ -124,7 +124,7 @@ public class WC extends FileSystem {
 		clientManager().getCopyClient().doCopy(sources, dst, false, false, true);
 	}
 
-	private File toFile(String path) {
+	public File toFile(String path) {
 		File dir = new File(getDirectory(), path);
 		return dir;
 	}

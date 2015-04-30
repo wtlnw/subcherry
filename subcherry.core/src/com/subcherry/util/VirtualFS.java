@@ -17,6 +17,7 @@
  */
 package com.subcherry.util;
 
+import java.io.File;
 import java.util.Iterator;
 import java.util.TreeSet;
 
@@ -37,8 +38,14 @@ public class VirtualFS {
 
 	private final TreeSet<String> _addedPaths = new TreeSet<>();
 
+	private File _workspaceRoot;
+
 	public VirtualFS() {
-		super();
+		this(null);
+	}
+
+	public VirtualFS(File workspaceRoot) {
+		_workspaceRoot = workspaceRoot;
 	}
 
 	public void clear() {
@@ -57,27 +64,47 @@ public class VirtualFS {
 		removeDescendents(_addedPaths, resource);
 		removeDescendentsOrSelf(_deletedPaths, resource);
 
-		_addedPaths.add(resource);
+		String ancestor = resource;
+		while (true) {
+			_addedPaths.add(ancestor);
+
+			int dirSeparatorIndex = ancestor.lastIndexOf('/');
+			if (dirSeparatorIndex < 0) {
+				break;
+			}
+
+			ancestor = ancestor.substring(0, dirSeparatorIndex);
+		}
 	}
 
-	public boolean exists(String resource) {
+	public boolean exists(final String resource) {
+		if (_addedPaths.contains(resource)) {
+			// Some ancestor of the resource has been added.
+			return true;
+		}
+
+		String ancestor = resource;
 		while (true) {
-			if (_deletedPaths.contains(resource)) {
+			if (_deletedPaths.contains(ancestor)) {
 				return false;
 			}
-			if (_addedPaths.contains(resource)) {
-				// Some ancetor of the resource has been added.
-				return true;
-			}
 
-			int dirSeparatorIndex = resource.lastIndexOf('/');
+			int dirSeparatorIndex = ancestor.lastIndexOf('/');
 			if (dirSeparatorIndex < 0) {
-				// There is not evidence that the path has been deleted.
-				return true;
+				break;
 			}
 
-			resource = resource.substring(0, dirSeparatorIndex);
+			ancestor = ancestor.substring(0, dirSeparatorIndex);
 		}
+
+		if (_workspaceRoot == null) {
+			// There is not evidence that the path has been deleted.
+			return true;
+		}
+
+		// If there is no change in the current commit to the requested path, the current workspace
+		// is up to date and the file system can be checked directly.
+		return new File(_workspaceRoot, resource).exists();
 	}
 
 	private static void removeDescendentsOrSelf(TreeSet<String> paths, String resource) {

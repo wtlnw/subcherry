@@ -38,6 +38,7 @@ import org.tmatesoft.svn.core.SVNLogEntryPath;
 import org.tmatesoft.svn.core.SVNNodeKind;
 import org.tmatesoft.svn.core.SVNURL;
 import org.tmatesoft.svn.core.wc.SVNClientManager;
+import org.tmatesoft.svn.core.wc.SVNConflictAction;
 import org.tmatesoft.svn.core.wc.SVNDiffClient;
 import org.tmatesoft.svn.core.wc.SVNDiffOptions;
 import org.tmatesoft.svn.core.wc.SVNRevision;
@@ -90,7 +91,7 @@ public class MergeHandler extends Handler<MergeConfig> {
 		_clientManager = clientManager;
 		_paths = paths;
 		_modules = modules;
-		_virtualFs = new VirtualFS();
+		_virtualFs = new VirtualFS(config.getWorkspaceRoot());
 		_mapping = ResourceMapping.create(config.getResourceMapping());
 	}
 
@@ -510,7 +511,7 @@ public class MergeHandler extends Handler<MergeConfig> {
 
 		// Prevent merging the whole module (if, e.g. merge info is merged for the module),
 		// since this would produce conflicts with the explicitly merged moves and copies.
-		if (!_modules.contains(resource) && existsWhenMerged(resource)) {
+		if (!_modules.contains(resource)) {
 			buildResourceMerge(revision, source, target, false, true);
 		}
 	}
@@ -519,10 +520,7 @@ public class MergeHandler extends Handler<MergeConfig> {
 			throws SVNException {
 		String urlPrefix = createUrlPrefix(src.getBranch());
 		if (src.getKind() == SVNNodeKind.DIR && src.getType() == ChangeType.MODIFIED) {
-			SvnMerge merge =
-				createModification(revision, src.getResource(), target.getResource(), urlPrefix, recordOnly, ignoreAncestry);
-			merge.setDepth(SVNDepth.EMPTY);
-			addOperation(target.getResource(), merge);
+			addOperation(target.getResource(), createModification(revision, src.getResource(), target.getResource(), urlPrefix, recordOnly, ignoreAncestry, true));
 		} else {
 			addMergeOperations(revision, src, target.getResource(), urlPrefix, recordOnly, ignoreAncestry);
 		}
@@ -701,10 +699,19 @@ public class MergeHandler extends Handler<MergeConfig> {
 
 	private void addRemoteAdd(long revision, Path srcPath, String targetResource) throws SVNException {
 		addOperation(targetResource, createRemoteAdd(revision, srcPath, targetResource));
-		_virtualFs.add(targetResource);
 	}
 
 	private SvnOperation<?> createRemoteAdd(long srcRevision, Path srcPath, String targetResource) throws SVNException {
+		File targetFile = new File(_config.getWorkspaceRoot(), targetResource);
+		if (!existsWhenMerged(parent(targetResource))) {
+			ScheduledTreeConflict conflict = new ScheduledTreeConflict(operations());
+			conflict.setSingleTarget(SvnTarget.fromFile(targetFile));
+			conflict.setAction(SVNConflictAction.ADD);
+			return conflict;
+		}
+
+		_virtualFs.add(targetResource);
+
 		SVNRevision revision;
 		SvnCopySource copySource;
 		if (srcPath.getCopyPath() == null) {
@@ -726,26 +733,44 @@ public class MergeHandler extends Handler<MergeConfig> {
 		copy.setFailWhenDstExists(false);
 		copy.setMove(false);
 		copy.addCopySource(copySource);
-		copy.setSingleTarget(SvnTarget.fromFile(new File(_config.getWorkspaceRoot(), targetResource)));
+		copy.setSingleTarget(SvnTarget.fromFile(targetFile));
 
 		return copy;
 	}
 
+	private String parent(String resource) {
+		int dirSeparatorIndex = resource.lastIndexOf('/');
+		if (dirSeparatorIndex < 0) {
+			return "";
+		}
+
+		return resource.substring(0, dirSeparatorIndex);
+	}
+
 	void addModification(long revision, String resource, String urlPrefix, boolean recordOnly, boolean ignoreAncestry)
 			throws SVNException {
-		addOperation(resource, createModification(revision, resource, resource, urlPrefix, recordOnly, ignoreAncestry));
+		addOperation(resource, createModification(revision, resource, resource, urlPrefix, recordOnly, ignoreAncestry, false));
 	}
 
 	void addModification(long revision, String srcResource, String targetResource, String urlPrefix, boolean recordOnly, boolean ignoreAncestry)
 			throws SVNException {
-		addOperation(targetResource, createModification(revision, srcResource, targetResource, urlPrefix, recordOnly, ignoreAncestry));
+		addOperation(targetResource, createModification(revision, srcResource, targetResource, urlPrefix, recordOnly, ignoreAncestry, false));
 	}
 	
-	SvnMerge createModification(long revision, String srcResourceName, String targetResourceName, String urlPrefix,
-			boolean recordOnly, boolean ignoreAncestry) throws SVNException {
+	SvnOperation<?> createModification(long revision, String srcResourceName, String targetResourceName,
+			String urlPrefix,
+			boolean recordOnly, boolean ignoreAncestry, boolean empty) throws SVNException {
+		File targetFile = new File(_config.getWorkspaceRoot(), targetResourceName);
+		if (!existsWhenMerged(targetResourceName)) {
+			ScheduledTreeConflict conflict = new ScheduledTreeConflict(operations());
+			conflict.setSingleTarget(SvnTarget.fromFile(targetFile));
+			conflict.setAction(SVNConflictAction.EDIT);
+			return conflict;
+		}
+		
 		SvnMerge merge = operations().createMerge();
 		merge.setRecordOnly(recordOnly);
-		if (recordOnly) {
+		if (empty || recordOnly) {
 			/* Set depth empty to avoid recording merge information on single files. Otherwise
 			 * property changes on files that are not touched by the merge. */
 			merge.setDepth(SVNDepth.EMPTY);
@@ -758,7 +783,6 @@ public class MergeHandler extends Handler<MergeConfig> {
 		/* Must allow as otherwise the whole workspace is checked for revisions which costs much
 		 * time */
 		merge.setAllowMixedRevisions(true);
-		File targetFile = new File(_config.getWorkspaceRoot(), targetResourceName);
 		SvnTarget target = SvnTarget.fromFile(targetFile);
 		merge.setSingleTarget(target);
 		
@@ -780,7 +804,7 @@ public class MergeHandler extends Handler<MergeConfig> {
 	private SvnOperation<?> createRemove(String resourceName) {
 		File targetFile = new File(_config.getWorkspaceRoot(), resourceName);
 
-		DeleteLocalFile remove = new DeleteLocalFile(operations());
+		SubCherrySvnOperation remove = new DeleteLocalFile(operations());
 		remove.setSingleTarget(SvnTarget.fromFile(targetFile));
 		return remove;
 	}

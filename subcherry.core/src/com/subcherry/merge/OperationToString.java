@@ -45,13 +45,13 @@ public class OperationToString {
 			return toStringLocalMkDir((LocalMkDir) op);
 		}
 		if (op instanceof DeleteLocalFile) {
-			return toStringDeleteLocalFile((DeleteLocalFile) op);
+			return toStringDeleteLocalFile((SubCherrySvnOperation) op);
 		}
 	
 		return op.toString();
 	}
 
-	private static String toStringDeleteLocalFile(DeleteLocalFile op) {
+	private static String toStringDeleteLocalFile(SubCherrySvnOperation op) {
 		StringBuilder buffer = new StringBuilder();
 		buffer.append("svn delete");
 		appendTargets(buffer, op.getTargets());

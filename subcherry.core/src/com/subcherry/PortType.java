@@ -1,5 +1,5 @@
 /*
- * TimeCollect records time you spent on your development work.
+ * SubCherry - Cherry Picking with Trac and Subversion
  * Copyright (C) 2013 Bernhard Haumacher and others
  *
  * This program is free software: you can redistribute it and/or modify

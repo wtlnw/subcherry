@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import org.tmatesoft.svn.core.SVNNodeKind;
+import com.subcherry.repository.core.NodeKind;
 
 /**
  * Representation of a file or directory with continuous history.
@@ -69,10 +69,10 @@ public class Node {
 	public enum Kind {
 		DIR, FILE, UNKNOWN;
 
-		public static Kind fromSvn(SVNNodeKind kind) {
-			if (kind == SVNNodeKind.DIR) {
+		public static Kind fromSvn(NodeKind kind) {
+			if (kind == NodeKind.DIR) {
 				return DIR;
-			} else if (kind == SVNNodeKind.FILE) {
+			} else if (kind == NodeKind.FILE) {
 				return FILE;
 			} else {
 				return UNKNOWN;

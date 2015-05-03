@@ -20,39 +20,39 @@ package com.subcherry;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.tmatesoft.svn.core.ISVNLogEntryHandler;
-import org.tmatesoft.svn.core.SVNException;
-import org.tmatesoft.svn.core.SVNLogEntry;
+import com.subcherry.repository.command.log.LogEntryHandler;
+import com.subcherry.repository.core.LogEntry;
+import com.subcherry.repository.core.RepositoryException;
 
 /**
  * @version   $Revision$  $Author$  $Date$
  */
-public abstract class SVNLogEntryMatcher implements ISVNLogEntryHandler {
+public abstract class SVNLogEntryMatcher implements LogEntryHandler {
 	
 	private final class AllEntries extends SVNLogEntryMatcher {
 		@Override
-		public boolean matches(SVNLogEntry logEntry) {
+		public boolean matches(LogEntry logEntry) {
 			return true;
 		}
 	}
 
-	private List<SVNLogEntry> _entries = new ArrayList<SVNLogEntry>();
+	private List<LogEntry> _entries = new ArrayList<LogEntry>();
 	
-	protected abstract boolean matches(SVNLogEntry logEntry);
+	protected abstract boolean matches(LogEntry logEntry);
 
-	public List<SVNLogEntry> getEntries() {
+	public List<LogEntry> getEntries() {
 		return _entries;
 	}
 	
 	@Override
-	public void handleLogEntry(SVNLogEntry logEntry) throws SVNException {
+	public void handleLogEntry(LogEntry logEntry) throws RepositoryException {
 		if (matches(logEntry)) {
 			_entries.add(logEntry);
 		}
 	}
 
-	public void forward(ISVNLogEntryHandler mergeCommitHandler) throws SVNException {
-		for (SVNLogEntry entry : getEntries()) {
+	public void forward(LogEntryHandler mergeCommitHandler) throws RepositoryException {
+		for (LogEntry entry : getEntries()) {
 			mergeCommitHandler.handleLogEntry(entry);
 		}
 	}

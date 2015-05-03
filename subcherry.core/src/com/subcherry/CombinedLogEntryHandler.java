@@ -17,23 +17,23 @@
  */
 package com.subcherry;
 
-import org.tmatesoft.svn.core.ISVNLogEntryHandler;
-import org.tmatesoft.svn.core.SVNException;
-import org.tmatesoft.svn.core.SVNLogEntry;
+import com.subcherry.repository.command.log.LogEntryHandler;
+import com.subcherry.repository.core.LogEntry;
+import com.subcherry.repository.core.RepositoryException;
 
-public class CombinedLogEntryHandler implements ISVNLogEntryHandler {
+public class CombinedLogEntryHandler implements LogEntryHandler {
 
-	private ISVNLogEntryHandler _handler1;
+	private LogEntryHandler _handler1;
 
-	private ISVNLogEntryHandler _handler2;
+	private LogEntryHandler _handler2;
 
-	public CombinedLogEntryHandler(ISVNLogEntryHandler handler1, ISVNLogEntryHandler handler2) {
+	public CombinedLogEntryHandler(LogEntryHandler handler1, LogEntryHandler handler2) {
 		_handler1 = handler1;
 		_handler2 = handler2;
 	}
 
 	@Override
-	public void handleLogEntry(SVNLogEntry logEntry) throws SVNException {
+	public void handleLogEntry(LogEntry logEntry) throws RepositoryException {
 		_handler1.handleLogEntry(logEntry);
 		_handler2.handleLogEntry(logEntry);
 	}

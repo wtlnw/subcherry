@@ -26,13 +26,13 @@ import java.sql.SQLException;
 
 import javax.sql.DataSource;
 
-import org.tmatesoft.svn.core.ISVNLogEntryHandler;
-import org.tmatesoft.svn.core.SVNException;
-import org.tmatesoft.svn.core.SVNLogEntry;
-import org.tmatesoft.svn.core.SVNURL;
-import org.tmatesoft.svn.core.wc.SVNClientManager;
-import org.tmatesoft.svn.core.wc.SVNLogClient;
-import org.tmatesoft.svn.core.wc.SVNRevision;
+import com.subcherry.repository.core.ISVNLogEntryHandler;
+import com.subcherry.repository.core.SVNException;
+import com.subcherry.repository.core.SVNLogEntry;
+import com.subcherry.repository.core.SVNURL;
+import com.subcherry.repository.core.wc.SVNClientManager;
+import com.subcherry.repository.core.wc.SVNLogClient;
+import com.subcherry.repository.core.wc.SVNRevision;
 
 import com.subcherry.Main;
 import com.subcherry.index.db.DB;

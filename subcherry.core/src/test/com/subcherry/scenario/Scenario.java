@@ -25,26 +25,21 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
 
-import org.tmatesoft.svn.core.SVNCommitInfo;
-import org.tmatesoft.svn.core.SVNDepth;
-import org.tmatesoft.svn.core.SVNException;
-import org.tmatesoft.svn.core.SVNLogEntry;
-import org.tmatesoft.svn.core.SVNURL;
-import org.tmatesoft.svn.core.internal.wc.DefaultSVNOptions;
-import org.tmatesoft.svn.core.internal.wc17.SVNWCContext;
-import org.tmatesoft.svn.core.wc.SVNClientManager;
-import org.tmatesoft.svn.core.wc.SVNCommitClient;
-import org.tmatesoft.svn.core.wc.SVNCopyClient;
-import org.tmatesoft.svn.core.wc.SVNCopySource;
-import org.tmatesoft.svn.core.wc.SVNRevision;
-import org.tmatesoft.svn.core.wc2.SvnOperationFactory;
-
 import com.subcherry.merge.LastLogEntry;
+import com.subcherry.repository.command.Client;
+import com.subcherry.repository.command.ClientManager;
+import com.subcherry.repository.command.copy.CopySource;
+import com.subcherry.repository.core.CommitInfo;
+import com.subcherry.repository.core.Depth;
+import com.subcherry.repository.core.LogEntry;
+import com.subcherry.repository.core.RepositoryException;
+import com.subcherry.repository.core.RepositoryURL;
+import com.subcherry.repository.core.Revision;
 
 public class Scenario extends FileSystem {
 
-	private SVNClientManager _clientManager;
-	private SVNURL _repositoryUrl;
+	private ClientManager _clientManager;
+	private RepositoryURL _repositoryUrl;
 
 	private int _id = 1;
 
@@ -52,64 +47,61 @@ public class Scenario extends FileSystem {
 
 	private static int _scenarioId = 1;
 
-	public static Scenario scenario() throws IOException, SVNException {
+	public static Scenario scenario(ClientManager clientManager) throws IOException, RepositoryException {
 		File repositoryRoot = File.createTempFile("repos", "");
 		repositoryRoot.delete();
 		repositoryRoot.mkdir();
 
-		SVNWCContext svnwcContext = new SVNWCContext(new DefaultSVNOptions(), null);
-		SvnOperationFactory svnOperationFactory = new SvnOperationFactory(svnwcContext);
-		SVNClientManager clientManager = SVNClientManager.newInstance(svnOperationFactory);
-		SVNURL repositoryUrl =
-			clientManager.getAdminClient().doCreateRepository(repositoryRoot, "uuid-" + (_scenarioId++), true, false);
+		RepositoryURL repositoryUrl =
+			clientManager.getClient().createRepository(repositoryRoot, "uuid-" + (_scenarioId++), true, false);
 
 		return new Scenario(clientManager, repositoryUrl);
 	}
 
-	private Scenario(SVNClientManager clientManager, SVNURL repositoryUrl) {
+	private Scenario(ClientManager clientManager, RepositoryURL repositoryUrl) {
 		_clientManager = clientManager;
 		_repositoryUrl = repositoryUrl;
 	}
 
-	public SVNURL getRepositoryUrl() {
+	public RepositoryURL getRepositoryUrl() {
 		return _repositoryUrl;
 	}
 
-	public SVNClientManager clientManager() {
+	public ClientManager clientManager() {
 		return _clientManager;
 	}
 
-	public WC wc(String path) throws IOException, SVNException {
+	public WC wc(String path) throws IOException, RepositoryException {
 		return new WC(this, path);
 	}
 
-	public SVNLogEntry log(long revision) throws SVNException {
+	public LogEntry log(long revision) throws RepositoryException {
 		String[] paths = { "/" };
-		SVNRevision startRevision = SVNRevision.create(revision);
-		SVNRevision endRevision = SVNRevision.create(revision);
-		SVNRevision pegRevision = startRevision;
+		Revision startRevision = Revision.create(revision);
+		Revision endRevision = Revision.create(revision);
+		Revision pegRevision = startRevision;
 		LastLogEntry handler = new LastLogEntry();
-		clientManager().getLogClient().doLog(getRepositoryUrl(), paths, pegRevision, startRevision, endRevision, false,
+		clientManager().getClient().log(getRepositoryUrl(), paths, pegRevision, startRevision, endRevision, false,
 			true, false, 0, null, handler);
 		return handler.getLogEntry();
 	}
 
 	@Override
-	public long mkdir(String path) throws SVNException {
-		SVNURL url = getRepositoryUrl().appendPath(path, true);
-		SVNCommitInfo result = commitClient().doMkDir(new SVNURL[] { url }, createMessage(), null, true);
+	public long mkdir(String path) throws RepositoryException {
+		RepositoryURL url = getRepositoryUrl().appendPath(path);
+		CommitInfo result = commitClient().mkDir(new RepositoryURL[] { url }, createMessage(), null, true);
 		return result.getNewRevision();
 	}
 
 	@Override
-	public long file(String path) throws IOException, SVNException {
+	public long file(String path) throws IOException, RepositoryException {
 		File dir = File.createTempFile("upload", "");
 		dir.delete();
 		dir.mkdir();
 		File file = new File(dir, fileName(path));
 		fillFileContent(file);
-		SVNURL dstURL = getRepositoryUrl().appendPath(path, true);
-		SVNCommitInfo result = commitClient().doImport(file, dstURL, createMessage(), null, false, true, SVNDepth.FILES);
+		RepositoryURL dstURL = getRepositoryUrl().appendPath(path);
+		CommitInfo result = commitClient().importResource(file, dstURL, createMessage(), null, false, true, Depth.FILES);
 		return result.getNewRevision();
 	}
 
@@ -123,26 +115,26 @@ public class Scenario extends FileSystem {
 	}
 
 	@Override
-	public long copy(String toPath, String fromPath) throws SVNException {
-		return internalCopy(toPath, fromPath, SVNRevision.HEAD);
+	public long copy(String toPath, String fromPath) throws RepositoryException {
+		return internalCopy(toPath, fromPath, Revision.HEAD);
 	}
 
 	@Override
-	public long copy(String toPath, String fromPath, long revision) throws SVNException {
-		return internalCopy(toPath, fromPath, SVNRevision.create(revision));
+	public long copy(String toPath, String fromPath, long revision) throws RepositoryException {
+		return internalCopy(toPath, fromPath, Revision.create(revision));
 	}
 
-	private long internalCopy(String toPath, String fromPath, SVNRevision revision) throws SVNException {
-		SVNURL srcUrl = getRepositoryUrl().appendPath(fromPath, true);
-		SVNCopySource source = new SVNCopySource(SVNRevision.HEAD, revision, srcUrl);
-		SVNCopySource[] sources = { source };
-		SVNURL dst = getRepositoryUrl().appendPath(toPath, true);
-		SVNCommitInfo result = copyClient().doCopy(sources, dst, false, false, true, createMessage(), null);
+	private long internalCopy(String toPath, String fromPath, Revision revision) throws RepositoryException {
+		RepositoryURL srcUrl = getRepositoryUrl().appendPath(fromPath);
+		CopySource source = CopySource.create(Revision.HEAD, revision, srcUrl);
+		CopySource[] sources = { source };
+		RepositoryURL dst = getRepositoryUrl().appendPath(toPath);
+		CommitInfo result = copyClient().copy(sources, dst, false, false, true, createMessage(), null);
 		return result.getNewRevision();
 	}
 
-	private SVNCopyClient copyClient() {
-		return clientManager().getCopyClient();
+	private Client copyClient() {
+		return clientManager().getClient();
 	}
 
 	public String createMessage() {
@@ -172,8 +164,8 @@ public class Scenario extends FileSystem {
 		return _fileId++;
 	}
 
-	private SVNCommitClient commitClient() {
-		return _clientManager.getCommitClient();
+	private Client commitClient() {
+		return _clientManager.getClient();
 	}
 
 }

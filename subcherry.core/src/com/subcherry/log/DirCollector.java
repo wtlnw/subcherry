@@ -23,36 +23,35 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.tmatesoft.svn.core.ISVNDirEntryHandler;
-import org.tmatesoft.svn.core.SVNDepth;
-import org.tmatesoft.svn.core.SVNDirEntry;
-import org.tmatesoft.svn.core.SVNException;
-import org.tmatesoft.svn.core.SVNNodeKind;
-import org.tmatesoft.svn.core.SVNURL;
-import org.tmatesoft.svn.core.wc.SVNLogClient;
-import org.tmatesoft.svn.core.wc.SVNRevision;
+import com.subcherry.repository.command.Client;
+import com.subcherry.repository.command.log.DirEntryHandler;
+import com.subcherry.repository.core.Depth;
+import com.subcherry.repository.core.DirEntry;
+import com.subcherry.repository.core.NodeKind;
+import com.subcherry.repository.core.RepositoryException;
+import com.subcherry.repository.core.RepositoryURL;
+import com.subcherry.repository.core.Revision;
 
 /**
  * @version   $Revision$  $Author$  $Date$
  */
-public class DirCollector implements ISVNDirEntryHandler {
+public class DirCollector implements DirEntryHandler {
 	private List<String> dirs = new ArrayList<String>();
 
 	@Override
-	public void handleDirEntry(SVNDirEntry dirEntry) throws SVNException {
-		if (dirEntry.getKind() == SVNNodeKind.DIR) {
+	public void handleDirEntry(DirEntry dirEntry) throws RepositoryException {
+		if (dirEntry.getNodeKind() == NodeKind.DIR) {
 			String path = dirEntry.getRelativePath();
 			if (path.isEmpty()) {
 				return;
 			}
 			
 			dirs.add(path);
-			TicketsOnBranch.LOG.fine("Branch module: " + path);
 		}
 	}
 
-	public List<String> listDirs(SVNLogClient logClient, SVNURL url, SVNRevision revision) throws SVNException {
-		logClient.doList(url, revision, revision, false, SVNDepth.IMMEDIATES, SVNDirEntry.DIRENT_KIND, this);
+	public List<String> listDirs(Client logClient, RepositoryURL url, Revision revision) throws RepositoryException {
+		logClient.list(url, revision, revision, false, Depth.IMMEDIATES, DirEntry.Kind.DIRENT, this);
 		return getDirs();
 	}
 	
@@ -60,9 +59,9 @@ public class DirCollector implements ISVNDirEntryHandler {
 		return dirs;
 	}
 	
-	public static Set<String> getBranchModules(SVNLogClient logClient,
-			String[] configuredModules, SVNURL branchUrl1, SVNRevision revision)
-			throws SVNException {
+	public static Set<String> getBranchModules(Client logClient,
+			String[] configuredModules, RepositoryURL branchUrl1, Revision revision)
+			throws RepositoryException {
 		List<String> moduleDirs1 = new DirCollector().listDirs(logClient, branchUrl1, revision);
 		Set<String> modules = new HashSet<String>(moduleDirs1);
 		if (configuredModules.length > 0) {

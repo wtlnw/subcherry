@@ -28,14 +28,15 @@ import java.util.Map;
 
 import junit.framework.TestCase;
 
-import org.tmatesoft.svn.core.SVNException;
-import org.tmatesoft.svn.core.SVNLogEntry;
-import org.tmatesoft.svn.core.SVNLogEntryPath;
-
 import com.subcherry.history.Change;
 import com.subcherry.history.HistroyBuilder;
 import com.subcherry.history.Node;
 import com.subcherry.history.Node.Kind;
+import com.subcherry.repository.core.ChangeType;
+import com.subcherry.repository.core.LogEntry;
+import com.subcherry.repository.core.LogEntryPath;
+import com.subcherry.repository.core.NodeKind;
+import com.subcherry.repository.core.RepositoryException;
 
 /**
  * Test case for {@link HistroyBuilder}.
@@ -63,7 +64,7 @@ public class TestHistroyBuilder extends TestCase {
 		super.tearDown();
 	}
 
-	public void testDeleteParent() throws SVNException {
+	public void testDeleteParent() throws RepositoryException {
 		create(50, "/branches/unstable/module/file-1");
 		modify(60, "/branches/unstable/module/file-1");
 
@@ -75,7 +76,7 @@ public class TestHistroyBuilder extends TestCase {
 		assertNoChanges("/branches/unstable/module/file-1");
 	}
 
-	public void testBranchRename() throws SVNException {
+	public void testBranchRename() throws RepositoryException {
 		create(40, "/branches/unstable");
 
 		create(50, "/branches/unstable/module/file-1");
@@ -104,7 +105,7 @@ public class TestHistroyBuilder extends TestCase {
 		assertNoChanges("/branches/unstable/module/file-1");
 	}
 
-	public void testLookupDeletedBranchedDir() throws SVNException {
+	public void testLookupDeletedBranchedDir() throws RepositoryException {
 		create(50, "/branch");
 		create(60, "/branch/module");
 		create(70, "/branch/module/file");
@@ -116,7 +117,7 @@ public class TestHistroyBuilder extends TestCase {
 		assertNoChanges("/trunk/module");
 	}
 
-	public void testImplicitBranchCreation() throws SVNException {
+	public void testImplicitBranchCreation() throws RepositoryException {
 		// The creation of "/branches/unstable" is not recorded.
 	
 		create(50, "/branches/unstable/module/file-1");
@@ -130,7 +131,7 @@ public class TestHistroyBuilder extends TestCase {
 		assertChanges(revisions(50, 60, 80), "/branches/stable/module/file-1");
 	}
 
-	public void testMultipleCopiesFromImplicitBranch() throws SVNException {
+	public void testMultipleCopiesFromImplicitBranch() throws RepositoryException {
 		// The creation of "/branches/unstable" is not recorded.
 
 		create(50, "/branches/unstable/module/file-1");
@@ -147,7 +148,7 @@ public class TestHistroyBuilder extends TestCase {
 		assertChanges(revisions(50, 60, 100), "/branches/rc2/module/file-1");
 	}
 
-	public void testCopyFromBeforeImplicitCreation() throws SVNException {
+	public void testCopyFromBeforeImplicitCreation() throws RepositoryException {
 		// The creation of "/branches/unstable" is not recorded.
 
 		modify(60, "/branches/unstable/file");
@@ -159,7 +160,7 @@ public class TestHistroyBuilder extends TestCase {
 		assertChanges(revisions(80), "/branches/stable/file");
 	}
 
-	public void testReplace() throws SVNException {
+	public void testReplace() throws RepositoryException {
 		create(60, "/b1/file");
 		create(70, "/b2/file");
 
@@ -172,7 +173,7 @@ public class TestHistroyBuilder extends TestCase {
 		assertNoChanges("/b2/file");
 	}
 
-	public void testSwapBranches() throws SVNException {
+	public void testSwapBranches() throws RepositoryException {
 		create(70, "/b1");
 		create(80, "/b2");
 
@@ -197,7 +198,7 @@ public class TestHistroyBuilder extends TestCase {
 		assertChanges(revisions(100, 150, 200), "/b2/file");
 	}
 
-	public void testCurrentViewOfCopiedChanges() throws SVNException {
+	public void testCurrentViewOfCopiedChanges() throws RepositoryException {
 		create(50, "/branches/unstable");
 		create(60, "/branches/unstable/file-1");
 		modify(70, "/branches/unstable/file-1");
@@ -213,7 +214,7 @@ public class TestHistroyBuilder extends TestCase {
 			"/branches/stable/file-2");
 	}
 
-	public void testCurrentViewOfCopiedChangesBeforeDeletion() throws SVNException {
+	public void testCurrentViewOfCopiedChangesBeforeDeletion() throws RepositoryException {
 		create(50, "/branches/unstable");
 		create(60, "/branches/unstable/file-1");
 		modify(70, "/branches/unstable/file-1");
@@ -245,42 +246,42 @@ public class TestHistroyBuilder extends TestCase {
 		_builder.getHistory().expandContents(path);
 	}
 
-	private void create(long revision, String path) throws SVNException {
-		Map<String, SVNLogEntryPath> paths = paths(added(path));
+	private void create(long revision, String path) throws RepositoryException {
+		Map<String, LogEntryPath> paths = paths(added(path));
 		apply(revision, paths);
 	}
 
-	private void modify(long revision, String path) throws SVNException {
-		Map<String, SVNLogEntryPath> paths = paths(modified(path));
+	private void modify(long revision, String path) throws RepositoryException {
+		Map<String, LogEntryPath> paths = paths(modified(path));
 		apply(revision, paths);
 	}
 
-	private void delete(long revision, String path) throws SVNException {
-		Map<String, SVNLogEntryPath> paths = paths(deleted(path));
+	private void delete(long revision, String path) throws RepositoryException {
+		Map<String, LogEntryPath> paths = paths(deleted(path));
 		apply(revision, paths);
 	}
 
-	private void copy(long revision, String fromPath, String toPath) throws SVNException {
+	private void copy(long revision, String fromPath, String toPath) throws RepositoryException {
 		copy(revision, fromPath, revision - 1, toPath);
 	}
 
-	private void copy(long revision, String fromPath, long fromRevision, String toPath) throws SVNException {
-		Map<String, SVNLogEntryPath> paths = paths(copied(fromPath, toPath, fromRevision));
+	private void copy(long revision, String fromPath, long fromRevision, String toPath) throws RepositoryException {
+		Map<String, LogEntryPath> paths = paths(copied(fromPath, toPath, fromRevision));
 		apply(revision, paths);
 	}
 
-	private void move(long revision, String fromPath, String toPath) throws SVNException {
-		Map<String, SVNLogEntryPath> paths = paths(copied(fromPath, toPath, revision - 1), deleted(fromPath));
+	private void move(long revision, String fromPath, String toPath) throws RepositoryException {
+		Map<String, LogEntryPath> paths = paths(copied(fromPath, toPath, revision - 1), deleted(fromPath));
 		apply(revision, paths);
 	}
 
-	private void replace(long revision, String fromPath, String toPath) throws SVNException {
-		Map<String, SVNLogEntryPath> paths = paths(deleted(fromPath), replaced(fromPath, toPath, revision - 1));
+	private void replace(long revision, String fromPath, String toPath) throws RepositoryException {
+		Map<String, LogEntryPath> paths = paths(deleted(fromPath), replaced(fromPath, toPath, revision - 1));
 		apply(revision, paths);
 	}
 
-	private void apply(long revision, Map<String, SVNLogEntryPath> paths) throws SVNException {
-		SVNLogEntry logEntry = new SVNLogEntry(paths, revision, "", DATE, "message-" + revision);
+	private void apply(long revision, Map<String, LogEntryPath> paths) throws RepositoryException {
+		LogEntry logEntry = new LogEntry(paths, revision, "", DATE, "message-" + revision);
 		_builder.handleLogEntry(logEntry);
 	}
 
@@ -307,24 +308,24 @@ public class TestHistroyBuilder extends TestCase {
 		assertNull(getNode(path));
 	}
 
-	private static SVNLogEntryPath added(String path) {
-		return new SVNLogEntryPath(path, SVNLogEntryPath.TYPE_ADDED, null, 0);
+	private static LogEntryPath added(String path) {
+		return new LogEntryPath(NodeKind.UNKNOWN, path, ChangeType.ADDED, null, 0);
 	}
 
-	private static SVNLogEntryPath copied(String fromPath, String toPath, long copyRevision) {
-		return new SVNLogEntryPath(toPath, SVNLogEntryPath.TYPE_ADDED, fromPath, copyRevision);
+	private static LogEntryPath copied(String fromPath, String toPath, long copyRevision) {
+		return new LogEntryPath(NodeKind.UNKNOWN, toPath, ChangeType.ADDED, fromPath, copyRevision);
 	}
 
-	private static SVNLogEntryPath replaced(String fromPath, String toPath, long copyRevision) {
-		return new SVNLogEntryPath(toPath, SVNLogEntryPath.TYPE_REPLACED, fromPath, copyRevision);
+	private static LogEntryPath replaced(String fromPath, String toPath, long copyRevision) {
+		return new LogEntryPath(NodeKind.UNKNOWN, toPath, ChangeType.REPLACED, fromPath, copyRevision);
 	}
 
-	private static SVNLogEntryPath modified(String path) {
-		return new SVNLogEntryPath(path, SVNLogEntryPath.TYPE_MODIFIED, null, 0);
+	private static LogEntryPath modified(String path) {
+		return new LogEntryPath(NodeKind.UNKNOWN, path, ChangeType.MODIFIED, null, 0);
 	}
 
-	private static SVNLogEntryPath deleted(String fromPath) {
-		return new SVNLogEntryPath(fromPath, SVNLogEntryPath.TYPE_DELETED, null, 0);
+	private static LogEntryPath deleted(String fromPath) {
+		return new LogEntryPath(NodeKind.UNKNOWN, fromPath, ChangeType.DELETED, null, 0);
 	}
 
 	private static List<Long> revisions(long... revisions) {
@@ -343,14 +344,14 @@ public class TestHistroyBuilder extends TestCase {
 		return result;
 	}
 
-	private static Map<String, SVNLogEntryPath> paths(SVNLogEntryPath pathEntry) {
+	private static Map<String, LogEntryPath> paths(LogEntryPath pathEntry) {
 		return Collections.singletonMap(pathEntry.getPath(), pathEntry);
 	}
 
-	private static Map<String, SVNLogEntryPath> paths(SVNLogEntryPath... pathEntries) {
-		HashMap<String, SVNLogEntryPath> result = new LinkedHashMap<>();
-		for (SVNLogEntryPath pathEntry : pathEntries) {
-			SVNLogEntryPath clash = result.put(pathEntry.getPath(), pathEntry);
+	private static Map<String, LogEntryPath> paths(LogEntryPath... pathEntries) {
+		HashMap<String, LogEntryPath> result = new LinkedHashMap<>();
+		for (LogEntryPath pathEntry : pathEntries) {
+			LogEntryPath clash = result.put(pathEntry.getPath(), pathEntry);
 			assertNull(clash);
 		}
 		return result;

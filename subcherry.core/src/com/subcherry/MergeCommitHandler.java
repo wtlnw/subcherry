@@ -29,20 +29,19 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.tmatesoft.svn.core.SVNCommitInfo;
-import org.tmatesoft.svn.core.SVNException;
-import org.tmatesoft.svn.core.SVNLogEntry;
-import org.tmatesoft.svn.core.wc.SVNClientManager;
-import org.tmatesoft.svn.core.wc.SVNConflictDescription;
-import org.tmatesoft.svn.core.wc.SVNDiffClient;
-import org.tmatesoft.svn.core.wc.SVNTreeConflictDescription;
-
 import com.subcherry.commit.Commit;
 import com.subcherry.commit.CommitContext;
 import com.subcherry.commit.RevisionRewriter;
-import com.subcherry.merge.Merge;
-import com.subcherry.merge.MergeContext;
 import com.subcherry.merge.MergeHandler;
+import com.subcherry.repository.command.Client;
+import com.subcherry.repository.command.ClientManager;
+import com.subcherry.repository.command.merge.CommandExecutor;
+import com.subcherry.repository.command.merge.ConflictDescription;
+import com.subcherry.repository.command.merge.MergeOperation;
+import com.subcherry.repository.command.merge.TreeConflictDescription;
+import com.subcherry.repository.core.CommitInfo;
+import com.subcherry.repository.core.LogEntry;
+import com.subcherry.repository.core.RepositoryException;
 import com.subcherry.utils.Log;
 import com.subcherry.utils.Utils;
 
@@ -85,8 +84,8 @@ public class MergeCommitHandler {
 
 	private final MergeHandler _mergeHandler;
 	private final CommitContext _commitContext;
-	private final SVNDiffClient _diffClient;
-	private final MergeContext _mergeContext;
+
+	private final Client _client;
 	private final boolean _autoCommit;
 
 	private List<CommitSet> _commitSets;
@@ -103,21 +102,23 @@ public class MergeCommitHandler {
 
 	private Configuration _config;
 
-	public MergeCommitHandler(MergeHandler mergeHandler, SVNClientManager clientManager, Configuration config) {
+	private ClientManager _clientManager;
+
+	public MergeCommitHandler(MergeHandler mergeHandler, ClientManager clientManager, Configuration config) {
 		this._mergeHandler = mergeHandler;
+		_clientManager = clientManager;
 		_config = config;
-		this._diffClient = clientManager.getDiffClient();
+		this._client = clientManager.getClient();
 		if (config.getNoCommit()) {
 			_commitContext = null;
 		} else {
-			_commitContext = new CommitContext(clientManager.getUpdateClient(), clientManager.getCommitClient());
+			_commitContext = new CommitContext(clientManager.getClient(), clientManager.getClient());
 		}
-		this._mergeContext = new MergeContext(_diffClient);
 		_autoCommit = config.getAutoCommit();
 		_stopOnRevisions = new HashSet<Long>(Arrays.asList(config.getStopOnRevisions()));
 	}
 
-	public void run(List<CommitSet> commitSets) throws SVNException {
+	public void run(List<CommitSet> commitSets) throws RepositoryException {
 		_commitSets = commitSets;
 		_totalRevs = getTotalRevs(commitSets);
 
@@ -149,10 +150,10 @@ public class MergeCommitHandler {
 		return result;
 	}
 	
-	public void merge(Commit commit, SVNLogEntry logEntry) throws SVNException {
+	public void merge(Commit commit, LogEntry logEntry) throws RepositoryException {
 		_doneRevs++;
 
-		Merge merge = _mergeHandler.parseMerge(logEntry);
+		MergeOperation merge = _mergeHandler.parseMerge(logEntry);
 		if (merge.isEmpty()) {
 			Log.info("Skipping '" + merge.getRevision() + "' (no relevant modules touched).");
 			return;
@@ -165,7 +166,8 @@ public class MergeCommitHandler {
 
 		merge:
 		while (true) {
-			Map<File, List<SVNConflictDescription>> conflicts = merge.run(_mergeContext);
+			CommandExecutor executor = _clientManager.getOperationsFactory().getExecutor();
+			Map<File, List<ConflictDescription>> conflicts = executor.execute(merge.getCommands());
 			commit.addTouchedResources(merge.getTouchedResources());
 
 			if (!conflicts.isEmpty()) {
@@ -207,13 +209,13 @@ public class MergeCommitHandler {
 				while (true) {
 					try {
 						Log.info("Execute:" + commit);
-						SVNCommitInfo commitInfo = commit.run(_commitContext);
+						CommitInfo commitInfo = commit.run(_commitContext);
 						Log.info("Revision '" + logEntry.getRevision() + "' merged and commited as '"
 							+ commitInfo.getNewRevision() + "'.");
 
 						_revisionRewrite.add(logEntry.getRevision(), commitInfo.getNewRevision());
 						break;
-					} catch (SVNException ex) {
+					} catch (RepositoryException ex) {
 						System.out.println("Commit failed: " + ex.getLocalizedMessage());
 
 						InputResult result = queryCommit(commit, "retry");
@@ -236,7 +238,7 @@ public class MergeCommitHandler {
 		
 	}
 
-	private InputResult queryCommit(Commit commit, String continueCommand) throws SVNException {
+	private InputResult queryCommit(Commit commit, String continueCommand) throws RepositoryException {
 		String skipCommand = "skip";
 		String stopCommand = "stop";
 		String apiCommand = "api";
@@ -363,20 +365,20 @@ public class MergeCommitHandler {
 		return s.replace("\\n", "\n").replace("\\r", "\r");
 	}
 	
-	public void log(Map<File, List<SVNConflictDescription>> conflicts) {
+	public void log(Map<File, List<ConflictDescription>> conflicts) {
 		System.out.println(toStringConflicts(_config.getWorkspaceRoot(), conflicts));
 	}
 
-	public static String toStringConflicts(File workspaceRoot, Map<File, List<SVNConflictDescription>> conflicts) {
+	public static String toStringConflicts(File workspaceRoot, Map<File, List<ConflictDescription>> conflicts) {
 		StringBuilder message = new StringBuilder("Merge has conflicts in files:");
-		for (Entry<File, List<SVNConflictDescription>> entry : conflicts.entrySet()) {
+		for (Entry<File, List<ConflictDescription>> entry : conflicts.entrySet()) {
 			String absolutePath = entry.getKey().getAbsolutePath();
 			message.append('\n');
 			message.append(Utils.toResource(workspaceRoot, absolutePath));
 			message.append(':');
 			message.append(' ');
 			boolean first = true;
-			for (SVNConflictDescription conflict : entry.getValue()) {
+			for (ConflictDescription conflict : entry.getValue()) {
 				if (first) {
 					first = false;
 				} else {
@@ -389,7 +391,7 @@ public class MergeCommitHandler {
 					message.append("text");
 				}
 				if (conflict.isTreeConflict()) {
-					SVNTreeConflictDescription treeConflict = (SVNTreeConflictDescription) conflict;
+					TreeConflictDescription treeConflict = (TreeConflictDescription) conflict;
 					message.append("tree (");
 					message.append(treeConflict.getConflictAction());
 					message.append(" but locally ");

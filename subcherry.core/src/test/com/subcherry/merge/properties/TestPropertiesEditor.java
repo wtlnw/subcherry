@@ -29,8 +29,8 @@ import java.util.Properties;
 
 import junit.framework.TestCase;
 
-import com.subcherry.merge.properties.PropertiesEditor;
-import com.subcherry.merge.properties.PropertiesEditor.Property;
+import com.subcherry.repository.merge.properties.PropertiesEditor;
+import com.subcherry.repository.merge.properties.PropertiesEditor.Property;
 
 /**
  * Test case for {@link PropertiesEditor}.

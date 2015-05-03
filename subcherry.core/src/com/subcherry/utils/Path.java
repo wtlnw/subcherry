@@ -17,10 +17,9 @@
  */
 package com.subcherry.utils;
 
-import org.tmatesoft.svn.core.SVNLogEntryPath;
-import org.tmatesoft.svn.core.SVNNodeKind;
-
-import com.subcherry.history.ChangeType;
+import com.subcherry.repository.core.ChangeType;
+import com.subcherry.repository.core.LogEntryPath;
+import com.subcherry.repository.core.NodeKind;
 
 public class Path {
 
@@ -32,7 +31,7 @@ public class Path {
 
 	private String _resource;
 
-	private SVNLogEntryPath _pathEntry;
+	private LogEntryPath _pathEntry;
 
 	private Path _copyPath;
 
@@ -69,11 +68,11 @@ public class Path {
 		return _resource;
 	}
 
-	void setPathEntry(SVNLogEntryPath pathEntry) {
+	void setPathEntry(LogEntryPath pathEntry) {
 		_pathEntry = pathEntry;
 	}
 
-	public SVNLogEntryPath getPathEntry() {
+	public LogEntryPath getPathEntry() {
 		return _pathEntry;
 	}
 
@@ -90,7 +89,7 @@ public class Path {
 	}
 
 	public ChangeType getType() {
-		return ChangeType.fromSvn(_pathEntry.getType());
+		return _pathEntry.getType();
 	}
 
 	@Override
@@ -99,14 +98,14 @@ public class Path {
 	}
 
 	public boolean isDir() {
-		return getKind() == SVNNodeKind.DIR;
+		return getKind() == NodeKind.DIR;
 	}
 
 	public boolean isFile() {
-		return getKind() == SVNNodeKind.FILE;
+		return getKind() == NodeKind.FILE;
 	}
 
-	public SVNNodeKind getKind() {
+	public NodeKind getKind() {
 		return getPathEntry().getKind();
 	}
 

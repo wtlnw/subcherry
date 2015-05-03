@@ -25,17 +25,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.tmatesoft.svn.core.SVNCommitInfo;
-import org.tmatesoft.svn.core.SVNDepth;
-import org.tmatesoft.svn.core.SVNException;
-import org.tmatesoft.svn.core.SVNLogEntry;
-import org.tmatesoft.svn.core.SVNProperties;
-import org.tmatesoft.svn.core.wc.SVNCommitClient;
-import org.tmatesoft.svn.core.wc.SVNRevision;
-import org.tmatesoft.svn.core.wc.SVNUpdateClient;
-
 import com.subcherry.CommitConfig;
 import com.subcherry.MergeCommitHandler;
+import com.subcherry.repository.command.Client;
+import com.subcherry.repository.core.CommitInfo;
+import com.subcherry.repository.core.Depth;
+import com.subcherry.repository.core.LogEntry;
+import com.subcherry.repository.core.NodeProperties;
+import com.subcherry.repository.core.RepositoryException;
+import com.subcherry.repository.core.Revision;
 import com.subcherry.utils.ArrayUtil;
 import com.subcherry.utils.PathParser;
 import com.subcherry.utils.Utils;
@@ -46,11 +44,11 @@ import com.subcherry.utils.Utils.TicketMessage;
  */
 public class Commit {
 
-	private static final SVNProperties NO_ADDITIONAL_PROPERTIES = null;
+	private static final NodeProperties NO_ADDITIONAL_PROPERTIES = null;
 
 	private final CommitConfig _config;
 
-	private final SVNLogEntry _logEntry;
+	private final LogEntry _logEntry;
 
 	private String commitMessage;
 
@@ -58,14 +56,14 @@ public class Commit {
 
 	private final Set<String> _touchedResources;
 
-	public Commit(CommitConfig config, SVNLogEntry logEntry, TicketMessage ticketMessage) {
+	public Commit(CommitConfig config, LogEntry logEntry, TicketMessage ticketMessage) {
 		_config = config;
 		_logEntry = logEntry;
 		_ticketMessage = ticketMessage;
 		_touchedResources = new HashSet<>();
 	}
 
-	public SVNLogEntry getLogEntry() {
+	public LogEntry getLogEntry() {
 		return _logEntry;
 	}
 
@@ -85,35 +83,35 @@ public class Commit {
 		return buffer.toArray(new File[buffer.size()]);
 	}
 
-	public SVNCommitInfo run(CommitContext context) throws SVNException {
-		SVNCommitInfo commitInfo = doCommit(context.commitClient);
-		updateToHEAD(context.updateClient);
+	public CommitInfo run(CommitContext context) throws RepositoryException {
+		CommitInfo commitInfo = doCommit(context.commitClient);
+		updateToHEAD(context.client);
 		return commitInfo;
 	}
 
-	SVNCommitInfo doCommit(SVNCommitClient commitClient) throws SVNException {
+	CommitInfo doCommit(Client commitClient) throws RepositoryException {
 		HashSet<File> commitPathes = new HashSet<File>();
 		commitPathes.addAll(getAffectedPaths());
 		commitPathes.addAll(getTouchedModules());
 		boolean keepLocks = false;
-		SVNProperties revisionProperties = NO_ADDITIONAL_PROPERTIES;
+		NodeProperties revisionProperties = NO_ADDITIONAL_PROPERTIES;
 		String[] changelists = null;
 		boolean keepChangelist = false;
 		boolean force = false;
-		SVNDepth depth = SVNDepth.EMPTY; // all pathes are given explicitly
-		SVNCommitInfo commitInfo =
-			commitClient.doCommit(commitPathes.toArray(ArrayUtil.EMPTY_FILE_ARRAY), keepLocks, getCommitMessage(),
+		Depth depth = Depth.EMPTY; // all pathes are given explicitly
+		CommitInfo commitInfo =
+			commitClient.commit(commitPathes.toArray(ArrayUtil.EMPTY_FILE_ARRAY), keepLocks, getCommitMessage(),
 				revisionProperties, changelists, keepChangelist, force, depth);
 		return commitInfo;
 	}
 
-	void updateToHEAD(SVNUpdateClient updateClient) throws SVNException {
-		SVNRevision revision = SVNRevision.HEAD;
-		SVNDepth depth = SVNDepth.INFINITY;
+	void updateToHEAD(Client client) throws RepositoryException {
+		Revision revision = Revision.HEAD;
+		Depth depth = Depth.INFINITY;
 		boolean depthIsSticky = false;
 		boolean allowUnversionedObstructions = false;
 		File[] paths = getTouchedModules().toArray(ArrayUtil.EMPTY_FILE_ARRAY);
-		updateClient.doUpdate(paths, revision, depth, allowUnversionedObstructions, depthIsSticky);
+		client.update(paths, revision, depth, allowUnversionedObstructions, depthIsSticky);
 	}
 
 	private List<File> getTouchedModules() {

@@ -25,8 +25,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import org.tmatesoft.svn.core.SVNLogEntry;
-
+import com.subcherry.repository.core.LogEntry;
 import com.subcherry.trac.Ticket;
 import com.subcherry.trac.TicketStub;
 import com.subcherry.trac.TracConnection;
@@ -96,7 +95,7 @@ public class DefaultLogEntryMatcher extends SVNLogEntryMatcher {
 
 
 	@Override
-	public boolean matches(SVNLogEntry logEntry) {
+	public boolean matches(LogEntry logEntry) {
 		long revision = logEntry.getRevision();
 		if (_ignoreRevisions.contains(revision)) {
 			Log.info("Ignore revision " + revision + " as it is configured to be ignored");

@@ -20,9 +20,8 @@ package com.subcherry.utils;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.tmatesoft.svn.core.SVNLogEntryPath;
-
 import com.subcherry.BranchConfig;
+import com.subcherry.repository.core.LogEntryPath;
 
 public class PathParser {
 
@@ -37,7 +36,7 @@ public class PathParser {
 		_branchPattern = Pattern.compile("^(?:" + branchPattern + ")");
 	}
 
-	public Path parsePath(SVNLogEntryPath pathEntry) {
+	public Path parsePath(LogEntryPath pathEntry) {
 		if (pathEntry == null) {
 			return null;
 		}

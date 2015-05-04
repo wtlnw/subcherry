@@ -25,6 +25,11 @@ import com.subcherry.repository.javahl.internal.HLClientManager;
 public class HLRepositoryFactory extends ClientManagerFactory {
 
 	@Override
+	public String getProviderName() {
+		return "javahl";
+	}
+
+	@Override
 	public ClientManager createClientManager(LoginCredential svnCredentials) {
 		return new HLClientManager(svnCredentials);
 	}

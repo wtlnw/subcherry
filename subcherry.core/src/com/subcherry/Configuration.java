@@ -202,4 +202,9 @@ public interface Configuration extends MergeConfig, CommitConfig, BranchConfig {
 	 */
 	boolean getSkipWaitForTimestamp();
 
+	/**
+	 * Name of the repository binding provider.
+	 */
+	String getRepositoryProvider();
+
 }

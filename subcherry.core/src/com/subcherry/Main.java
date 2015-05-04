@@ -555,7 +555,7 @@ public class Main {
 		LoginCredential svnCredentials = PropertiesUtil.load("conf/loginCredentials.properties", "svn.",
 			LoginCredentialsValue.class);
 
-		return ClientManagerFactory.getInstance().createClientManager(svnCredentials);
+		return ClientManagerFactory.getInstance(config().getRepositoryProvider()).createClientManager(svnCredentials);
 	}
 
 }

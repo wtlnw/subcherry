@@ -17,31 +17,48 @@
  */
 package com.subcherry.repository;
 
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.ServiceLoader;
 
 import com.subcherry.repository.command.ClientManager;
 
 public abstract class ClientManagerFactory {
 
-	private static ClientManagerFactory _instance;
+	public static final String DEFAULT_NAME = "DEFAULT";
 
-	public static ClientManager newClientManager() {
-		return getInstance().createClientManager();
-	}
+	private static Map<String, ClientManagerFactory> _factories;
 
-	public static ClientManagerFactory getInstance() {
-		if (_instance == null) {
+	public static ClientManagerFactory getInstance(String providerName) {
+		if (_factories == null) {
+			_factories = new HashMap<String, ClientManagerFactory>();
+
 			ServiceLoader<ClientManagerFactory> providerLoader = ServiceLoader.load(ClientManagerFactory.class);
 			Iterator<ClientManagerFactory> providers = providerLoader.iterator();
-			_instance = providers.next();
+			boolean first = true;
+			while (providers.hasNext()) {
+				ClientManagerFactory factory = providers.next();
+				if (first) {
+					first = false;
+					_factories.put(DEFAULT_NAME, factory);
+				}
+				_factories.put(factory.getProviderName(), factory);
+			}
 		}
-		return _instance;
+
+		return _factories.get(applyDefault(providerName));
+	}
+
+	private static Object applyDefault(String providerName) {
+		return providerName == null ? DEFAULT_NAME : (providerName.isEmpty() ? DEFAULT_NAME : providerName);
 	}
 
 	public final ClientManager createClientManager() {
 		return createClientManager(null);
 	}
+
+	public abstract String getProviderName();
 
 	public abstract ClientManager createClientManager(LoginCredential svnCredentials);
 

@@ -26,6 +26,11 @@ import com.subcherry.repository.command.ClientManager;
 public class SKRepositoryFactory extends ClientManagerFactory {
 
 	@Override
+	public String getProviderName() {
+		return "svnkit";
+	}
+
+	@Override
 	public ClientManager createClientManager(LoginCredential svnCredentials) {
 		return new SKClientManager(svnCredentials);
 	}

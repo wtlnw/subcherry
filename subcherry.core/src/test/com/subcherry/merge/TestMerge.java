@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import junit.extensions.TestSetup;
 import junit.framework.AssertionFailedError;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -76,7 +77,7 @@ public class TestMerge extends TestCase {
 	protected void setUp() throws Exception {
 		super.setUp();
 
-		_clientManager = ClientManagerFactory.newClientManager();
+		_clientManager = ClientManagerFactory.getInstance(Setup.getProviderName()).createClientManager();
 		_clientManager.getOperationsFactory().settings().setSleepForTimestamp(false);
 	}
 
@@ -902,6 +903,35 @@ public class TestMerge extends TestCase {
 		assertNull(mergedEntry.getChangedPaths().get(path));
 	}
 
+	static class Setup extends TestSetup {
+
+		private final String _providerName;
+
+		private static String _activeProviderName;
+
+		public Setup(Class<TestMerge> test, String providerName) {
+			super(new TestSuite(test, providerName));
+			_providerName = providerName;
+		}
+
+		@Override
+		public String toString() {
+			return super.toString() + "(" + _providerName + ")";
+		}
+
+		@Override
+		protected void setUp() throws Exception {
+			super.setUp();
+
+			_activeProviderName = _providerName;
+		}
+
+		public static String getProviderName() {
+			return _activeProviderName;
+		}
+
+	}
+
 	/**
 	 * @return a cumulative {@link Test} for all Tests in {@link TestMerge}.
 	 */
@@ -912,6 +942,9 @@ public class TestMerge extends TestCase {
 			t.setName("testMergeFolderConflict4");
 			return t;
 		}
-		return new TestSuite(TestMerge.class);
+		TestSuite suite = new TestSuite();
+		suite.addTest(new Setup(TestMerge.class, "javahl"));
+		suite.addTest(new Setup(TestMerge.class, "svnkit"));
+		return suite;
 	}
 }

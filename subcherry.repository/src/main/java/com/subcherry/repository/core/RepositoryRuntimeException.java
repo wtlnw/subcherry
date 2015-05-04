@@ -17,8 +17,15 @@
  */
 package com.subcherry.repository.core;
 
-public enum NodeKind {
-	
-	DIR, FILE, SYMLINK, NONE, UNKNOWN
+public class RepositoryRuntimeException extends RuntimeException {
+
+	public RepositoryRuntimeException(RepositoryException cause) {
+		super(cause);
+	}
+
+	@Override
+	public RepositoryException getCause() {
+		return (RepositoryException) super.getCause();
+	}
 
 }

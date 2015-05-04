@@ -15,10 +15,22 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.subcherry.repository.core;
+package com.subcherry.repository.javahl.internal;
 
-public enum NodeKind {
-	
-	DIR, FILE, SYMLINK, NONE, UNKNOWN
+import org.apache.subversion.javahl.CommitInfo;
+import org.apache.subversion.javahl.callback.CommitCallback;
+
+public class LastCommitInfo implements CommitCallback {
+
+	private CommitInfo _info;
+
+	@Override
+	public void commitInfo(CommitInfo info) {
+		_info = info;
+	}
+
+	public com.subcherry.repository.core.CommitInfo getInfo() {
+		return Conversions.wrap(_info);
+	}
 
 }

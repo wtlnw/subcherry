@@ -40,6 +40,7 @@ import com.subcherry.repository.command.copy.Copy;
 import com.subcherry.repository.command.copy.CopySource;
 import com.subcherry.repository.command.log.LogEntryHandler;
 import com.subcherry.repository.command.merge.ConflictAction;
+import com.subcherry.repository.command.merge.ConflictReason;
 import com.subcherry.repository.command.merge.Merge;
 import com.subcherry.repository.command.merge.MergeOperation;
 import com.subcherry.repository.command.merge.ScheduledTreeConflict;
@@ -704,6 +705,7 @@ public class MergeHandler extends Handler<MergeConfig> {
 			ScheduledTreeConflict conflict = operations().newScheduledTreeConflict();
 			conflict.setTarget(Target.fromFile(targetFile));
 			conflict.setAction(ConflictAction.ADDED);
+			conflict.setReason(ConflictReason.MISSING);
 			return conflict;
 		}
 
@@ -761,6 +763,7 @@ public class MergeHandler extends Handler<MergeConfig> {
 			ScheduledTreeConflict conflict = operations().newScheduledTreeConflict();
 			conflict.setTarget(Target.fromFile(targetFile));
 			conflict.setAction(ConflictAction.EDITED);
+			conflict.setReason(ConflictReason.MISSING);
 			return conflict;
 		}
 		

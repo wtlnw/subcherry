@@ -15,10 +15,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.subcherry.repository.core;
+package com.subcherry.repository.javahl;
 
-public enum NodeKind {
-	
-	DIR, FILE, SYMLINK, NONE, UNKNOWN
+import com.subcherry.repository.ClientManagerFactory;
+import com.subcherry.repository.LoginCredential;
+import com.subcherry.repository.command.ClientManager;
+import com.subcherry.repository.javahl.internal.HLClientManager;
+
+public class HLRepositoryFactory extends ClientManagerFactory {
+
+	@Override
+	public ClientManager createClientManager(LoginCredential svnCredentials) {
+		return new HLClientManager(svnCredentials);
+	}
 
 }

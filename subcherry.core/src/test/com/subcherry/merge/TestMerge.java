@@ -67,7 +67,8 @@ public class TestMerge extends TestCase {
 
 	private static final List<String> MERGED_MODULES = Arrays.asList("module1", "module2");
 
-	private static final String NL = System.getProperty("line.separator");
+	// Note: svn:ignore is expected to use Unix line ending style.
+	private static final String NL = "\n";
 
 	private ClientManager _clientManager;
 
@@ -712,7 +713,7 @@ public class TestMerge extends TestCase {
 		wc1.file("module1/folder/sub/zzz");
 		long origRevision = wc1.commit();
 
-		assertEquals("tmp" + NL, wc1.getProperty("module1/folder", "svn:ignore"));
+		assertEquals(Arrays.asList("tmp"), splitSvnIgnore(wc1.getProperty("module1/folder", "svn:ignore")));
 
 		long mergedRevision = origRevision;
 
@@ -738,7 +739,14 @@ public class TestMerge extends TestCase {
 		
 		WC wc2 = s.wc("/branches/branch2");
 		assertEquals("Property of new folder has not been copied.",
-			"tmp" + NL, wc2.getProperty("module1/folder", "svn:ignore"));
+			Arrays.asList("tmp"), splitSvnIgnore(wc2.getProperty("module1/folder", "svn:ignore")));
+	}
+
+	private List<String> splitSvnIgnore(String svnIgnore) {
+		if (svnIgnore == null) {
+			return null;
+		}
+		return Arrays.asList(svnIgnore.split("\r?\n"));
 	}
 
 	public void testMoveIntoRevertedFolder() throws IOException, RepositoryException {

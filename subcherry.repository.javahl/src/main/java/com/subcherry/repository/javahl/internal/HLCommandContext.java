@@ -15,10 +15,23 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.subcherry.repository.core;
+package com.subcherry.repository.javahl.internal;
 
-public enum NodeKind {
+import java.io.File;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.subcherry.repository.command.merge.CommandContext;
+import com.subcherry.repository.command.merge.ConflictDescription;
+
+class HLCommandContext implements CommandContext {
+
+	private Map<File, List<ConflictDescription>> _conflicts = new HashMap<File, List<ConflictDescription>>();
+
+	@Override
+	public Map<File, List<ConflictDescription>> getConflicts() {
+		return _conflicts;
+	}
 	
-	DIR, FILE, SYMLINK, NONE, UNKNOWN
-
 }

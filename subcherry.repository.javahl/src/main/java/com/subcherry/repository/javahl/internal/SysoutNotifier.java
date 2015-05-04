@@ -15,10 +15,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.subcherry.repository.core;
+package com.subcherry.repository.javahl.internal;
 
-public enum NodeKind {
-	
-	DIR, FILE, SYMLINK, NONE, UNKNOWN
+import org.apache.subversion.javahl.ClientNotifyInformation;
+import org.apache.subversion.javahl.callback.ClientNotifyCallback;
+
+public class SysoutNotifier implements ClientNotifyCallback {
+
+	@Override
+	public void onNotify(ClientNotifyInformation info) {
+		System.out.println(info);
+	}
 
 }

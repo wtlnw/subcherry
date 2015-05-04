@@ -15,10 +15,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.subcherry.repository.core;
+package com.subcherry.repository.javahl.internal;
 
-public enum NodeKind {
-	
-	DIR, FILE, SYMLINK, NONE, UNKNOWN
+import org.apache.subversion.javahl.ProgressEvent;
+import org.apache.subversion.javahl.callback.ProgressCallback;
+
+public class SysoutProgressListener implements ProgressCallback {
+
+	@Override
+	public void onProgress(ProgressEvent event) {
+		System.out.println(event);
+	}
 
 }

@@ -15,10 +15,24 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.subcherry.repository.core;
+package com.subcherry.repository.javahl.internal;
 
-public enum NodeKind {
-	
-	DIR, FILE, SYMLINK, NONE, UNKNOWN
+import java.util.Set;
+
+import org.apache.subversion.javahl.CommitItem;
+import org.apache.subversion.javahl.callback.CommitMessageCallback;
+
+public class PredefinedCommitMessage implements CommitMessageCallback {
+
+	private String _commitMessage;
+
+	public PredefinedCommitMessage(String commitMessage) {
+		_commitMessage = commitMessage;
+	}
+
+	@Override
+	public String getLogMessage(Set<CommitItem> elementsToBeCommitted) {
+		return _commitMessage;
+	}
 
 }

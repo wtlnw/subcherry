@@ -38,4 +38,9 @@ public class StringValue extends PropertyValue {
 	public String toString() {
 		return getString();
 	}
+
+	@Override
+	public String asString() {
+		return _string;
+	}
 }

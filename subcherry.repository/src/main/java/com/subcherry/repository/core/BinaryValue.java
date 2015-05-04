@@ -17,6 +17,8 @@
  */
 package com.subcherry.repository.core;
 
+import java.io.UnsupportedEncodingException;
+
 public class BinaryValue extends PropertyValue {
 
 	private byte[] _bytes;
@@ -37,5 +39,14 @@ public class BinaryValue extends PropertyValue {
 	@Override
 	public String toString() {
 		return "byte[" + getBytes().length + "]";
+	}
+
+	@Override
+	public String asString() {
+		try {
+			return new String(_bytes, "utf-8");
+		} catch (UnsupportedEncodingException ex) {
+			return new String(_bytes);
+		}
 	}
 }

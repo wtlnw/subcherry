@@ -33,4 +33,6 @@ public abstract class PropertyValue {
 		return new StringValue(string);
 	}
 
+	public abstract String asString();
+
 }

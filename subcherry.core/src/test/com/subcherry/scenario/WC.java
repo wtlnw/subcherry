@@ -41,7 +41,6 @@ import com.subcherry.repository.core.RepositoryException;
 import com.subcherry.repository.core.RepositoryURL;
 import com.subcherry.repository.core.Revision;
 import com.subcherry.repository.core.RevisionRange;
-import com.subcherry.repository.core.StringValue;
 
 public class WC extends FileSystem {
 
@@ -180,7 +179,7 @@ public class WC extends FileSystem {
 		if (data == null) {
 			return null;
 		}
-		return ((StringValue) data.getValue()).getString();
+		return data.getValue().asString();
 	}
 
 	public List<File> getModified() throws RepositoryException {

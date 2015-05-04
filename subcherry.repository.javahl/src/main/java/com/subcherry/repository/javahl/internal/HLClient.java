@@ -417,9 +417,8 @@ public class HLClient implements Client {
 			boolean climbUnversionedParents, Depth depth,
 			boolean includeIgnored, boolean makeParents)
 			throws RepositoryException {
-		boolean noAutoProps = false;
 		try {
-			_client.add(unwrap(path), unwrap(depth), force, includeIgnored, noAutoProps, climbUnversionedParents);
+			_client.add(unwrap(path), unwrap(depth), force, includeIgnored, climbUnversionedParents);
 		} catch (ClientException ex) {
 			throw wrap(ex);
 		}

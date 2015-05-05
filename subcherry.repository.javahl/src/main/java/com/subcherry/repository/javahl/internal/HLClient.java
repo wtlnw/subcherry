@@ -93,9 +93,6 @@ public class HLClient implements Client {
 			_client.username(credentials.getUser());
 			_client.password(credentials.getPasswd());
 		}
-		_client.notification2(new SysoutNotifier());
-		_client.setProgressCallback(new SysoutProgressListener());
-		// _client.setConfigDirectory(null);
 
 		_repos = new SVNRepos();
 	}

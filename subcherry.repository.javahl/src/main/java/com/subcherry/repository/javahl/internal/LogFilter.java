@@ -40,7 +40,8 @@ public class LogFilter {
 		_suffixes = new String[paths.length];
 		int prefixLength = prefix.length();
 		for (int n = 0, cnt = paths.length; n < cnt; n++) {
-			_suffixes[n] = startingWithSlash(paths[n]).substring(prefixLength);
+			String path = startingWithSlash(paths[n]);
+			_suffixes[n] = path.substring(prefixLength);
 		}
 	}
 	
@@ -82,7 +83,18 @@ public class LogFilter {
 				return path(shorter, n);
 			}
 		}
-		return path(longer, cnt);
+		if (cnt < longer.length()) {
+			if (longer.charAt(cnt) == SLASH) {
+				// The shorter is the parent directory of the longer without a
+				// trailing slash.
+				return shorter;
+			} else {
+				return path(longer, cnt);
+			}
+		} else {
+			// Paths were equal.
+			return p1;
+		}
 	}
 
 	private String path(String path, int size) {

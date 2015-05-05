@@ -35,6 +35,7 @@ import com.subcherry.commit.RevisionRewriter;
 import com.subcherry.merge.MergeHandler;
 import com.subcherry.repository.command.Client;
 import com.subcherry.repository.command.ClientManager;
+import com.subcherry.repository.command.Command;
 import com.subcherry.repository.command.merge.CommandExecutor;
 import com.subcherry.repository.command.merge.ConflictDescription;
 import com.subcherry.repository.command.merge.MergeOperation;
@@ -163,6 +164,9 @@ public class MergeCommitHandler {
 		
 		System.out.println("Revision " + logEntry.getRevision() + " (" + _doneRevs + " of " + _totalRevs + "): "
 			+ encode(logEntry.getMessage()));
+		for (Command command : merge.getCommands()) {
+			System.out.println("   " + command.toString());
+		}
 
 		merge:
 		while (true) {

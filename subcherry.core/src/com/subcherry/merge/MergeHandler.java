@@ -701,13 +701,6 @@ public class MergeHandler extends Handler<MergeConfig> {
 
 	private Command createRemoteAdd(long srcRevision, Path srcPath, String targetResource) throws RepositoryException {
 		File targetFile = new File(_config.getWorkspaceRoot(), targetResource);
-		if (!existsWhenMerged(parent(targetResource))) {
-			ScheduledTreeConflict conflict = operations().newScheduledTreeConflict();
-			conflict.setTarget(Target.fromFile(targetFile));
-			conflict.setAction(ConflictAction.ADDED);
-			conflict.setReason(ConflictReason.MISSING);
-			return conflict;
-		}
 
 		_virtualFs.add(targetResource);
 

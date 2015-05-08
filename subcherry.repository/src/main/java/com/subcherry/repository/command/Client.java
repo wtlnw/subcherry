@@ -20,6 +20,8 @@ package com.subcherry.repository.command;
 import java.io.File;
 import java.io.OutputStream;
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 import com.subcherry.repository.command.copy.CopySource;
 import com.subcherry.repository.command.log.DirEntryHandler;
@@ -29,6 +31,7 @@ import com.subcherry.repository.command.wc.PropertyHandler;
 import com.subcherry.repository.core.CommitInfo;
 import com.subcherry.repository.core.Depth;
 import com.subcherry.repository.core.DirEntry.Kind;
+import com.subcherry.repository.core.MergeInfo;
 import com.subcherry.repository.core.NodeProperties;
 import com.subcherry.repository.core.PropertyData;
 import com.subcherry.repository.core.PropertyValue;
@@ -36,6 +39,7 @@ import com.subcherry.repository.core.RepositoryException;
 import com.subcherry.repository.core.RepositoryURL;
 import com.subcherry.repository.core.Revision;
 import com.subcherry.repository.core.RevisionRange;
+import com.subcherry.repository.core.Target;
 
 public interface Client {
 
@@ -106,5 +110,12 @@ public interface Client {
 	void setProperty(File path, String propName, PropertyValue propValue,
 			boolean skipChecks, Depth depth, PropertyHandler handler, Collection<String> changeLists)
 			throws RepositoryException;
+
+	void getMergeInfoLog(Target target, Target mergeSource, Revision startRev, Revision endRev, LogEntryHandler handler)
+			throws RepositoryException;
+
+	MergeInfo getMergeInfo(Target target) throws RepositoryException;
+
+	Map<String, List<RevisionRange>> mergeInfoDiff(Target target, long rev) throws RepositoryException;
 
 }

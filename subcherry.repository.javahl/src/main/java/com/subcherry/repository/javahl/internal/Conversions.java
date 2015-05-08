@@ -19,10 +19,12 @@ package com.subcherry.repository.javahl.internal;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -30,10 +32,14 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.subversion.javahl.ClientException;
+import org.apache.subversion.javahl.SubversionException;
+import org.apache.subversion.javahl.callback.LogMessageCallback;
 import org.apache.subversion.javahl.types.ChangePath;
 import org.apache.subversion.javahl.types.ChangePath.Action;
+import org.apache.subversion.javahl.types.LogDate;
 
 import com.subcherry.repository.command.copy.CopySource;
+import com.subcherry.repository.command.log.LogEntryHandler;
 import com.subcherry.repository.command.merge.ConflictDescription;
 import com.subcherry.repository.command.status.Status;
 import com.subcherry.repository.core.BinaryValue;
@@ -41,12 +47,15 @@ import com.subcherry.repository.core.ChangeType;
 import com.subcherry.repository.core.CommitInfo;
 import com.subcherry.repository.core.Depth;
 import com.subcherry.repository.core.DirEntry;
+import com.subcherry.repository.core.LogEntry;
 import com.subcherry.repository.core.LogEntryPath;
+import com.subcherry.repository.core.MergeInfo;
 import com.subcherry.repository.core.NodeKind;
 import com.subcherry.repository.core.NodeProperties;
 import com.subcherry.repository.core.PropertyData;
 import com.subcherry.repository.core.PropertyValue;
 import com.subcherry.repository.core.RepositoryException;
+import com.subcherry.repository.core.RepositoryRuntimeException;
 import com.subcherry.repository.core.RepositoryURL;
 import com.subcherry.repository.core.Revision;
 import com.subcherry.repository.core.RevisionRange;
@@ -57,7 +66,24 @@ import com.subcherry.repository.core.Target.UrlTarget;
 
 public class Conversions {
 
+	public static final String SVN_LOG = "svn:log";
+
+	public static final String SVN_AUTHOR = "svn:author";
+
+	public static final String SVN_DATE = "svn:date";
+
+	private static final Filter<String> TRUE = new Filter() {
+		@Override
+		public boolean accept(Object value) {
+			return true;
+		}
+	};
+
 	public static RepositoryException wrap(ClientException ex) {
+		return new RepositoryException(ex);
+	}
+
+	public static RepositoryException wrap(SubversionException ex) {
 		return new RepositoryException(ex);
 	}
 
@@ -73,7 +99,7 @@ public class Conversions {
 		return new CommitInfo() {
 			@Override
 			public long getNewRevision() {
-				return info.getRevision();
+				return info == null ? -1 : info.getRevision();
 			}
 		};
 	}
@@ -170,7 +196,15 @@ public class Conversions {
 		return new org.apache.subversion.javahl.types.RevisionRange(unwrap(range.getStart()), unwrap(range.getEnd()));
 	}
 
-	public static Map<String, LogEntryPath> wrap(Set<ChangePath> changedPaths, LogFilter filter) {
+	public static Map<String, LogEntryPath> wrap(Set<ChangePath> changedPaths) {
+		return wrap(changedPaths, TRUE);
+	}
+
+	public static Map<String, LogEntryPath> wrap(Set<ChangePath> changedPaths,
+			Filter<String> filter) {
+		if (changedPaths == null) {
+			return null;
+		}
 		HashMap<String, LogEntryPath> result = new HashMap<String, LogEntryPath>();
 		for (ChangePath path : changedPaths) {
 			if (!filter.accept(path.getPath())) {
@@ -295,6 +329,135 @@ public class Conversions {
 			return null;
 		}
 		return Arrays.asList(changelists);
+	}
+
+	public static MergeInfo wrap(
+			final org.apache.subversion.javahl.types.Mergeinfo mergeinfo) {
+		return new MergeInfo() {
+
+			@Override
+			public Set<RepositoryURL> getPaths() {
+				return parseUrlSet(mergeinfo.getPaths());
+			}
+
+			@Override
+			public List<RevisionRange> getRevisions(RepositoryURL path) {
+				return wrapRanges(mergeinfo.getRevisions(path.toString()));
+			}
+
+		};
+	}
+
+	public static Set<RepositoryURL> parseUrlSet(Set<String> paths) {
+		HashSet<RepositoryURL> result = new HashSet<RepositoryURL>();
+		for (String path : paths) {
+			result.add(RepositoryURL.parse(path));
+		}
+		return result;
+	}
+
+	public static List<RevisionRange> wrapRanges(
+			List<org.apache.subversion.javahl.types.RevisionRange> ranges) {
+		if (ranges == null) {
+			return null;
+		}
+		ArrayList<RevisionRange> result = new ArrayList<RevisionRange>();
+		for (org.apache.subversion.javahl.types.RevisionRange range : ranges) {
+			result.add(wrap(range));
+		}
+		return result;
+	}
+
+	public static RevisionRange wrap(
+			org.apache.subversion.javahl.types.RevisionRange range) {
+		return RevisionRange.create(wrap(range.getFromRevision()),
+				wrap(range.getToRevision()));
+	}
+
+	public static Revision wrap(
+			org.apache.subversion.javahl.types.Revision revision) {
+		switch (revision.getKind()) {
+		case number: return Revision.create(((org.apache.subversion.javahl.types.Revision.Number) revision).getNumber());
+		case base: return Revision.BASE;
+		case head: return Revision.HEAD;
+		case unspecified: return Revision.UNDEFINED;
+		case working: return Revision.WORKING;
+		case previous:
+		case committed:
+			throw unsupported("Unsupported revision kind: "
+					+ revision.getKind());
+		}
+		throw unsupported("No such revision kind: " + revision.getKind());
+	}
+
+	public static Date getDate(Map<String, byte[]> revprops) {
+		return binaryToDate(revprops.get(SVN_DATE));
+	}
+
+	public static String getMessage(Map<String, byte[]> revprops) {
+		return binaryToString(revprops.get(SVN_LOG));
+	}
+
+	public static String getAuthor(Map<String, byte[]> revprops) {
+		return binaryToString(revprops.get(SVN_AUTHOR));
+	}
+
+	private static Date binaryToDate(byte[] data) {
+		if (data != null) {
+			long timeMicros;
+			try {
+				LogDate logDate = new LogDate(new String(data));
+				timeMicros = logDate.getTimeMicros();
+			} catch (ParseException ex) {
+				timeMicros = 0;
+			}
+			return new Date(timeMicros / 1000);
+		} else {
+			return null;
+		}
+	}
+
+	private static String binaryToString(byte[] data) {
+		if (data != null) {
+			try {
+				return new String(data, "utf-8");
+			} catch (UnsupportedEncodingException e) {
+				return new String(data);
+			}
+		} else {
+			return null;
+		}
+	}
+
+	public static LogMessageCallback wrap(final LogEntryHandler handler) {
+		return wrap(handler, TRUE);
+	}
+
+	public static LogMessageCallback wrap(final LogEntryHandler handler, final Filter<String> pathFilter) {
+		LogMessageCallback callback = new LogMessageCallback() {
+			@Override
+			public void singleMessage(Set<ChangePath> changedPaths,
+					long revision, Map<String, byte[]> revprops,
+					boolean hasChildren) {
+
+				if (revprops == null) {
+					revprops = Collections.emptyMap();
+				}
+				String author = getAuthor(revprops);
+				String message = getMessage(revprops);
+				Date date = getDate(revprops);
+
+				LogEntry logEntry = new LogEntry(
+						wrap(changedPaths, pathFilter),
+						revision, author, date, message, hasChildren);
+				try {
+					handler.handleLogEntry(logEntry);
+				} catch (RepositoryException ex) {
+					throw new RepositoryRuntimeException(ex);
+				}
+			}
+		};
+		return callback;
 	}
 
 }

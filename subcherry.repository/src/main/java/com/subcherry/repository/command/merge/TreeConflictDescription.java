@@ -42,4 +42,9 @@ public class TreeConflictDescription extends ConflictDescription {
 		return Kind.TREE;
 	}
 
+	@Override
+	public String toString() {
+		return super.toString() + " (" + getConflictAction() + " but locally " + getConflictReason() + ")";
+	}
+
 }

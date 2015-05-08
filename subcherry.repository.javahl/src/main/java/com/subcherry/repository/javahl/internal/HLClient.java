@@ -21,12 +21,9 @@ import static com.subcherry.repository.javahl.internal.Conversions.*;
 
 import java.io.File;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
-import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -36,19 +33,19 @@ import org.apache.subversion.javahl.ISVNClient;
 import org.apache.subversion.javahl.ISVNRepos;
 import org.apache.subversion.javahl.SVNClient;
 import org.apache.subversion.javahl.SVNRepos;
+import org.apache.subversion.javahl.SubversionException;
 import org.apache.subversion.javahl.callback.CommitCallback;
 import org.apache.subversion.javahl.callback.CommitMessageCallback;
 import org.apache.subversion.javahl.callback.ListCallback;
 import org.apache.subversion.javahl.callback.LogMessageCallback;
 import org.apache.subversion.javahl.callback.StatusCallback;
-import org.apache.subversion.javahl.types.ChangePath;
 import org.apache.subversion.javahl.types.DirEntry;
 import org.apache.subversion.javahl.types.Lock;
-import org.apache.subversion.javahl.types.LogDate;
+import org.apache.subversion.javahl.types.Mergeinfo.LogKind;
 import org.apache.subversion.javahl.types.Status;
 
 import com.subcherry.repository.LoginCredential;
-import com.subcherry.repository.command.Client;
+import com.subcherry.repository.command.DefaultClient;
 import com.subcherry.repository.command.OperationFactory;
 import com.subcherry.repository.command.copy.CopySource;
 import com.subcherry.repository.command.log.DirEntryHandler;
@@ -58,7 +55,7 @@ import com.subcherry.repository.command.wc.PropertyHandler;
 import com.subcherry.repository.core.CommitInfo;
 import com.subcherry.repository.core.Depth;
 import com.subcherry.repository.core.DirEntry.Kind;
-import com.subcherry.repository.core.LogEntry;
+import com.subcherry.repository.core.MergeInfo;
 import com.subcherry.repository.core.NodeProperties;
 import com.subcherry.repository.core.PropertyData;
 import com.subcherry.repository.core.PropertyValue;
@@ -67,14 +64,9 @@ import com.subcherry.repository.core.RepositoryRuntimeException;
 import com.subcherry.repository.core.RepositoryURL;
 import com.subcherry.repository.core.Revision;
 import com.subcherry.repository.core.RevisionRange;
+import com.subcherry.repository.core.Target;
 
-public class HLClient implements Client {
-
-	private static final String SVN_LOG = "svn:log";
-
-	private static final String SVN_AUTHOR = "svn:author";
-
-	private static final String SVN_DATE = "svn:date";
+public class HLClient extends DefaultClient {
 
 	private static final String[] DEFAULT_REVPROPS_ARRAY = { SVN_DATE, SVN_AUTHOR, SVN_LOG };
 
@@ -293,54 +285,7 @@ public class HLClient implements Client {
 			long limit, String[] revisionProperties, final LogEntryHandler handler)
 			throws RepositoryException {
 		final LogFilter logFilter = new LogFilter(unwrap(url), paths);
-		LogMessageCallback callback = new LogMessageCallback() {
-			@Override
-			public void singleMessage(Set<ChangePath> changedPaths,
-					long revision, Map<String, byte[]> revprops,
-					boolean hasChildren) {
-
-				if (revprops == null) {
-					revprops = Collections.emptyMap();
-				}
-				String author = binaryToString(revprops.get(SVN_AUTHOR));
-				String message = binaryToString(revprops.get(SVN_LOG));
-				Date date = binaryToDate(revprops.get(SVN_DATE));
-
-				LogEntry logEntry = new LogEntry(wrap(changedPaths, logFilter), revision, author, date, message);
-				try {
-					handler.handleLogEntry(logEntry);
-				} catch (RepositoryException ex) {
-					throw new RepositoryRuntimeException(ex);
-				}
-			}
-
-			private Date binaryToDate(byte[] data) {
-				if (data != null) {
-					long timeMicros;
-					try {
-						LogDate logDate = new LogDate(new String(data));
-						timeMicros = logDate.getTimeMicros();
-					} catch (ParseException ex) {
-						timeMicros = 0;
-					}
-					return new Date(timeMicros / 1000);
-				} else {
-					return null;
-				}
-			}
-
-			private String binaryToString(byte[] data) {
-				if (data != null) {
-					try {
-						return new String(data, "utf-8");
-					} catch (UnsupportedEncodingException e) {
-						return new String(data);
-					}
-				} else {
-					return null;
-				}
-			}
-		};
+		LogMessageCallback callback = wrap(handler, logFilter);
 		try {
 			_client.logMessages(logFilter.getPrefixUrl(), unwrap(pegRevision),
 				range(startRevision, endRevision), stopOnCopy,
@@ -459,4 +404,36 @@ public class HLClient implements Client {
 		}
 	}
 
+	public MergeInfo getMergeInfo(Target target) throws RepositoryException {
+		try {
+			return wrap(_client.getMergeinfo(unwrap(target), unwrap(target.getPegRevision())));
+		} catch (SubversionException ex) {
+			throw wrap(ex);
+		}
+	}
+
+	@Override
+	public void getMergeInfoLog(Target target, Target mergeSource,
+			Revision startRev, Revision endRev, final LogEntryHandler handler) throws RepositoryException {
+		LogKind kind = LogKind.merged;
+		String pathOrUrl = unwrap(target);
+		org.apache.subversion.javahl.types.Revision pegRevision = unwrap(target.getPegRevision());
+		String mergeSourceUrl = unwrap(mergeSource);
+		org.apache.subversion.javahl.types.Revision srcPegRevision = unwrap(mergeSource.getPegRevision());
+		org.apache.subversion.javahl.types.Revision srcStartRevision = unwrap(startRev);
+		org.apache.subversion.javahl.types.Revision srcEndRevision = unwrap(endRev);
+		boolean discoverChangedPaths = false;
+		org.apache.subversion.javahl.types.Depth depth = org.apache.subversion.javahl.types.Depth.empty;
+		Set<String> revProps = Collections.emptySet();
+		try {
+			_client.getMergeinfoLog(kind, pathOrUrl, pegRevision,
+					mergeSourceUrl, srcPegRevision, srcStartRevision,
+					srcEndRevision, discoverChangedPaths, depth, revProps,
+					wrap(handler));
+		} catch (RepositoryRuntimeException ex) {
+			throw ex.getCause();
+		} catch (ClientException ex) {
+			throw wrap(ex);
+		}
+	}
 }

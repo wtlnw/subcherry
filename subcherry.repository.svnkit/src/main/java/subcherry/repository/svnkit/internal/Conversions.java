@@ -22,9 +22,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.tmatesoft.svn.core.ISVNDirEntryHandler;
 import org.tmatesoft.svn.core.ISVNLogEntryHandler;
@@ -35,6 +37,8 @@ import org.tmatesoft.svn.core.SVNErrorMessage;
 import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.SVNLogEntry;
 import org.tmatesoft.svn.core.SVNLogEntryPath;
+import org.tmatesoft.svn.core.SVNMergeRange;
+import org.tmatesoft.svn.core.SVNMergeRangeList;
 import org.tmatesoft.svn.core.SVNNodeKind;
 import org.tmatesoft.svn.core.SVNProperties;
 import org.tmatesoft.svn.core.SVNPropertyValue;
@@ -76,6 +80,7 @@ import com.subcherry.repository.core.Depth;
 import com.subcherry.repository.core.DirEntry;
 import com.subcherry.repository.core.LogEntry;
 import com.subcherry.repository.core.LogEntryPath;
+import com.subcherry.repository.core.MergeInfo;
 import com.subcherry.repository.core.NodeKind;
 import com.subcherry.repository.core.NodeProperties;
 import com.subcherry.repository.core.PropertyData;
@@ -179,13 +184,19 @@ public class Conversions {
 		Target.Kind kind = target.kind();
 		switch (kind) {
 		case FILE:
-			return SvnTarget.fromFile(((FileTarget) target).getFile(),
-					unwrap(target.getPegRevision()));
+				return SvnTarget.fromFile(unwrapFile(target), unwrap(target.getPegRevision()));
 		case URL:
-			return SvnTarget.fromURL(unwrap(((UrlTarget) target).getUrl()),
-					unwrap(target.getPegRevision()));
+				return SvnTarget.fromURL(unwrap(unwrapUrl(target)), unwrap(target.getPegRevision()));
 		}
 		throw new UnsupportedOperationException("No such target kind: " + kind);
+	}
+
+	public static RepositoryURL unwrapUrl(Target target) {
+		return ((UrlTarget) target).getUrl();
+	}
+
+	public static File unwrapFile(Target target) {
+		return ((FileTarget) target).getFile();
 	}
 
 	public static SVNConflictAction unwrap(ConflictAction value) {
@@ -274,10 +285,10 @@ public class Conversions {
 		Target.Kind kind = target.kind();
 		switch (kind) {
 		case FILE:
-			File path = ((FileTarget) target).getFile();
+			File path = unwrapFile(target);
 			return new SVNCopySource(pegRevision, revision, path);
 		case URL:
-			RepositoryURL url = ((UrlTarget) target).getUrl();
+				RepositoryURL url = unwrapUrl(target);
 			return new SVNCopySource(pegRevision, revision, unwrap(url));
 		}
 		throw new UnsupportedOperationException("No such target kind: " + kind);
@@ -414,7 +425,7 @@ public class Conversions {
 		String author = logEntry.getAuthor();
 		Date date = logEntry.getDate();
 		String message = logEntry.getMessage();
-		return new LogEntry(changedPaths, revision, author, date, message);
+		return new LogEntry(changedPaths, revision, author, date, message, logEntry.hasChildren());
 	}
 
 	public static Map<String, LogEntryPath> wrap(
@@ -522,6 +533,40 @@ public class Conversions {
 				handler.handleProperty(path, wrap(property));
 			}
 		};
+	}
+
+	public static MergeInfo wrapMergeInfo(final Map<SVNURL, SVNMergeRangeList> info) {
+		return new MergeInfo() {
+			@Override
+			public List<RevisionRange> getRevisions(RepositoryURL path) {
+				return wrapRanges(info.get(unwrap(path)));
+			}
+
+			@Override
+			public Set<RepositoryURL> getPaths() {
+				return wrapURLs(info.keySet());
+			}
+		};
+	}
+
+	protected static Set<RepositoryURL> wrapURLs(Set<SVNURL> urls) {
+		HashSet<RepositoryURL> result = new HashSet<>();
+		for (SVNURL url : urls) {
+			result.add(wrap(url));
+		}
+		return result;
+	}
+
+	protected static List<RevisionRange> wrapRanges(SVNMergeRangeList svnMergeRangeList) {
+		ArrayList<RevisionRange> result = new ArrayList<>(svnMergeRangeList.getSize());
+		for (SVNMergeRange range : svnMergeRangeList.getRanges()) {
+			result.add(wrap(range));
+		}
+		return result;
+	}
+
+	private static RevisionRange wrap(SVNMergeRange range) {
+		return new RevisionRange(Revision.create(range.getStartRevision()), Revision.create(range.getEndRevision()));
 	}
 
 }

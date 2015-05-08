@@ -21,6 +21,7 @@ import static test.com.subcherry.scenario.Scenario.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -44,7 +45,9 @@ import com.subcherry.commit.Commit;
 import com.subcherry.commit.CommitContext;
 import com.subcherry.merge.MergeHandler;
 import com.subcherry.repository.ClientManagerFactory;
+import com.subcherry.repository.command.Client;
 import com.subcherry.repository.command.ClientManager;
+import com.subcherry.repository.command.log.LogEntryHandler;
 import com.subcherry.repository.command.merge.CommandExecutor;
 import com.subcherry.repository.command.merge.ConflictDescription;
 import com.subcherry.repository.command.merge.MergeOperation;
@@ -52,7 +55,12 @@ import com.subcherry.repository.core.ChangeType;
 import com.subcherry.repository.core.CommitInfo;
 import com.subcherry.repository.core.LogEntry;
 import com.subcherry.repository.core.LogEntryPath;
+import com.subcherry.repository.core.MergeInfo;
 import com.subcherry.repository.core.RepositoryException;
+import com.subcherry.repository.core.Revision;
+import com.subcherry.repository.core.RevisionRange;
+import com.subcherry.repository.core.RevisionRanges;
+import com.subcherry.repository.core.Target;
 import com.subcherry.utils.PathParser;
 
 import de.haumacher.common.config.ValueFactory;
@@ -66,6 +74,21 @@ import de.haumacher.common.config.ValueFactory;
 @SuppressWarnings("javadoc")
 public class TestMerge extends TestCase {
 
+	static class LogEntryCollector implements LogEntryHandler {
+
+		private final List<LogEntry> _buffer = new ArrayList<>();
+
+		@Override
+		public void handleLogEntry(LogEntry logEntry) throws RepositoryException {
+			_buffer.add(logEntry);
+		}
+
+		public List<LogEntry> getBuffer() {
+			return _buffer;
+		}
+
+	}
+
 	private static final List<String> MERGED_MODULES = Arrays.asList("module1", "module2");
 
 	// Note: svn:ignore is expected to use Unix line ending style.
@@ -77,7 +100,8 @@ public class TestMerge extends TestCase {
 	protected void setUp() throws Exception {
 		super.setUp();
 
-		_clientManager = ClientManagerFactory.getInstance(Setup.getProviderName()).createClientManager();
+		String providerName = Setup.getProviderName();
+		_clientManager = ClientManagerFactory.getInstance(providerName).createClientManager();
 		_clientManager.getOperationsFactory().settings().setSleepForTimestamp(false);
 	}
 
@@ -85,6 +109,59 @@ public class TestMerge extends TestCase {
 	protected void tearDown() throws Exception {
 		_clientManager.close();
 		super.tearDown();
+	}
+
+	public void testMergeInfo() throws IOException, RepositoryException {
+		Scenario s = moduleScenario();
+
+		// Create branch2.
+		s.copy("/branches/branch2", "/branches/branch1");
+
+		// Create change in original branch1.
+		WC wc1 = s.wc("/branches/branch1");
+		wc1.file("/module1/foo");
+		wc1.setProperty("/module1", "myproperty", "myvalue");
+		long r1 = wc1.commit();
+
+		// Merge changes into branch2.
+		LogEntry merge = doMerge(s, r1);
+		long r2 = merge.getRevision();
+
+		MergeInfo mergeInfo = s.mergeInfo("branches/branch2/module1");
+		assertEquals(set(s.url("branches/branch1/module1")), mergeInfo.getPaths());
+		List<RevisionRange> mergedFromBranch1 = mergeInfo.getRevisions(s.url("branches/branch1/module1"));
+		assertTrue(RevisionRanges.containsAll(mergedFromBranch1, ranges(range(r1))));
+		
+		// TODO: Does not hold for unknown reasons.
+		// assertEquals(ranges(range(r1)), mergedFromBranch1);
+
+		Client client = s.clientManager().getClient();
+		LogEntryCollector collector = new LogEntryCollector();
+		client.getMergeInfoLog(
+			Target.fromURL(s.url("branches/branch2/module1")),
+			Target.fromURL(s.url("branches/branch1/module1")),
+			Revision.create(1),
+			Revision.HEAD, collector);
+		List<LogEntry> entries = collector.getBuffer();
+		assertEquals(1, entries.size());
+		assertEquals(r1, entries.get(0).getRevision());
+
+		Map<String, List<RevisionRange>> mergeInfoDiff = s.mergeInfoDiff("branches/branch2/module1", r2);
+		assertEquals(
+			Collections.singletonMap("/branches/branch1/module1", ranges(range(r1))),
+			mergeInfoDiff);
+
+
+		WC merged = s.wc("/branches/branch2");
+		merged.setProperty("/module1", "svn:mergeinfo", "");
+		long r3 = merged.commit();
+
+		// TODO: Reverse merge info is not supported.
+		System.out.println(s.mergeInfoDiff("branches/branch2/module1", r3));
+	}
+
+	private <T> Set<T> set(T... values) {
+		return new HashSet<>(Arrays.asList(values));
 	}
 
 	public void testChangeInDirectoryThatDoesNotExistOnTargetBranch() throws IOException, RepositoryException {
@@ -877,6 +954,22 @@ public class TestMerge extends TestCase {
 		s.mkdir("/branches/branch1/module2");
 		s.mkdir("/branches/branch1/module3");
 		return s;
+	}
+
+	private static List<RevisionRange> ranges(RevisionRange... ranges) {
+		return Arrays.asList(ranges);
+	}
+
+	private static RevisionRange range(long r1) {
+		return revisionRange(r1, r1);
+	}
+
+	private static RevisionRange revisionRange(long r1, long r2) {
+		return RevisionRange.create(revision(r1), revision(r2));
+	}
+
+	private static Revision revision(long r1) {
+		return Revision.create(r1);
 	}
 
 	private static void assertType(LogEntry changedPaths, ChangeType expectedType, String path) {

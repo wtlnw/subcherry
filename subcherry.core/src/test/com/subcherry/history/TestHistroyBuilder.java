@@ -281,7 +281,7 @@ public class TestHistroyBuilder extends TestCase {
 	}
 
 	private void apply(long revision, Map<String, LogEntryPath> paths) throws RepositoryException {
-		LogEntry logEntry = new LogEntry(paths, revision, "", DATE, "message-" + revision);
+		LogEntry logEntry = new LogEntry(paths, revision, "", DATE, "message-" + revision, false);
 		_builder.handleLogEntry(logEntry);
 	}
 

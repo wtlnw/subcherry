@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
+import java.util.List;
+import java.util.Map;
 
 import com.subcherry.merge.LastLogEntry;
 import com.subcherry.repository.command.Client;
@@ -32,9 +34,12 @@ import com.subcherry.repository.command.copy.CopySource;
 import com.subcherry.repository.core.CommitInfo;
 import com.subcherry.repository.core.Depth;
 import com.subcherry.repository.core.LogEntry;
+import com.subcherry.repository.core.MergeInfo;
 import com.subcherry.repository.core.RepositoryException;
 import com.subcherry.repository.core.RepositoryURL;
 import com.subcherry.repository.core.Revision;
+import com.subcherry.repository.core.RevisionRange;
+import com.subcherry.repository.core.Target;
 
 public class Scenario extends FileSystem {
 
@@ -143,6 +148,22 @@ public class Scenario extends FileSystem {
 
 	public String createMessage() {
 		return "Commit " + createCommitId() + ".";
+	}
+
+	public MergeInfo mergeInfo(String path) throws RepositoryException {
+		Client client = clientManager().getClient();
+		RepositoryURL targetUrl = getRepositoryUrl().appendPath(path);
+		Target target = Target.fromURL(targetUrl, Revision.HEAD);
+
+		return client.getMergeInfo(target);
+	}
+
+	public Map<String, List<RevisionRange>> mergeInfoDiff(String path, long rev) throws RepositoryException {
+		Client client = clientManager().getClient();
+		RepositoryURL targetUrl = getRepositoryUrl().appendPath(path);
+		Target target = Target.fromURL(targetUrl, Revision.HEAD);
+	
+		return client.mergeInfoDiff(target, rev);
 	}
 
 	int createCommitId() {

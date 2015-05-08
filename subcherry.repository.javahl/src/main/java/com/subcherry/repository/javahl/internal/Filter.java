@@ -15,31 +15,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.subcherry.repository.command.merge;
+package com.subcherry.repository.javahl.internal;
 
-public abstract class ConflictDescription {
+public interface Filter<T> {
 
-	public enum Kind {
-		TEXT, TREE, PROPERTY;
-	}
-
-	public abstract Kind kind();
-
-	public final boolean isPropertyConflict() {
-		return kind() == Kind.PROPERTY;
-	}
-
-	public final boolean isTextConflict() {
-		return kind() == Kind.TEXT;
-	}
-
-	public boolean isTreeConflict() {
-		return kind() == Kind.TREE;
-	}
-
-	@Override
-	public String toString() {
-		return kind() + " conflict";
-	}
+	boolean accept(T value);
 
 }

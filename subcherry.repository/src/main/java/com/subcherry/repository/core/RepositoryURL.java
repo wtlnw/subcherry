@@ -108,5 +108,45 @@ public class RepositoryURL {
 		return _path;
 	}
 
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((_host == null) ? 0 : _host.hashCode());
+		result = prime * result + ((_path == null) ? 0 : _path.hashCode());
+		result = prime * result + _port;
+		result = prime * result + ((_protocol == null) ? 0 : _protocol.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		RepositoryURL other = (RepositoryURL) obj;
+		if (_host == null) {
+			if (other._host != null)
+				return false;
+		} else if (!_host.equals(other._host))
+			return false;
+		if (_path == null) {
+			if (other._path != null)
+				return false;
+		} else if (!_path.equals(other._path))
+			return false;
+		if (_port != other._port)
+			return false;
+		if (_protocol == null) {
+			if (other._protocol != null)
+				return false;
+		} else if (!_protocol.equals(other._protocol))
+			return false;
+		return true;
+	}
+
 }
 

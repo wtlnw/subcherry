@@ -45,6 +45,10 @@ public abstract class Target {
 		return new FileTarget(file, pegRevision);
 	}
 
+	public static Target fromURL(RepositoryURL url) {
+		return fromURL(url, Revision.HEAD);
+	}
+
 	public static Target fromURL(RepositoryURL url, Revision pegRevision) {
 		return new UrlTarget(url, pegRevision);
 	}

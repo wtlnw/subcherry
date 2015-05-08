@@ -18,7 +18,7 @@
 package com.subcherry.repository.javahl.internal;
 
 
-public class LogFilter {
+public class LogFilter implements Filter<String> {
 
 	private static final char SLASH = '/';
 	private static final String ROOT = Character.toString(SLASH);
@@ -106,6 +106,7 @@ public class LogFilter {
 		return ROOT;
 	}
 
+	@Override
 	public boolean accept(String path) {
 		for (String suffix : _suffixes) {
 			if (path.startsWith(suffix, _prefix.length())) {

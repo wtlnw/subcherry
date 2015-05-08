@@ -55,13 +55,19 @@ import com.subcherry.repository.ClientManagerFactory;
 import com.subcherry.repository.LoginCredential;
 import com.subcherry.repository.command.Client;
 import com.subcherry.repository.command.ClientManager;
+import com.subcherry.repository.command.log.LogEntryHandler;
 import com.subcherry.repository.core.LogEntry;
+import com.subcherry.repository.core.MergeInfo;
 import com.subcherry.repository.core.RepositoryException;
 import com.subcherry.repository.core.RepositoryURL;
 import com.subcherry.repository.core.Revision;
+import com.subcherry.repository.core.RevisionRange;
+import com.subcherry.repository.core.RevisionRanges;
+import com.subcherry.repository.core.Target;
 import com.subcherry.trac.TracConnection;
 import com.subcherry.trac.TracTicket;
 import com.subcherry.utils.Log;
+import com.subcherry.utils.Path;
 import com.subcherry.utils.PathParser;
 import com.subcherry.utils.Utils;
 import com.subcherry.utils.Utils.IllegalMessageFormat;
@@ -115,9 +121,9 @@ public class Main {
 		Client logClient = clientManager.getClient();
 		
 		String sourceBranch = config().getSourceBranch();
-		RepositoryURL sourceBranchUrl = RepositoryURL.parse(config().getSvnURL() + Utils.SVN_SERVER_PATH_SEPARATOR + sourceBranch);
+		RepositoryURL sourceBranchUrl = RepositoryURL.parse(config().getSvnURL()).appendPath(sourceBranch);
 		String targetBranch = config().getTargetBranch();
-		RepositoryURL targetBranchUrl = RepositoryURL.parse(config().getSvnURL() + Utils.SVN_SERVER_PATH_SEPARATOR + targetBranch);
+		RepositoryURL targetBranchUrl = RepositoryURL.parse(config().getSvnURL()).appendPath(targetBranch);
 		if (config().getDetectCommonModules() || config().getModules().length == 0) {
 			_modules = DirCollector.getBranchModules(logClient, config().getModules(), sourceBranchUrl, pegRevision);
 		} else {
@@ -200,18 +206,81 @@ public class Main {
 			});
 		}
 
-		LOG.log(Level.INFO, "Reading target history.");
-		
 		if (!config().getSkipDependencies()) {
 			HistroyBuilder historyBuilder = new HistroyBuilder(getStartRevision().getNumber());
-			String[] targetPaths = getLogPaths(targetBranch);
-			String[] allPaths = concat(sourcePaths, targetPaths);
-			// For history reconstruction, the history must always be read in ascending revision
-			// order.
-			logReader.setStartRevision(getStartRevision());
-			logReader.setEndRevision(getEndRevision());
-			logReader.readLog(allPaths, historyBuilder);
+			readTargetLog(logReader, targetBranch, sourcePaths, historyBuilder);
 			analyzeDependencies(historyBuilder, sourceBranch, targetBranch, trac, mergedLogEntries);
+		}
+
+		if (!config().ignoreMergeInfo()) {
+			Log.info("Analyzing merge info.");
+
+			Map<String, MergeInfo> moduleMergeInfos = new HashMap<>();
+			for (int n = mergedLogEntries.size() - 1; n >= 0; n--) {
+				LogEntry entry = mergedLogEntries.get(n);
+
+				boolean alreadyMerged = false;
+				long mergedRevision = entry.getRevision();
+
+				Set<String> touchedModules = new HashSet<>();
+
+				searchMatchingMergeInfo:
+				for (String changedPath : entry.getChangedPaths().keySet()) {
+					Path parsedPath = paths.parsePath(changedPath);
+
+					String changedModuleName = parsedPath.getModule();
+					touchedModules.add(changedModuleName);
+
+					if (!isModulePath(parsedPath)) {
+						// Merge info is only recorded at module level. Therefore, checks on all
+						// other paths can be skipped.
+						continue;
+					}
+					if (!_modules.contains(changedModuleName)) {
+						continue;
+					}
+
+					MergeInfo moduleMergeInfo = lookupMergeInfo(clientManager, moduleMergeInfos, changedModuleName);
+					Target changedModuleUrl = Target.fromURL(url.appendPath(changedPath), getPegRevision());
+					Map<String, List<RevisionRange>> mergeInfoDiff =
+						clientManager.getClient().mergeInfoDiff(changedModuleUrl, mergedRevision);
+
+					for (Entry<String, List<RevisionRange>> mergeEntry : mergeInfoDiff.entrySet()) {
+						String mergedModulePath = mergeEntry.getKey();
+						RepositoryURL mergedModuleUrl = url.appendPath(mergedModulePath);
+
+						List<RevisionRange> transitivelyMergedRevisions = moduleMergeInfo.getRevisions(mergedModuleUrl);
+						if (transitivelyMergedRevisions == null) {
+							continue;
+						}
+						if (RevisionRanges.containsAll(transitivelyMergedRevisions, mergeEntry.getValue())) {
+							// This module has already been merged.
+							alreadyMerged = true;
+							break searchMatchingMergeInfo;
+						}
+					}
+				}
+
+				if (!alreadyMerged) {
+					for (String touchedModule : touchedModules) {
+						MergeInfo moduleMergeInfo = lookupMergeInfo(clientManager, moduleMergeInfos, touchedModule);
+						RepositoryURL mergeSrcUrl = sourceBranchUrl.appendPath(touchedModule);
+						List<RevisionRange> mergedRevisions = moduleMergeInfo.getRevisions(mergeSrcUrl);
+						if (mergedRevisions == null) {
+							continue;
+						}
+						if (RevisionRanges.contains(mergedRevisions, mergedRevision)) {
+							alreadyMerged = true;
+							break;
+						}
+					}
+				}
+
+				if (alreadyMerged) {
+					Log.info("Already merged [" + entry.getRevision() + "]: " + entry.getMessage());
+					mergedLogEntries.remove(n);
+				}
+			}
 		}
 
 		List<CommitSet> commitSets = getCommitSets(commitHandler, mergedLogEntries);
@@ -226,6 +295,38 @@ public class Main {
 		mergeCommitHandler.run(commitSets);
 
 		Restart.clear();
+	}
+
+	private static MergeInfo lookupMergeInfo(ClientManager clientManager, Map<String, MergeInfo> moduleMergeInfos,
+			String moduleName) throws RepositoryException {
+		MergeInfo moduleMergeInfo;
+		{
+			File targetModuleFile = new File(config().getWorkspaceRoot(), moduleName);
+			moduleMergeInfo = moduleMergeInfos.get(moduleName);
+			if (moduleMergeInfo == null) {
+				moduleMergeInfo =
+					clientManager.getClient().getMergeInfo(Target.fromFile(targetModuleFile));
+				moduleMergeInfos.put(moduleName, moduleMergeInfo);
+			}
+		}
+		return moduleMergeInfo;
+	}
+
+	private static boolean isModulePath(Path parsedPath) {
+		return parsedPath.getResource().equals(parsedPath.getModule());
+	}
+
+	private static void readTargetLog(LogReader logReader, String targetBranch, String[] sourcePaths,
+			LogEntryHandler handler) throws RepositoryException {
+		LOG.log(Level.INFO, "Reading target history.");
+
+		String[] targetPaths = getLogPaths(targetBranch);
+		String[] allPaths = concat(sourcePaths, targetPaths);
+		// For history reconstruction, the history must always be read in ascending revision
+		// order.
+		logReader.setStartRevision(getStartRevision());
+		logReader.setEndRevision(getEndRevision());
+		logReader.readLog(allPaths, handler);
 	}
 
 	private static void analyzeDependencies(HistroyBuilder historyBuilder, String sourceBranch, String targetBranch,

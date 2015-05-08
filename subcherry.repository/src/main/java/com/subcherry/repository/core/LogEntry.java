@@ -32,13 +32,16 @@ public class LogEntry {
 
 	private String _message;
 
+	private final boolean _hasChildren;
+
 	public LogEntry(Map<String, LogEntryPath> changedPaths, long revision, String author, Date date,
-			String message) {
+			String message, boolean hasChildren) {
 		_changedPaths = changedPaths;
 		_revision = revision;
 		_author = author;
 		_date = date;
 		_message = message;
+		_hasChildren = hasChildren;
 	}
 
 	public Map<String, LogEntryPath> getChangedPaths() {

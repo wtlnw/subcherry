@@ -24,6 +24,7 @@ import java.io.OutputStream;
 import java.util.Collection;
 
 import org.tmatesoft.svn.core.SVNException;
+import org.tmatesoft.svn.core.SVNLogEntry;
 import org.tmatesoft.svn.core.wc.SVNCommitClient;
 import org.tmatesoft.svn.core.wc.SVNCopyClient;
 import org.tmatesoft.svn.core.wc.SVNDiffClient;
@@ -32,8 +33,12 @@ import org.tmatesoft.svn.core.wc.SVNStatusClient;
 import org.tmatesoft.svn.core.wc.SVNUpdateClient;
 import org.tmatesoft.svn.core.wc.SVNWCClient;
 import org.tmatesoft.svn.core.wc.admin.SVNAdminClient;
+import org.tmatesoft.svn.core.wc2.ISvnObjectReceiver;
+import org.tmatesoft.svn.core.wc2.SvnGetMergeInfo;
+import org.tmatesoft.svn.core.wc2.SvnLogMergeInfo;
+import org.tmatesoft.svn.core.wc2.SvnTarget;
 
-import com.subcherry.repository.command.Client;
+import com.subcherry.repository.command.DefaultClient;
 import com.subcherry.repository.command.OperationFactory;
 import com.subcherry.repository.command.copy.CopySource;
 import com.subcherry.repository.command.log.DirEntryHandler;
@@ -43,6 +48,7 @@ import com.subcherry.repository.command.wc.PropertyHandler;
 import com.subcherry.repository.core.CommitInfo;
 import com.subcherry.repository.core.Depth;
 import com.subcherry.repository.core.DirEntry.Kind;
+import com.subcherry.repository.core.MergeInfo;
 import com.subcherry.repository.core.NodeProperties;
 import com.subcherry.repository.core.PropertyData;
 import com.subcherry.repository.core.PropertyValue;
@@ -50,8 +56,9 @@ import com.subcherry.repository.core.RepositoryException;
 import com.subcherry.repository.core.RepositoryURL;
 import com.subcherry.repository.core.Revision;
 import com.subcherry.repository.core.RevisionRange;
+import com.subcherry.repository.core.Target;
 
-public class SKClient implements Client {
+public class SKClient extends DefaultClient {
 
 	private SKClientManager _clientManager;
 	
@@ -281,6 +288,46 @@ public class SKClient implements Client {
 		try {
 			SVNWCClient wcClient = _clientManager.impl().getWCClient();
 			wcClient.doSetProperty(path, propName, unwrap(propValue), skipChecks, unwrap(depth), adapt(handler), changeLists);
+		} catch (SVNException ex) {
+			throw wrap(ex);
+		}
+	}
+
+	@Override
+	public void getMergeInfoLog(Target target, Target mergeSource, Revision startRev, Revision endRev, final LogEntryHandler handler)
+			throws RepositoryException {
+		if (!startRev.equals(endRev)) {
+			throw new UnsupportedOperationException("Merge info log with revision range is not supported.");
+		}
+		SvnLogMergeInfo op = _clientManager.impl().getOperationFactory().createLogMergeInfo();
+		op.addTarget(unwrap(target));
+		op.setSource(unwrap(mergeSource));
+		op.setReceiver(new ISvnObjectReceiver<SVNLogEntry>() {
+			@Override
+			public void receive(SvnTarget target, SVNLogEntry logEntry) throws SVNException {
+				try {
+					handler.handleLogEntry(wrap(logEntry));
+				} catch (RepositoryException ex) {
+					throw unwrap(ex);
+				}
+			}
+		});
+
+		op.setRevision(unwrap(startRev));
+
+		try {
+			op.run();
+		} catch (SVNException ex) {
+			throw wrap(ex);
+		}
+	}
+
+	@Override
+	public MergeInfo getMergeInfo(Target target) throws RepositoryException {
+		SvnGetMergeInfo op = _clientManager.impl().getOperationFactory().createGetMergeInfo();
+		op.setSingleTarget(unwrap(target));
+		try {
+			return wrapMergeInfo(op.run());
 		} catch (SVNException ex) {
 			throw wrap(ex);
 		}

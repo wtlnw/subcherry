@@ -207,4 +207,9 @@ public interface Configuration extends MergeConfig, CommitConfig, BranchConfig {
 	 */
 	String getRepositoryProvider();
 
+	/**
+	 * Whether to skip revisions that are already on the target branch by inspecting SVN merge info.
+	 */
+	boolean ignoreMergeInfo();
+
 }

@@ -15,31 +15,22 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.subcherry.repository.command.merge;
+package com.subcherry.repository.core;
 
-public abstract class ConflictDescription {
+import java.util.List;
+import java.util.Set;
 
-	public enum Kind {
-		TEXT, TREE, PROPERTY;
-	}
+public interface MergeInfo {
 
-	public abstract Kind kind();
+	public Set<RepositoryURL> getPaths();
 
-	public final boolean isPropertyConflict() {
-		return kind() == Kind.PROPERTY;
-	}
-
-	public final boolean isTextConflict() {
-		return kind() == Kind.TEXT;
-	}
-
-	public boolean isTreeConflict() {
-		return kind() == Kind.TREE;
-	}
-
-	@Override
-	public String toString() {
-		return kind() + " conflict";
-	}
+	/**
+	 * Get the revision ranges for the specified merge source URL.
+	 * 
+	 * @param path
+	 *        The merge source URL, or <code>null</code>.
+	 * @return List of RevisionRange objects, or <code>null</code>.
+	 */
+	public List<RevisionRange> getRevisions(RepositoryURL path);
 
 }

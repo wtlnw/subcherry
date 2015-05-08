@@ -67,6 +67,10 @@ public class Scenario extends FileSystem {
 		return _repositoryUrl;
 	}
 
+	public RepositoryURL url(String path) {
+		return _repositoryUrl.appendPath(path);
+	}
+
 	public ClientManager clientManager() {
 		return _clientManager;
 	}

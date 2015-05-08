@@ -29,6 +29,9 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.subversion.javahl.ClientException;
+import org.apache.subversion.javahl.ConflictDescriptor;
+import org.apache.subversion.javahl.ConflictResult;
+import org.apache.subversion.javahl.ConflictResult.Choice;
 import org.apache.subversion.javahl.ISVNClient;
 import org.apache.subversion.javahl.ISVNRepos;
 import org.apache.subversion.javahl.SVNClient;
@@ -36,6 +39,7 @@ import org.apache.subversion.javahl.SVNRepos;
 import org.apache.subversion.javahl.SubversionException;
 import org.apache.subversion.javahl.callback.CommitCallback;
 import org.apache.subversion.javahl.callback.CommitMessageCallback;
+import org.apache.subversion.javahl.callback.ConflictResolverCallback;
 import org.apache.subversion.javahl.callback.ListCallback;
 import org.apache.subversion.javahl.callback.LogMessageCallback;
 import org.apache.subversion.javahl.callback.StatusCallback;
@@ -48,9 +52,11 @@ import com.subcherry.repository.LoginCredential;
 import com.subcherry.repository.command.DefaultClient;
 import com.subcherry.repository.command.OperationFactory;
 import com.subcherry.repository.command.copy.CopySource;
+import com.subcherry.repository.command.diff.DiffOptions;
 import com.subcherry.repository.command.log.DirEntryHandler;
 import com.subcherry.repository.command.log.LogEntryHandler;
 import com.subcherry.repository.command.status.StatusHandler;
+import com.subcherry.repository.command.status.StatusType;
 import com.subcherry.repository.command.wc.PropertyHandler;
 import com.subcherry.repository.core.CommitInfo;
 import com.subcherry.repository.core.Depth;
@@ -65,6 +71,7 @@ import com.subcherry.repository.core.RepositoryURL;
 import com.subcherry.repository.core.Revision;
 import com.subcherry.repository.core.RevisionRange;
 import com.subcherry.repository.core.Target;
+import com.subcherry.repository.merge.properties.PropertiesMerge;
 
 public class HLClient extends DefaultClient {
 
@@ -85,6 +92,52 @@ public class HLClient extends DefaultClient {
 			_client.username(credentials.getUser());
 			_client.password(credentials.getPasswd());
 		}
+		ConflictResolverCallback resolver = new ConflictResolverCallback() {
+			@Override
+			public ConflictResult resolve(ConflictDescriptor descriptor)
+					throws SubversionException {
+				if (descriptor.getKind() != ConflictDescriptor.Kind.text) {
+					return postPone(descriptor);
+				}
+				if (descriptor.getAction() != ConflictDescriptor.Action.edit) {
+					return postPone(descriptor);
+				}
+				if (!descriptor.getPath().endsWith(".properties")) {
+					return postPone(descriptor);
+				}
+
+				File baseFile = new File(descriptor.getBasePath());
+				File localFile = new File(descriptor.getMyPath());
+				File latestFile = new File(descriptor.getTheirPath());
+				DiffOptions options = null;
+				File resultFile = new File(descriptor.getMergedPath());
+
+				StatusType result;
+				try {
+					result = new PropertiesMerge().merge(baseFile, localFile,
+							latestFile, options, resultFile);
+				} catch (RepositoryException ex) {
+					throw new RepositoryRuntimeException(ex);
+				}
+
+				if (result == StatusType.MERGED) {
+					return resolved(descriptor);
+				} else {
+					return postPone(descriptor);
+				}
+			}
+
+			private ConflictResult resolved(ConflictDescriptor descriptor) {
+				return new ConflictResult(Choice.chooseMerged,
+						descriptor.getMergedPath());
+			}
+
+			private ConflictResult postPone(ConflictDescriptor descriptor) {
+				return new ConflictResult(Choice.postpone,
+						descriptor.getMergedPath());
+			}
+		};
+		_client.setConflictResolver(resolver);
 
 		_repos = new SVNRepos();
 	}
@@ -264,6 +317,8 @@ public class HLClient extends DefaultClient {
 			_client.merge(unwrap(url), unwrap(pegRevision),
 				unwrapRanges(rangesToMerge), unwrap(dstPath), force,
 				unwrap(depth), ignoreAncestry, dryRun, recordOnly);
+		} catch (RepositoryRuntimeException ex) {
+			throw ex.getCause();
 		} catch (ClientException ex) {
 			throw wrap(ex);
 		}

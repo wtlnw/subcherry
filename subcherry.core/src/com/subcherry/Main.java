@@ -212,7 +212,7 @@ public class Main {
 			analyzeDependencies(historyBuilder, sourceBranch, targetBranch, trac, mergedLogEntries);
 		}
 
-		if (!config().ignoreMergeInfo()) {
+		if (!config().getIgnoreMergeInfo()) {
 			Log.info("Analyzing merge info.");
 
 			Map<String, MergeInfo> moduleMergeInfos = new HashMap<>();

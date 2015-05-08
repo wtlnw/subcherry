@@ -210,6 +210,6 @@ public interface Configuration extends MergeConfig, CommitConfig, BranchConfig {
 	/**
 	 * Whether to skip revisions that are already on the target branch by inspecting SVN merge info.
 	 */
-	boolean ignoreMergeInfo();
+	boolean getIgnoreMergeInfo();
 
 }

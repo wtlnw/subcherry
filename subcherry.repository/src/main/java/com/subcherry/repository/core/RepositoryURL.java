@@ -56,7 +56,23 @@ public class RepositoryURL {
 	}
 
 	public RepositoryURL appendPath(String path) {
-		return new RepositoryURL(_protocol, _host, _port, _path + '/' + path);
+		return new RepositoryURL(_protocol, _host, _port, append(path));
+	}
+
+	private String append(String path) {
+		if (path.isEmpty()) {
+			return _path;
+		} else if (_path.charAt(_path.length() - 1) == '/') {
+			if (path.charAt(0) == '/') {
+				return _path + path.substring(1);
+			} else {
+				return _path + path;
+			}
+		} else if (path.charAt(0) == '/') {
+			return _path + path;
+		} else {
+			return _path + '/' + path;
+		}
 	}
 
 	@Override
@@ -69,7 +85,9 @@ public class RepositoryURL {
 			result.append(":");
 			result.append(_port);
 		}
-		result.append("/");
+		if ((!_path.isEmpty()) && (_path.charAt(0) != '/')) {
+			result.append("/");
+		}
 		result.append(_path);
 		return result.toString();
 	}

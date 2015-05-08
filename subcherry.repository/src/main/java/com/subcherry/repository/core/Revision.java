@@ -52,6 +52,9 @@ public class Revision {
 	}
 
 	public long getNumber() {
+		if (_kind != Kind.COMMIT) {
+			throw new IllegalStateException("Not a commit revision: " + _kind);
+		}
 		return _commitNumber;
 	}
 

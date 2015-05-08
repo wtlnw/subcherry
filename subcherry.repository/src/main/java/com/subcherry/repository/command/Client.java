@@ -70,9 +70,8 @@ public interface Client {
 	void copy(CopySource[] sources, File dst, boolean isMove, boolean makeParents,
 			boolean failWhenDstExists) throws RepositoryException;
 
-	void diff(RepositoryURL url, Revision pegRevision, Revision startRev,
-			Revision stopRev, Depth depth, boolean useAncestry,
-			OutputStream result) throws RepositoryException;
+	void diff(Target target, Revision startRev, Revision stopRev,
+			Depth depth, boolean useAncestry, OutputStream result) throws RepositoryException;
 
 	void merge(RepositoryURL url, Revision pegRevision,
 			Collection<RevisionRange> rangesToMerge, File dstPath,

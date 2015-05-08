@@ -65,15 +65,24 @@ public class SKClient implements Client {
 	}
 
 	@Override
-	public void diff(RepositoryURL url, Revision pegRevision, Revision startRev,
-			Revision stopRev, Depth depth, boolean useAncestry,
-			OutputStream result) throws RepositoryException {
+	public void diff(Target target, Revision startRev, Revision stopRev,
+			Depth depth, boolean useAncestry, OutputStream result) throws RepositoryException {
 		SVNDiffClient diffClient = _clientManager.impl().getDiffClient();
 		try {
-			diffClient.doDiff(
-				unwrap(url), 
-				unwrap(pegRevision), unwrap(startRev), unwrap(stopRev), 
-				unwrap(depth), useAncestry, result);
+			switch (target.kind()) {
+				case FILE:
+					diffClient.doDiff(
+						unwrapFile(target),
+						unwrap(target.getPegRevision()), unwrap(startRev), unwrap(stopRev),
+						unwrap(depth), useAncestry, result, null);
+					break;
+				case URL:
+					diffClient.doDiff(
+						unwrap(unwrapUrl(target)),
+						unwrap(target.getPegRevision()), unwrap(startRev), unwrap(stopRev),
+						unwrap(depth), useAncestry, result);
+					break;
+			}
 		} catch (SVNException ex) {
 			throw wrap(ex);
 		}

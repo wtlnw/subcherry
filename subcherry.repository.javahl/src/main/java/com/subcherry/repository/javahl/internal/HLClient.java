@@ -240,9 +240,9 @@ public class HLClient implements Client {
 	}
 
 	@Override
-	public void diff(RepositoryURL url, Revision pegRevision,
-			Revision startRev, Revision stopRev, Depth depth,
-			boolean useAncestry, OutputStream result)
+	public void diff(Target target, Revision startRev,
+			Revision stopRev, Depth depth, boolean useAncestry,
+			OutputStream result)
 			throws RepositoryException {
 		String relativeToDir = null;
 		Collection<String> changelists = null;
@@ -250,10 +250,10 @@ public class HLClient implements Client {
 		boolean noDiffDeleted = false;
 		boolean force = false;
 		boolean copiesAsAdds = true;
-		boolean ignoreProps = true;
+		boolean ignoreProps = false;
 		boolean propsOnly = false;
 		try {
-			_client.diff(unwrap(url), unwrap(pegRevision), unwrap(startRev),
+			_client.diff(unwrap(target), unwrap(target.getPegRevision()), unwrap(startRev),
 				unwrap(stopRev), relativeToDir, result, unwrap(depth),
 				changelists, ignoreAncestry, noDiffDeleted, force,
 				copiesAsAdds, ignoreProps, propsOnly);

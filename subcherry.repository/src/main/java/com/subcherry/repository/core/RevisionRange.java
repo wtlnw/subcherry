@@ -45,4 +45,36 @@ public class RevisionRange {
 	public String toString() {
 		return getStart() + ":" + getEnd();
 	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((_end == null) ? 0 : _end.hashCode());
+		result = prime * result + ((_start == null) ? 0 : _start.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		RevisionRange other = (RevisionRange) obj;
+		if (_end == null) {
+			if (other._end != null)
+				return false;
+		} else if (!_end.equals(other._end))
+			return false;
+		if (_start == null) {
+			if (other._start != null)
+				return false;
+		} else if (!_start.equals(other._start))
+			return false;
+		return true;
+	}
+
 }

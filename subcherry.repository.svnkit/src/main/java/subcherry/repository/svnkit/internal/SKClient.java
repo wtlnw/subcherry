@@ -297,9 +297,6 @@ public class SKClient extends DefaultClient {
 	@Override
 	public void getMergeInfoLog(Target target, Target mergeSource, Revision startRev, Revision endRev, final LogEntryHandler handler)
 			throws RepositoryException {
-		if (startRev.getNumber() != endRev.getNumber() - 1) {
-			throw new UnsupportedOperationException("Merge info log with revision range is not supported.");
-		}
 		SvnLogMergeInfo op = _clientManager.impl().getOperationFactory().createLogMergeInfo();
 		op.addTarget(unwrap(target));
 		op.setSource(unwrap(mergeSource));

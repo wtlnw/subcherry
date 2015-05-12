@@ -210,6 +210,8 @@ public class PropertiesMerge implements FileMerge {
 		} finally {
 			out.close();
 		}
+
+		PropertiesNormalizer.normalize(file);
 	}
 
 }

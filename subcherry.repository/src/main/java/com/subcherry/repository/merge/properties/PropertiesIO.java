@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
 import java.util.Properties;
 
 import com.subcherry.repository.merge.properties.PropertiesEditor.Property;
@@ -355,7 +357,7 @@ public class PropertiesIO {
      */
 	private static String saveConvert(String theString,
                                boolean escapeSpace,
-                               boolean escapeUnicode) {
+			CharsetEncoder encoder) {
         int len = theString.length();
         int bufLen = len * 2;
         if (bufLen < 0) {
@@ -396,7 +398,7 @@ public class PropertiesIO {
                     outBuffer.append('\\'); outBuffer.append(aChar);
                     break;
                 default:
-                    if (((aChar < 0x0020) || (aChar > 0x007e)) & escapeUnicode ) {
+					if (!encoder.canEncode(aChar)) {
                         outBuffer.append('\\');
                         outBuffer.append('u');
                         outBuffer.append(toHex((aChar >> 12) & 0xF));
@@ -415,10 +417,11 @@ public class PropertiesIO {
 	 * @see Properties#store(OutputStream, String)
 	 */
 	public static void store(PropertiesEditor editor, OutputStream out) throws IOException {
-		internalStore(editor, new BufferedWriter(new OutputStreamWriter(out, "8859_1")), true);
+		CharsetEncoder encoder = Charset.forName("8859_1").newEncoder();
+		internalStore(editor, new BufferedWriter(new OutputStreamWriter(out, encoder)), encoder);
     }
 
-	private static void internalStore(PropertiesEditor editor, BufferedWriter bw, boolean escUnicode)
+	private static void internalStore(PropertiesEditor editor, BufferedWriter bw, CharsetEncoder encoder)
 			throws IOException {
 		boolean hasNewLine = true;
 		for (Property property : editor.getProperties()) {
@@ -432,10 +435,10 @@ public class PropertiesIO {
 			} else {
 				String key = property.getKey();
 				String val = property.getValue();
-				key = saveConvert(key, true, escUnicode);
+				key = saveConvert(key, true, encoder);
 				/* No need to escape embedded and trailing spaces for value, hence pass false to
 				 * flag. */
-				val = saveConvert(val, false, escUnicode);
+				val = saveConvert(val, false, encoder);
 				bw.write(key + " = " + val);
 				bw.newLine();
 				hasNewLine = true;

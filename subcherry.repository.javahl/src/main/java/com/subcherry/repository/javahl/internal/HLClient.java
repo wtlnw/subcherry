@@ -68,6 +68,7 @@ import com.subcherry.repository.core.PropertyValue;
 import com.subcherry.repository.core.RepositoryException;
 import com.subcherry.repository.core.RepositoryRuntimeException;
 import com.subcherry.repository.core.RepositoryURL;
+import com.subcherry.repository.core.Resolution;
 import com.subcherry.repository.core.Revision;
 import com.subcherry.repository.core.RevisionRange;
 import com.subcherry.repository.core.Target;
@@ -491,4 +492,20 @@ public class HLClient extends DefaultClient {
 			throw wrap(ex);
 		}
 	}
+
+	public void resolve(File target, Depth depth, Resolution resolution)
+			throws RepositoryException {
+		if (!target.exists()) {
+			// JavaHL behaves strange on reported tree conflicts. The conflict
+			// cannot be resolved, and committing the whole working copy works
+			// just fine.
+			return;
+		}
+		try {
+			_client.resolve(unwrap(target), unwrap(depth), unwrap(resolution));
+		} catch (SubversionException ex) {
+			throw wrap(ex);
+		}
+	}
+
 }

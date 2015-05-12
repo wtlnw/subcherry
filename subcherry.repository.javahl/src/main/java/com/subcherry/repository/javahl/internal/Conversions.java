@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.subversion.javahl.ClientException;
+import org.apache.subversion.javahl.ConflictResult.Choice;
 import org.apache.subversion.javahl.SubversionException;
 import org.apache.subversion.javahl.callback.LogMessageCallback;
 import org.apache.subversion.javahl.types.ChangePath;
@@ -57,6 +58,7 @@ import com.subcherry.repository.core.PropertyValue;
 import com.subcherry.repository.core.RepositoryException;
 import com.subcherry.repository.core.RepositoryRuntimeException;
 import com.subcherry.repository.core.RepositoryURL;
+import com.subcherry.repository.core.Resolution;
 import com.subcherry.repository.core.Revision;
 import com.subcherry.repository.core.RevisionRange;
 import com.subcherry.repository.core.StringValue;
@@ -458,6 +460,26 @@ public class Conversions {
 			}
 		};
 		return callback;
+	}
+
+	public static Choice unwrap(Resolution resolution) {
+		switch (resolution) {
+		case CHOOSE_BASE:
+			return Choice.chooseBase;
+		case CHOOSE_MERGED:
+			return Choice.chooseMerged;
+		case CHOOSE_MINE_CONFLICT:
+			return Choice.chooseMineConflict;
+		case CHOOSE_MINE_FULL:
+			return Choice.chooseMineFull;
+		case CHOOSE_THEIRS_CONFLICT:
+			return Choice.chooseTheirsConflict;
+		case CHOOSE_THEIRS_FULL:
+			return Choice.chooseTheirsFull;
+		case POSTPONE:
+			return Choice.postpone;
+		}
+		throw unsupported("No such resolution: " + resolution);
 	}
 
 }

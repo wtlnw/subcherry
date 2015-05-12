@@ -46,6 +46,7 @@ import org.tmatesoft.svn.core.SVNURL;
 import org.tmatesoft.svn.core.wc.ISVNPropertyHandler;
 import org.tmatesoft.svn.core.wc.ISVNStatusHandler;
 import org.tmatesoft.svn.core.wc.SVNConflictAction;
+import org.tmatesoft.svn.core.wc.SVNConflictChoice;
 import org.tmatesoft.svn.core.wc.SVNConflictDescription;
 import org.tmatesoft.svn.core.wc.SVNConflictReason;
 import org.tmatesoft.svn.core.wc.SVNCopySource;
@@ -88,6 +89,7 @@ import com.subcherry.repository.core.PropertyValue;
 import com.subcherry.repository.core.PropertyValue.Kind;
 import com.subcherry.repository.core.RepositoryException;
 import com.subcherry.repository.core.RepositoryURL;
+import com.subcherry.repository.core.Resolution;
 import com.subcherry.repository.core.Revision;
 import com.subcherry.repository.core.RevisionRange;
 import com.subcherry.repository.core.StringValue;
@@ -567,6 +569,27 @@ public class Conversions {
 
 	private static RevisionRange wrap(SVNMergeRange range) {
 		return new RevisionRange(Revision.create(range.getStartRevision()), Revision.create(range.getEndRevision()));
+	}
+
+	public static SVNConflictChoice unwrap(Resolution resolution) {
+		switch (resolution) {
+			case CHOOSE_BASE:
+				return SVNConflictChoice.BASE;
+			case CHOOSE_MERGED:
+				return SVNConflictChoice.MERGED;
+			case CHOOSE_MINE_CONFLICT:
+				return SVNConflictChoice.MINE_CONFLICT;
+			case CHOOSE_MINE_FULL:
+				return SVNConflictChoice.MINE_FULL;
+			case CHOOSE_THEIRS_CONFLICT:
+				return SVNConflictChoice.THEIRS_CONFLICT;
+			case CHOOSE_THEIRS_FULL:
+				return SVNConflictChoice.THEIRS_FULL;
+			case POSTPONE:
+				return SVNConflictChoice.POSTPONE;
+		}
+		throw new UnsupportedOperationException("No such resolution: "
+			+ resolution);
 	}
 
 }

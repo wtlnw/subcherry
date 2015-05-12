@@ -54,6 +54,7 @@ import com.subcherry.repository.core.PropertyData;
 import com.subcherry.repository.core.PropertyValue;
 import com.subcherry.repository.core.RepositoryException;
 import com.subcherry.repository.core.RepositoryURL;
+import com.subcherry.repository.core.Resolution;
 import com.subcherry.repository.core.Revision;
 import com.subcherry.repository.core.RevisionRange;
 import com.subcherry.repository.core.Target;
@@ -328,6 +329,15 @@ public class SKClient extends DefaultClient {
 		op.setSingleTarget(unwrap(target));
 		try {
 			return wrapMergeInfo(op.run());
+		} catch (SVNException ex) {
+			throw wrap(ex);
+		}
+	}
+
+	@Override
+	public void resolve(File target, Depth depth, Resolution resolution) throws RepositoryException {
+		try {
+			_clientManager.impl().getWCClient().doResolve(target, unwrap(depth), unwrap(resolution));
 		} catch (SVNException ex) {
 			throw wrap(ex);
 		}

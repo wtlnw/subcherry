@@ -37,6 +37,7 @@ import com.subcherry.repository.core.PropertyData;
 import com.subcherry.repository.core.PropertyValue;
 import com.subcherry.repository.core.RepositoryException;
 import com.subcherry.repository.core.RepositoryURL;
+import com.subcherry.repository.core.Resolution;
 import com.subcherry.repository.core.Revision;
 import com.subcherry.repository.core.RevisionRange;
 import com.subcherry.repository.core.Target;
@@ -117,5 +118,7 @@ public interface Client {
 	MergeInfo getMergeInfo(Target target) throws RepositoryException;
 
 	Map<String, List<RevisionRange>> mergeInfoDiff(Target target, long rev) throws RepositoryException;
+
+	void resolve(File target, Depth depth, Resolution resolution) throws RepositoryException;
 
 }

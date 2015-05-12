@@ -49,14 +49,18 @@ import com.subcherry.repository.command.Client;
 import com.subcherry.repository.command.ClientManager;
 import com.subcherry.repository.command.log.LogEntryHandler;
 import com.subcherry.repository.command.merge.CommandExecutor;
+import com.subcherry.repository.command.merge.ConflictAction;
 import com.subcherry.repository.command.merge.ConflictDescription;
 import com.subcherry.repository.command.merge.MergeOperation;
+import com.subcherry.repository.command.merge.TreeConflictDescription;
 import com.subcherry.repository.core.ChangeType;
 import com.subcherry.repository.core.CommitInfo;
+import com.subcherry.repository.core.Depth;
 import com.subcherry.repository.core.LogEntry;
 import com.subcherry.repository.core.LogEntryPath;
 import com.subcherry.repository.core.MergeInfo;
 import com.subcherry.repository.core.RepositoryException;
+import com.subcherry.repository.core.Resolution;
 import com.subcherry.repository.core.Revision;
 import com.subcherry.repository.core.RevisionRange;
 import com.subcherry.repository.core.RevisionRanges;
@@ -194,9 +198,32 @@ public class TestMerge extends TestCase {
 		MergeOperation merge = createMerge(s, wc2, entry);
 		Map<File, List<ConflictDescription>> result = tryMerge(s, merge);
 
-		assertTrue(result.toString(), result.containsKey(wc2.toFile("module1/some/path/file2")));
-		assertTrue(result.toString(), result.containsKey(wc2.toFile("module1/some/path/file3")));
-		assertTrue(result.toString(), result.containsKey(wc2.toFile("module1/some/path/file4")));
+		List<ConflictDescription> conflictsFile2 = result.get(wc2.toFile("module1/some/path/file2"));
+		assertNotNull(result.toString(), conflictsFile2);
+		assertEquals(1, conflictsFile2.size());
+		ConflictDescription conflictFile2 = conflictsFile2.get(0);
+		assertTrue(conflictFile2.isTreeConflict());
+		assertEquals(ConflictAction.EDITED, ((TreeConflictDescription) conflictFile2).getConflictAction());
+
+		List<ConflictDescription> conflictsFile3 = result.get(wc2.toFile("module1/some/path/file3"));
+		assertNotNull(result.toString(), conflictsFile3);
+		assertEquals(1, conflictsFile3.size());
+		ConflictDescription conflictFile3 = conflictsFile3.get(0);
+		assertTrue(conflictFile3.isTreeConflict());
+		assertEquals(ConflictAction.DELETED, ((TreeConflictDescription) conflictFile3).getConflictAction());
+		
+		// Parent directories of added resources are automatically created.
+		assertFalse(result.toString(), result.containsKey(wc2.toFile("module1/some/path/file4")));
+		
+		wc2.resolve("module1/some/path/file2", Depth.EMPTY, Resolution.CHOOSE_MERGED);
+		wc2.resolve("module1/some/path/file3", Depth.EMPTY, Resolution.CHOOSE_MERGED);
+
+		long merged = wc2.commit();
+
+		LogEntry mergedEntry = s.log(merged);
+		LogEntryPath addedPath = mergedEntry.getChangedPaths().get("/branches/branch2/module1/some/path");
+		assertNotNull(addedPath);
+		assertEquals(ChangeType.ADDED, addedPath.getType());
 	}
 
 	public void testCrossBranchCopyWithExistingResourceWithSameName() throws IOException, RepositoryException {

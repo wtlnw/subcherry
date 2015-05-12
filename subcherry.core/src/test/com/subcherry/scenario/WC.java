@@ -39,6 +39,7 @@ import com.subcherry.repository.core.PropertyData;
 import com.subcherry.repository.core.PropertyValue;
 import com.subcherry.repository.core.RepositoryException;
 import com.subcherry.repository.core.RepositoryURL;
+import com.subcherry.repository.core.Resolution;
 import com.subcherry.repository.core.Revision;
 import com.subcherry.repository.core.RevisionRange;
 
@@ -209,6 +210,11 @@ public class WC extends FileSystem {
 				Depth.INFINITY, true, false, false, false);
 		}
 		return commit();
+	}
+
+	public void resolve(String path, Depth depth, Resolution resolution) throws RepositoryException {
+		Client client = clientManager().getClient();
+		client.resolve(toFile(path), depth, resolution);
 	}
 
 }

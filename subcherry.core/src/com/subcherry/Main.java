@@ -263,6 +263,10 @@ public class Main {
 
 				if (!alreadyMerged) {
 					for (String touchedModule : touchedModules) {
+						if (!_modules.contains(touchedModule)) {
+							continue;
+						}
+
 						MergeInfo moduleMergeInfo = lookupMergeInfo(clientManager, moduleMergeInfos, touchedModule);
 						RepositoryURL mergeSrcUrl = sourceBranchUrl.appendPath(touchedModule);
 						List<RevisionRange> mergedRevisions = moduleMergeInfo.getRevisions(mergeSrcUrl);

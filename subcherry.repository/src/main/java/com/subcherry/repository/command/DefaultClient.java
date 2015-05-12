@@ -134,7 +134,9 @@ public abstract class DefaultClient implements Client {
 			if (line.charAt(index) == 'r') {
 				index++;
 				int end1 = endOfNumber(line, index);
-				Revision r1 = Revision.create(Long.parseLong(line.substring(index, end1)));
+				long start = Long.parseLong(line.substring(index, end1));
+				Revision r1 = Revision.create(start);
+				Revision rBase = Revision.create(start - 1);
 				if (end1 < stop) {
 					if (line.charAt(end1) == '*') {
 						end1++;
@@ -149,11 +151,11 @@ public abstract class DefaultClient implements Client {
 						end2++;
 					}
 
-					result.add(RevisionRange.create(r1, r2));
+					result.add(RevisionRange.create(rBase, r2));
 
 					index = end2;
 				} else {
-					result.add(RevisionRange.create(r1, r1));
+					result.add(RevisionRange.create(rBase, r1));
 					index = end1;
 				}
 

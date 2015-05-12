@@ -32,7 +32,7 @@ public class RevisionRanges {
 
 	public static boolean containsAll(List<RevisionRange> ranges, RevisionRange value) {
 		// TODO: Optimize:
-		for (long rev = value.getStart().getNumber(), end = value.getEnd().getNumber(); rev <= end; rev++) {
+		for (long rev = value.getStart().getNumber() + 1, end = value.getEnd().getNumber(); rev <= end; rev++) {
 			if (!contains(ranges, rev)) {
 				return false;
 			}
@@ -51,7 +51,7 @@ public class RevisionRanges {
 	}
 
 	public static boolean contains(RevisionRange range, long rev) {
-		return range.getStart().getNumber() <= rev && rev <= range.getEnd().getNumber();
+		return range.getStart().getNumber() < rev && rev <= range.getEnd().getNumber();
 	}
 
 }

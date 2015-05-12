@@ -29,10 +29,16 @@ public class RevisionRange {
 		_end = end;
 	}
 
+	/**
+	 * Start revision of the range (exclusive).
+	 */
 	public Revision getStart() {
 		return _start;
 	}
 
+	/**
+	 * Last revision of the range (inclusive).
+	 */
 	public Revision getEnd() {
 		return _end;
 	}

@@ -131,10 +131,9 @@ public class TestMerge extends TestCase {
 		assertEquals(set(s.url("branches/branch1/module1")), mergeInfo.getPaths());
 		List<RevisionRange> mergedFromBranch1 = mergeInfo.getRevisions(s.url("branches/branch1/module1"));
 		assertTrue(RevisionRanges.containsAll(mergedFromBranch1, ranges(range(r1))));
+		assertFalse(RevisionRanges.containsAll(mergedFromBranch1, ranges(range(r1 + 1))));
+		assertFalse(RevisionRanges.containsAll(mergedFromBranch1, ranges(range(r1 - 1))));
 		
-		// TODO: Does not hold for unknown reasons.
-		// assertEquals(ranges(range(r1)), mergedFromBranch1);
-
 		Client client = s.clientManager().getClient();
 		LogEntryCollector collector = new LogEntryCollector();
 		client.getMergeInfoLog(
@@ -961,7 +960,7 @@ public class TestMerge extends TestCase {
 	}
 
 	private static RevisionRange range(long r1) {
-		return revisionRange(r1, r1);
+		return revisionRange(r1 - 1, r1);
 	}
 
 	private static RevisionRange revisionRange(long r1, long r2) {

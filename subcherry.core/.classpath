@@ -4,9 +4,11 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/ext.org.apache.xmlrpc"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/ext.org.lustin.trac"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/ext.org.tmatesoft.svn"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/ext.org.apache.ws.commons"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/de.haumacher.common.config"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/subcherry.repository"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/3"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/subcherry.repository.javahl"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/subcherry.repository.svnkit"/>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>

@@ -17,23 +17,23 @@
  */
 package com.subcherry;
 
-import org.tmatesoft.svn.core.ISVNLogEntryHandler;
-import org.tmatesoft.svn.core.SVNException;
-import org.tmatesoft.svn.core.SVNURL;
-import org.tmatesoft.svn.core.wc.SVNLogClient;
-import org.tmatesoft.svn.core.wc.SVNRevision;
+import com.subcherry.repository.command.Client;
+import com.subcherry.repository.command.log.LogEntryHandler;
+import com.subcherry.repository.core.RepositoryException;
+import com.subcherry.repository.core.RepositoryURL;
+import com.subcherry.repository.core.Revision;
 
 public class LogReader {
 
-	private final SVNLogClient _logClient;
+	private final Client _logClient;
 
-	private final SVNURL _url;
+	private final RepositoryURL _url;
 
-	private SVNRevision _startRevision;
+	private Revision _startRevision;
 
-	private SVNRevision _endRevision;
+	private Revision _endRevision;
 
-	private SVNRevision _pegRevision;
+	private Revision _pegRevision;
 
 	private boolean _stopOnCopy;
 
@@ -41,32 +41,32 @@ public class LogReader {
 
 	private long _limit;
 
-	public LogReader(SVNLogClient logClient, SVNURL url) {
+	public LogReader(Client logClient, RepositoryURL url) {
 		_logClient = logClient;
 		_url = url;
 	}
 
-	public SVNRevision getStartRevision() {
+	public Revision getStartRevision() {
 		return _startRevision;
 	}
 
-	public void setStartRevision(SVNRevision startRevision) {
+	public void setStartRevision(Revision startRevision) {
 		_startRevision = startRevision;
 	}
 
-	public SVNRevision getEndRevision() {
+	public Revision getEndRevision() {
 		return _endRevision;
 	}
 
-	public void setEndRevision(SVNRevision endRevision) {
+	public void setEndRevision(Revision endRevision) {
 		_endRevision = endRevision;
 	}
 
-	public SVNRevision getPegRevision() {
+	public Revision getPegRevision() {
 		return _pegRevision;
 	}
 
-	public void setPegRevision(SVNRevision pegRevision) {
+	public void setPegRevision(Revision pegRevision) {
 		_pegRevision = pegRevision;
 	}
 
@@ -94,8 +94,8 @@ public class LogReader {
 		_limit = limit;
 	}
 
-	public void readLog(String[] paths, ISVNLogEntryHandler logTarget) throws SVNException {
-		_logClient.doLog(_url, paths, _pegRevision, _startRevision, _endRevision, _stopOnCopy, _discoverChangedPaths,
+	public void readLog(String[] paths, LogEntryHandler logTarget) throws RepositoryException {
+		_logClient.log(_url, paths, _pegRevision, _startRevision, _endRevision, _stopOnCopy, _discoverChangedPaths,
 			_limit, logTarget);
 	}
 

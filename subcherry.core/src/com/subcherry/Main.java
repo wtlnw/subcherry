@@ -40,22 +40,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
-import org.tmatesoft.svn.core.SVNException;
-import org.tmatesoft.svn.core.SVNLogEntry;
-import org.tmatesoft.svn.core.SVNURL;
-import org.tmatesoft.svn.core.auth.ISVNAuthenticationManager;
-import org.tmatesoft.svn.core.internal.wc.DefaultSVNOptions;
-import org.tmatesoft.svn.core.internal.wc.SVNDiffConflictChoiceStyle;
-import org.tmatesoft.svn.core.internal.wc.SVNFileUtil;
-import org.tmatesoft.svn.core.internal.wc17.SVNWCContext;
-import org.tmatesoft.svn.core.wc.DefaultSVNRepositoryPool;
-import org.tmatesoft.svn.core.wc.ISVNMerger;
-import org.tmatesoft.svn.core.wc.SVNClientManager;
-import org.tmatesoft.svn.core.wc.SVNLogClient;
-import org.tmatesoft.svn.core.wc.SVNRevision;
-import org.tmatesoft.svn.core.wc.SVNWCUtil;
-import org.tmatesoft.svn.core.wc2.SvnOperationFactory;
-
 import com.subcherry.commit.Commit;
 import com.subcherry.commit.CommitHandler;
 import com.subcherry.commit.MessageRewriter;
@@ -66,11 +50,24 @@ import com.subcherry.history.DependencyBuilder.Dependency;
 import com.subcherry.history.HistroyBuilder;
 import com.subcherry.history.Node;
 import com.subcherry.log.DirCollector;
-import com.subcherry.merge.ContentSensitiveMerger;
 import com.subcherry.merge.MergeHandler;
+import com.subcherry.repository.ClientManagerFactory;
+import com.subcherry.repository.LoginCredential;
+import com.subcherry.repository.command.Client;
+import com.subcherry.repository.command.ClientManager;
+import com.subcherry.repository.command.log.LogEntryHandler;
+import com.subcherry.repository.core.LogEntry;
+import com.subcherry.repository.core.MergeInfo;
+import com.subcherry.repository.core.RepositoryException;
+import com.subcherry.repository.core.RepositoryURL;
+import com.subcherry.repository.core.Revision;
+import com.subcherry.repository.core.RevisionRange;
+import com.subcherry.repository.core.RevisionRanges;
+import com.subcherry.repository.core.Target;
 import com.subcherry.trac.TracConnection;
 import com.subcherry.trac.TracTicket;
 import com.subcherry.utils.Log;
+import com.subcherry.utils.Path;
 import com.subcherry.utils.PathParser;
 import com.subcherry.utils.Utils;
 import com.subcherry.utils.Utils.IllegalMessageFormat;
@@ -109,24 +106,24 @@ public class Main {
 
 	private static Set<String> _modules;
 
-	public static void main(String[] args) throws IOException, SVNException {
+	public static void main(String[] args) throws IOException, RepositoryException {
 		LoginCredential tracCredentials = PropertiesUtil.load("conf/loginCredentials.properties", "trac.",
-				LoginCredential.class);
+			LoginCredentialsValue.class);
 
 		doMerge(tracCredentials);
 	}
 
-	public static void doMerge(LoginCredential tracCredentials) throws SVNException, IOException {
-		SVNRevision startRevision = getStartRevision();
-		SVNRevision endRevision = getEndRevision();
-		SVNRevision pegRevision = getPegRevision();
-		SVNClientManager clientManager = newSVNClientManager();
-		SVNLogClient logClient = clientManager.getLogClient();
+	public static void doMerge(LoginCredential tracCredentials) throws RepositoryException, IOException {
+		Revision startRevision = getStartRevision();
+		Revision endRevision = getEndRevision();
+		Revision pegRevision = getPegRevision();
+		ClientManager clientManager = newSVNClientManager();
+		Client logClient = clientManager.getClient();
 		
 		String sourceBranch = config().getSourceBranch();
-		SVNURL sourceBranchUrl = SVNURL.parseURIDecoded(config().getSvnURL() + Utils.SVN_SERVER_PATH_SEPARATOR + sourceBranch);
+		RepositoryURL sourceBranchUrl = RepositoryURL.parse(config().getSvnURL()).appendPath(sourceBranch);
 		String targetBranch = config().getTargetBranch();
-		SVNURL targetBranchUrl = SVNURL.parseURIDecoded(config().getSvnURL() + Utils.SVN_SERVER_PATH_SEPARATOR + targetBranch);
+		RepositoryURL targetBranchUrl = RepositoryURL.parse(config().getSvnURL()).appendPath(targetBranch);
 		if (config().getDetectCommonModules() || config().getModules().length == 0) {
 			_modules = DirCollector.getBranchModules(logClient, config().getModules(), sourceBranchUrl, pegRevision);
 		} else {
@@ -146,10 +143,10 @@ public class Main {
 			MessageRewriter.createMessageRewriter(config(), portingTickets, revisionRewriter);
 		SVNLogEntryMatcher logEntryMatcher = newLogEntryMatcher(trac, portingTickets);
 		CommitHandler commitHandler = newCommitHandler(paths, messageRewriter);
-		SVNURL url = SVNURL.parseURIDecoded(config().getSvnURL());
+		RepositoryURL url = RepositoryURL.parse(config().getSvnURL());
 
 		if (config().getSkipWaitForTimestamp()) {
-			SVNFileUtil.setSleepForTimestamp(false);
+			clientManager.getOperationsFactory().settings().setSleepForTimestamp(false);
 		}
 
 		LOG.log(Level.INFO, "Reading source history.");
@@ -167,7 +164,7 @@ public class Main {
 		HashSet<Long> additionalRevisions = new HashSet<>(config().getAdditionalRevisions().keySet());
 		boolean additionalRevisionsFromOtherBranches;
 		if (!additionalRevisions.isEmpty()) {
-			for (SVNLogEntry foundEntry : logEntryMatcher.getEntries()) {
+			for (LogEntry foundEntry : logEntryMatcher.getEntries()) {
 				additionalRevisions.remove(foundEntry.getRevision());
 			}
 
@@ -178,7 +175,7 @@ public class Main {
 				// There are addition revisions not found on the source branch, load them
 				// explicitly.
 				for (Long additionalRev : additionalRevisions) {
-					SVNRevision svnAdditionalRev = SVNRevision.create(additionalRev);
+					Revision svnAdditionalRev = Revision.create(additionalRev);
 					logReader.setStartRevision(svnAdditionalRev);
 					logReader.setEndRevision(svnAdditionalRev);
 					logReader.readLog(ROOT, logEntryMatcher);
@@ -188,14 +185,14 @@ public class Main {
 			additionalRevisionsFromOtherBranches = false;
 		}
 
-		List<SVNLogEntry> mergedLogEntries = logEntryMatcher.getEntries();
+		List<LogEntry> mergedLogEntries = logEntryMatcher.getEntries();
 		if (additionalRevisionsFromOtherBranches || config().getRevert()) {
 			int reverse = config().getRevert() ? -1 : 1;
 			final int smaller = reverse * -1;
 			final int greater = reverse * 1;
-			Collections.sort(mergedLogEntries, new Comparator<SVNLogEntry>() {
+			Collections.sort(mergedLogEntries, new Comparator<LogEntry>() {
 				@Override
-				public int compare(SVNLogEntry e1, SVNLogEntry e2) {
+				public int compare(LogEntry e1, LogEntry e2) {
 					long r1 = e1.getRevision();
 					long r2 = e2.getRevision();
 					if (r1 < r2) {
@@ -209,18 +206,85 @@ public class Main {
 			});
 		}
 
-		LOG.log(Level.INFO, "Reading target history.");
-		
 		if (!config().getSkipDependencies()) {
 			HistroyBuilder historyBuilder = new HistroyBuilder(getStartRevision().getNumber());
-			String[] targetPaths = getLogPaths(targetBranch);
-			String[] allPaths = concat(sourcePaths, targetPaths);
-			// For history reconstruction, the history must always be read in ascending revision
-			// order.
-			logReader.setStartRevision(getStartRevision());
-			logReader.setEndRevision(getEndRevision());
-			logReader.readLog(allPaths, historyBuilder);
+			readTargetLog(logReader, targetBranch, sourcePaths, historyBuilder);
 			analyzeDependencies(historyBuilder, sourceBranch, targetBranch, trac, mergedLogEntries);
+		}
+
+		if (!config().getIgnoreMergeInfo()) {
+			Log.info("Analyzing merge info.");
+
+			Map<String, MergeInfo> moduleMergeInfos = new HashMap<>();
+			for (int n = mergedLogEntries.size() - 1; n >= 0; n--) {
+				LogEntry entry = mergedLogEntries.get(n);
+
+				boolean alreadyMerged = false;
+				long mergedRevision = entry.getRevision();
+
+				Set<String> touchedModules = new HashSet<>();
+
+				searchMatchingMergeInfo:
+				for (String changedPath : entry.getChangedPaths().keySet()) {
+					Path parsedPath = paths.parsePath(changedPath);
+
+					String changedModuleName = parsedPath.getModule();
+					touchedModules.add(changedModuleName);
+
+					if (!isModulePath(parsedPath)) {
+						// Merge info is only recorded at module level. Therefore, checks on all
+						// other paths can be skipped.
+						continue;
+					}
+					if (!_modules.contains(changedModuleName)) {
+						continue;
+					}
+
+					MergeInfo moduleMergeInfo = lookupMergeInfo(clientManager, moduleMergeInfos, changedModuleName);
+					Target changedModuleUrl = Target.fromURL(url.appendPath(changedPath), getPegRevision());
+					Map<String, List<RevisionRange>> mergeInfoDiff =
+						clientManager.getClient().mergeInfoDiff(changedModuleUrl, mergedRevision);
+
+					for (Entry<String, List<RevisionRange>> mergeEntry : mergeInfoDiff.entrySet()) {
+						String mergedModulePath = mergeEntry.getKey();
+						RepositoryURL mergedModuleUrl = url.appendPath(mergedModulePath);
+
+						List<RevisionRange> transitivelyMergedRevisions = moduleMergeInfo.getRevisions(mergedModuleUrl);
+						if (transitivelyMergedRevisions == null) {
+							continue;
+						}
+						if (RevisionRanges.containsAll(transitivelyMergedRevisions, mergeEntry.getValue())) {
+							// This module has already been merged.
+							alreadyMerged = true;
+							break searchMatchingMergeInfo;
+						}
+					}
+				}
+
+				if (!alreadyMerged) {
+					for (String touchedModule : touchedModules) {
+						if (!_modules.contains(touchedModule)) {
+							continue;
+						}
+
+						MergeInfo moduleMergeInfo = lookupMergeInfo(clientManager, moduleMergeInfos, touchedModule);
+						RepositoryURL mergeSrcUrl = sourceBranchUrl.appendPath(touchedModule);
+						List<RevisionRange> mergedRevisions = moduleMergeInfo.getRevisions(mergeSrcUrl);
+						if (mergedRevisions == null) {
+							continue;
+						}
+						if (RevisionRanges.contains(mergedRevisions, mergedRevision)) {
+							alreadyMerged = true;
+							break;
+						}
+					}
+				}
+
+				if (alreadyMerged) {
+					Log.info("Already merged [" + entry.getRevision() + "]: " + entry.getMessage());
+					mergedLogEntries.remove(n);
+				}
+			}
 		}
 
 		List<CommitSet> commitSets = getCommitSets(commitHandler, mergedLogEntries);
@@ -237,8 +301,40 @@ public class Main {
 		Restart.clear();
 	}
 
+	private static MergeInfo lookupMergeInfo(ClientManager clientManager, Map<String, MergeInfo> moduleMergeInfos,
+			String moduleName) throws RepositoryException {
+		MergeInfo moduleMergeInfo;
+		{
+			File targetModuleFile = new File(config().getWorkspaceRoot(), moduleName);
+			moduleMergeInfo = moduleMergeInfos.get(moduleName);
+			if (moduleMergeInfo == null) {
+				moduleMergeInfo =
+					clientManager.getClient().getMergeInfo(Target.fromFile(targetModuleFile));
+				moduleMergeInfos.put(moduleName, moduleMergeInfo);
+			}
+		}
+		return moduleMergeInfo;
+	}
+
+	private static boolean isModulePath(Path parsedPath) {
+		return parsedPath.getResource().equals(parsedPath.getModule());
+	}
+
+	private static void readTargetLog(LogReader logReader, String targetBranch, String[] sourcePaths,
+			LogEntryHandler handler) throws RepositoryException {
+		LOG.log(Level.INFO, "Reading target history.");
+
+		String[] targetPaths = getLogPaths(targetBranch);
+		String[] allPaths = concat(sourcePaths, targetPaths);
+		// For history reconstruction, the history must always be read in ascending revision
+		// order.
+		logReader.setStartRevision(getStartRevision());
+		logReader.setEndRevision(getEndRevision());
+		logReader.readLog(allPaths, handler);
+	}
+
 	private static void analyzeDependencies(HistroyBuilder historyBuilder, String sourceBranch, String targetBranch,
-			TracConnection trac, List<SVNLogEntry> mergedLogEntries) throws IOException {
+			TracConnection trac, List<LogEntry> mergedLogEntries) throws IOException {
 		LOG.log(Level.INFO, "Analyzing dependencies.");
 		DependencyBuilder dependencyBuilder = new DependencyBuilder(sourceBranch, targetBranch, _modules);
 		dependencyBuilder.analyzeConflicts(historyBuilder.getHistory(), mergedLogEntries);
@@ -473,9 +569,9 @@ public class Main {
 		}
 	}
 
-	private static List<CommitSet> getCommitSets(CommitHandler commitHandler, List<SVNLogEntry> logEntries) {
+	private static List<CommitSet> getCommitSets(CommitHandler commitHandler, List<LogEntry> logEntries) {
 		ArrayList<CommitSet> result = new ArrayList<CommitSet>(logEntries.size());
-		for (SVNLogEntry logEntry : logEntries) {
+		for (LogEntry logEntry : logEntries) {
 			Commit commit;
 			try {
 				commit = commitHandler.parseCommit(logEntry);
@@ -488,7 +584,7 @@ public class Main {
 		return result;
 	}
 
-	private static SVNRevision getPegRevision() {
+	private static Revision getPegRevision() {
 		return getRevisionOrHead(config().getPegRevision());
 	}
 
@@ -513,24 +609,24 @@ public class Main {
 		return workspaceModules;
 	}
 
-	public static SVNRevision getStartRevision() {
+	public static Revision getStartRevision() {
 		long storedRevision = Restart.getRevision();
 		if (storedRevision != Restart.NO_REVISION_FOUND) {
-			return SVNRevision.create(storedRevision);
+			return Revision.create(storedRevision);
 		} else {
 			return getRevisionOrHead(config().getStartRevision());
 		}
 	}
 
-	private static SVNRevision getEndRevision() {
+	private static Revision getEndRevision() {
 		return getRevisionOrHead(config().getEndRevision());
 	}
 
-	public static SVNRevision getRevisionOrHead(long revision) {
+	public static Revision getRevisionOrHead(long revision) {
 		if (revision < 1) {
-			return SVNRevision.HEAD;
+			return Revision.HEAD;
 		} else {
-			return SVNRevision.create(revision);
+			return Revision.create(revision);
 		}
 	}
 
@@ -560,23 +656,11 @@ public class Main {
 		return pathes;
 	}
 
-	public static SVNClientManager newSVNClientManager() throws IOException {
+	public static ClientManager newSVNClientManager() throws IOException {
 		LoginCredential svnCredentials = PropertiesUtil.load("conf/loginCredentials.properties", "svn.",
-				LoginCredential.class);
-		DefaultSVNOptions options = new DefaultSVNOptions() {
-			@Override
-			public ISVNMerger createMerger(byte[] conflictStart, byte[] conflictSeparator, byte[] conflictEnd) {
-				return new ContentSensitiveMerger(conflictStart, conflictSeparator, conflictEnd, getConflictResolver(),
-					SVNDiffConflictChoiceStyle.CHOOSE_MODIFIED_LATEST);
-			}
-		};
-		ISVNAuthenticationManager authManager = SVNWCUtil.createDefaultAuthenticationManager(svnCredentials.getUser(),
-				svnCredentials.getPasswd());
-		SVNWCContext svnwcContext = new SVNWCContext(options, null);
-		SvnOperationFactory svnOperationFactory = new SvnOperationFactory(svnwcContext);
-		svnOperationFactory.setRepositoryPool(new DefaultSVNRepositoryPool(authManager, options));
-		svnOperationFactory.setAutoDisposeRepositoryPool(true);
-		return SVNClientManager.newInstance(svnOperationFactory);
+			LoginCredentialsValue.class);
+
+		return ClientManagerFactory.getInstance(config().getRepositoryProvider()).createClientManager(svnCredentials);
 	}
 
 }

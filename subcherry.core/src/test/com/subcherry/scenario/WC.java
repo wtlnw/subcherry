@@ -28,19 +28,20 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import org.tmatesoft.svn.core.SVNCommitInfo;
-import org.tmatesoft.svn.core.SVNDepth;
-import org.tmatesoft.svn.core.SVNException;
-import org.tmatesoft.svn.core.SVNPropertyValue;
-import org.tmatesoft.svn.core.SVNURL;
-import org.tmatesoft.svn.core.wc.ISVNStatusHandler;
-import org.tmatesoft.svn.core.wc.SVNClientManager;
-import org.tmatesoft.svn.core.wc.SVNCopySource;
-import org.tmatesoft.svn.core.wc.SVNPropertyData;
-import org.tmatesoft.svn.core.wc.SVNRevision;
-import org.tmatesoft.svn.core.wc.SVNRevisionRange;
-import org.tmatesoft.svn.core.wc.SVNStatus;
-import org.tmatesoft.svn.core.wc.SVNWCClient;
+import com.subcherry.repository.command.Client;
+import com.subcherry.repository.command.ClientManager;
+import com.subcherry.repository.command.copy.CopySource;
+import com.subcherry.repository.command.status.Status;
+import com.subcherry.repository.command.status.StatusHandler;
+import com.subcherry.repository.core.CommitInfo;
+import com.subcherry.repository.core.Depth;
+import com.subcherry.repository.core.PropertyData;
+import com.subcherry.repository.core.PropertyValue;
+import com.subcherry.repository.core.RepositoryException;
+import com.subcherry.repository.core.RepositoryURL;
+import com.subcherry.repository.core.Resolution;
+import com.subcherry.repository.core.Revision;
+import com.subcherry.repository.core.RevisionRange;
 
 public class WC extends FileSystem {
 
@@ -48,11 +49,11 @@ public class WC extends FileSystem {
 
 	private String _path;
 
-	private SVNURL _baseUrl;
+	private RepositoryURL _baseUrl;
 
 	private File _wcPath;
 
-	WC(Scenario scenario, String path) throws IOException, SVNException {
+	WC(Scenario scenario, String path) throws IOException, RepositoryException {
 		_scenario = scenario;
 		_path = path;
 
@@ -60,15 +61,15 @@ public class WC extends FileSystem {
 		_wcPath.delete();
 		_wcPath.mkdir();
 
-		_baseUrl = scenario().getRepositoryUrl().appendPath(path, true);
-		scenario.clientManager().getUpdateClient().doCheckout(_baseUrl, _wcPath, SVNRevision.HEAD, SVNRevision.HEAD,
-			SVNDepth.INFINITY, false);
+		_baseUrl = scenario().getRepositoryUrl().appendPath(path);
+		scenario.clientManager().getClient().checkout(_baseUrl, _wcPath, Revision.HEAD, Revision.HEAD,
+			Depth.INFINITY, false);
 	}
 
-	public long commit() throws SVNException {
+	public long commit() throws RepositoryException {
 		File[] paths = { _wcPath };
-		SVNCommitInfo commitInfo = clientManager().getCommitClient()
-			.doCommit(paths, false, scenario().createMessage(), null, null, false, false, SVNDepth.INFINITY);
+		CommitInfo commitInfo = clientManager().getClient()
+			.commit(paths, false, scenario().createMessage(), null, null, false, false, Depth.INFINITY);
 		return commitInfo.getNewRevision();
 	}
 
@@ -77,7 +78,7 @@ public class WC extends FileSystem {
 	}
 
 	@Override
-	public long mkdir(String path) throws SVNException {
+	public long mkdir(String path) throws RepositoryException {
 		File dir = toFile(path);
 		dir.mkdirs();
 		add(dir);
@@ -85,43 +86,43 @@ public class WC extends FileSystem {
 	}
 
 	@Override
-	public long file(String path) throws SVNException, IOException {
+	public long file(String path) throws RepositoryException, IOException {
 		File file = toFile(path);
 		scenario().fillFileContent(file);
 		add(file);
 		return -1;
 	}
 
-	public void setProperty(String path, String name, String value) throws SVNException {
+	public void setProperty(String path, String name, String value) throws RepositoryException {
 		File file = toFile(path);
-		clientManager().getWCClient().doSetProperty(file, name, SVNPropertyValue.create(value), false, SVNDepth.EMPTY,
+		clientManager().getClient().setProperty(file, name, PropertyValue.create(value), false, Depth.EMPTY,
 			null, null);
 	}
 
 	@Override
-	public long copy(String toPath, String fromPath) throws SVNException {
-		return internalCopy(toPath, fromPath, SVNRevision.BASE);
+	public long copy(String toPath, String fromPath) throws RepositoryException {
+		return internalCopy(toPath, fromPath, Revision.BASE);
 	}
 
 	@Override
-	public long copy(String toPath, String fromPath, long revision) throws SVNException {
-		return internalCopy(toPath, fromPath, SVNRevision.create(revision));
+	public long copy(String toPath, String fromPath, long revision) throws RepositoryException {
+		return internalCopy(toPath, fromPath, Revision.create(revision));
 	}
 
-	private long internalCopy(String toPath, String fromPath, SVNRevision rev) throws SVNException {
-		SVNCopySource[] sources = { new SVNCopySource(SVNRevision.BASE, rev, toFile(fromPath)) };
+	private long internalCopy(String toPath, String fromPath, Revision rev) throws RepositoryException {
+		CopySource[] sources = { CopySource.create(Revision.BASE, rev, toFile(fromPath)) };
 		File dst = toFile(toPath);
-		clientManager().getCopyClient().doCopy(sources, dst, false, false, true);
+		clientManager().getClient().copy(sources, dst, false, false, true);
 		return -1;
 	}
 
-	public void copyFromRemote(String toPath, String remoteFromPath, long revision) throws SVNException {
-		SVNRevision svnRevision = SVNRevision.create(revision);
-		SVNCopySource[] sources =
-			{ new SVNCopySource(svnRevision, svnRevision, scenario().getRepositoryUrl()
-				.appendPath(remoteFromPath, true)) };
+	public void copyFromRemote(String toPath, String remoteFromPath, long revision) throws RepositoryException {
+		Revision svnRevision = Revision.create(revision);
+		CopySource[] sources =
+			{ CopySource.create(svnRevision, svnRevision, scenario().getRepositoryUrl()
+				.appendPath(remoteFromPath)) };
 		File dst = toFile(toPath);
-		clientManager().getCopyClient().doCopy(sources, dst, false, false, true);
+		clientManager().getClient().copy(sources, dst, false, false, true);
 	}
 
 	public File toFile(String path) {
@@ -129,11 +130,11 @@ public class WC extends FileSystem {
 		return dir;
 	}
 
-	private void add(File file) throws SVNException {
-		wcClient().doAdd(file, false, false, true, SVNDepth.EMPTY, false, true);
+	private void add(File file) throws RepositoryException {
+		wcClient().add(file, false, false, true, Depth.EMPTY, false, true);
 	}
 
-	private SVNClientManager clientManager() {
+	private ClientManager clientManager() {
 		return scenario().clientManager();
 	}
 
@@ -141,12 +142,12 @@ public class WC extends FileSystem {
 		return _scenario;
 	}
 
-	public void delete(String path) throws SVNException {
-		wcClient().doDelete(toFile(path), false, true, false);
+	public void delete(String path) throws RepositoryException {
+		wcClient().delete(toFile(path), false, true, false);
 	}
 
-	private SVNWCClient wcClient() {
-		return clientManager().getWCClient();
+	private Client wcClient() {
+		return clientManager().getClient();
 	}
 
 	public void update(String path) throws IOException {
@@ -172,43 +173,48 @@ public class WC extends FileSystem {
 		}
 	}
 
-	public String getProperty(String path, String property) throws SVNException {
-		SVNWCClient wcClient = scenario().clientManager().getWCClient();
-		SVNPropertyData data =
-			wcClient.doGetProperty(new File(_wcPath, path), property, SVNRevision.WORKING, SVNRevision.WORKING);
+	public String getProperty(String path, String property) throws RepositoryException {
+		Client wcClient = scenario().clientManager().getClient();
+		PropertyData data =
+			wcClient.getProperty(new File(_wcPath, path), property, Revision.WORKING, Revision.WORKING);
 		if (data == null) {
 			return null;
 		}
-		return data.getValue().getString();
+		return data.getValue().asString();
 	}
 
-	public List<File> getModified() throws SVNException {
+	public List<File> getModified() throws RepositoryException {
 		final List<File> modified = new ArrayList<>();
-		ISVNStatusHandler handler = new ISVNStatusHandler() {
+		StatusHandler handler = new StatusHandler() {
 			@Override
-			public void handleStatus(SVNStatus status) throws SVNException {
+			public void handleStatus(Status status) throws RepositoryException {
 				File file = status.getFile();
 				modified.add(file);
 			}
 		};
-		clientManager().getStatusClient().
-			doStatus(getDirectory(), SVNRevision.HEAD, SVNDepth.INFINITY, false, false, false, false, handler, null);
+		clientManager().getClient().
+			status(getDirectory(), Revision.HEAD, Depth.INFINITY, false, false, false, handler, null);
 		return modified;
 	}
 
-	public long merge(String branch, long revision, List<String> mergedModules) throws SVNException {
-		SVNURL sourceBranch = scenario().getRepositoryUrl().appendPath(branch, true);
-		SVNRevision baseRevision = SVNRevision.create(revision - 1);
-		SVNRevision svnRevision = SVNRevision.create(revision);
-		SVNRevision pegRevision = svnRevision;
-		Collection<SVNRevisionRange> rangesToMerge = Arrays.asList(new SVNRevisionRange(baseRevision, svnRevision));
+	public long merge(String branch, long revision, List<String> mergedModules) throws RepositoryException {
+		RepositoryURL sourceBranch = scenario().getRepositoryUrl().appendPath(branch);
+		Revision baseRevision = Revision.create(revision - 1);
+		Revision svnRevision = Revision.create(revision);
+		Revision pegRevision = svnRevision;
+		Collection<RevisionRange> rangesToMerge = Arrays.asList(new RevisionRange(baseRevision, svnRevision));
 		for (String module : mergedModules) {
-			SVNURL sourceModule = sourceBranch.appendPath(module, true);
+			RepositoryURL sourceModule = sourceBranch.appendPath(module);
 			File targetModule = new File(getDirectory(), module);
-			clientManager().getDiffClient().doMerge(sourceModule, pegRevision, rangesToMerge, targetModule,
-				SVNDepth.INFINITY, true, false, false, false);
+			clientManager().getClient().merge(sourceModule, pegRevision, rangesToMerge, targetModule,
+				Depth.INFINITY, true, false, false, false);
 		}
 		return commit();
+	}
+
+	public void resolve(String path, Depth depth, Resolution resolution) throws RepositoryException {
+		Client client = clientManager().getClient();
+		client.resolve(toFile(path), depth, resolution);
 	}
 
 }

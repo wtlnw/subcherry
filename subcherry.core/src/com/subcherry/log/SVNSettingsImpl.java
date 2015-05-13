@@ -64,9 +64,9 @@ public class SVNSettingsImpl implements SVNSettings {
 	public static SVNSettings loadSettings(BufferedReader in, Properties globalProperties) throws IOException {
 		SVNSettingsImpl result = new SVNSettingsImpl();
 		
-		result.setUrl(TicketsWithCommits.inputOnce(in, "SVN URL", globalProperties.getProperty(SVNSettingsImpl.SVN_URL_PROPERTY)));
-		result.setUser(TicketsWithCommits.inputOnce(in, "SVN user", globalProperties.getProperty(SVNSettingsImpl.SVN_USER_PROPERTY)));
-		result.setPassword(TicketsWithCommits.inputOnce(in, "SVN password (will be echoed)", globalProperties.getProperty(SVNSettingsImpl.SVN_PASSWORD_PROPERTY)));
+		result.setUrl(inputOnce(in, "SVN URL", globalProperties.getProperty(SVNSettingsImpl.SVN_URL_PROPERTY)));
+		result.setUser(inputOnce(in, "SVN user", globalProperties.getProperty(SVNSettingsImpl.SVN_USER_PROPERTY)));
+		result.setPassword(inputOnce(in, "SVN password (will be echoed)", globalProperties.getProperty(SVNSettingsImpl.SVN_PASSWORD_PROPERTY)));
 		
 		return result;
 	}
@@ -76,5 +76,38 @@ public class SVNSettingsImpl implements SVNSettings {
 		updatedProperties.setProperty(SVN_PASSWORD_PROPERTY, svn.getPassword());
 		updatedProperties.setProperty(SVN_URL_PROPERTY, svn.getUrl());
 	}
-	
+
+	static String inputOnce(BufferedReader in, String inputMessage, String defaultValue) throws IOException {
+		if (defaultValue != null) {
+			return defaultValue;
+		}
+		return input(in, inputMessage, defaultValue);
+	}
+
+	private static String input(BufferedReader in, String inputMessage, String defaultValue) throws IOException {
+		System.out.print(inputMessage + defaultValue(defaultValue) + ": ");
+		String result = read(in, defaultValue);
+		if (result == null) {
+			return "";
+		} else {
+			return result;
+		}
+	}
+
+	private static String read(BufferedReader in, String defaultValue) throws IOException {
+		String newUser = in.readLine();
+		if (newUser.trim().length() > 0) {
+			defaultValue = newUser;
+		}
+		return defaultValue;
+	}
+
+	private static String defaultValue(String value) {
+		if (value == null) {
+			return "";
+		} else {
+			return " (" + value + ")";
+		}
+	}
+
 }

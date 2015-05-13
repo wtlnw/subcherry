@@ -19,7 +19,7 @@ package test.com.subcherry.scenario;
 
 import java.io.IOException;
 
-import org.tmatesoft.svn.core.SVNException;
+import com.subcherry.repository.core.RepositoryException;
 
 public abstract class FileSystem {
 
@@ -31,7 +31,7 @@ public abstract class FileSystem {
 	 * @return The commit number of the operation, if the {@link FileSystem} is version-controlled
 	 *         or <tt>-1</tt> if not.
 	 */
-	public abstract long mkdir(String path) throws SVNException;
+	public abstract long mkdir(String path) throws RepositoryException;
 
 	/**
 	 * Creates a new file in this {@link FileSystem}.
@@ -41,7 +41,7 @@ public abstract class FileSystem {
 	 * @return The commit number of the operation, if the {@link FileSystem} is version-controlled
 	 *         or <tt>-1</tt> if not.
 	 */
-	public abstract long file(String path) throws SVNException, IOException;
+	public abstract long file(String path) throws RepositoryException, IOException;
 
 	/**
 	 * Creates a copy of the resource found under <tt>fromPath</tt> at <tt>toPath</tt>.
@@ -53,7 +53,7 @@ public abstract class FileSystem {
 	 * @return The commit number of the operation, if the {@link FileSystem} is version-controlled
 	 *         or <tt>-1</tt> if not.
 	 */
-	public abstract long copy(String toPath, String fromPath) throws SVNException;
+	public abstract long copy(String toPath, String fromPath) throws RepositoryException;
 
 	/**
 	 * Creates a copy of the resource found under <tt>fromPath</tt> in the given revision at
@@ -68,5 +68,5 @@ public abstract class FileSystem {
 	 * @return The commit number of the operation, if the {@link FileSystem} is version-controlled
 	 *         or <tt>-1</tt> if not.
 	 */
-	public abstract long copy(String toPath, String fromPath, long revision) throws SVNException;
+	public abstract long copy(String toPath, String fromPath, long revision) throws RepositoryException;
 }

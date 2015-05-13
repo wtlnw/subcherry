@@ -31,7 +31,8 @@ import java.util.regex.Pattern;
 import org.lustin.trac.xmlprc.Ticket;
 
 import com.subcherry.Configuration;
-import com.subcherry.LoginCredential;
+import com.subcherry.LoginCredentialsValue;
+import com.subcherry.repository.LoginCredential;
 import com.subcherry.trac.TicketStub;
 import com.subcherry.trac.TracConnection;
 import com.subcherry.trac.TracTicket;
@@ -62,7 +63,7 @@ public class TicketConsistency {
 	
 	public static void main(String[] args) throws IOException {
 		LoginCredential tracCredentials = PropertiesUtil.load("conf/loginCredentials.properties", "trac.",
-				LoginCredential.class);
+			LoginCredentialsValue.class);
 		Configuration config = PropertiesUtil.load("conf/configuration.properties", Configuration.class);
 		tracConnection = 
 				new TracConnection(config.getTracURL(), tracCredentials.getUser(), tracCredentials.getPasswd());

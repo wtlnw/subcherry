@@ -17,8 +17,7 @@
  */
 package com.subcherry.merge;
 
-import org.tmatesoft.svn.core.SVNLogEntry;
-
+import com.subcherry.repository.core.LogEntry;
 import com.subcherry.utils.Path;
 
 /**
@@ -29,11 +28,11 @@ import com.subcherry.utils.Path;
  */
 public class ResourceChange {
 
-	private final SVNLogEntry _changeSet;
+	private final LogEntry _changeSet;
 
 	private final Path _change;
 
-	public ResourceChange(SVNLogEntry logEntry, Path change) {
+	public ResourceChange(LogEntry logEntry, Path change) {
 		_changeSet = logEntry;
 		_change = change;
 	}
@@ -41,7 +40,7 @@ public class ResourceChange {
 	/**
 	 * The change set.
 	 */
-	public SVNLogEntry getChangeSet() {
+	public LogEntry getChangeSet() {
 		return _changeSet;
 	}
 

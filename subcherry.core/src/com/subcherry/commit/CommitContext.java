@@ -17,19 +17,18 @@
  */
 package com.subcherry.commit;
 
-import org.tmatesoft.svn.core.wc.SVNCommitClient;
-import org.tmatesoft.svn.core.wc.SVNUpdateClient;
+import com.subcherry.repository.command.Client;
 
 /**
  * @version    $Revision$  $Author$  $Date$
  */
 public class CommitContext {
 	
-	public final SVNUpdateClient updateClient;
-	public final SVNCommitClient commitClient;
+	public final Client client;
+	public final Client commitClient;
 
-	public CommitContext(SVNUpdateClient updateClient, SVNCommitClient commitClient) {
-		this.updateClient = updateClient;
+	public CommitContext(Client client, Client commitClient) {
+		this.client = client;
 		this.commitClient = commitClient;
 	}
 }

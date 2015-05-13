@@ -202,4 +202,14 @@ public interface Configuration extends MergeConfig, CommitConfig, BranchConfig {
 	 */
 	boolean getSkipWaitForTimestamp();
 
+	/**
+	 * Name of the repository binding provider.
+	 */
+	String getRepositoryProvider();
+
+	/**
+	 * Whether to skip revisions that are already on the target branch by inspecting SVN merge info.
+	 */
+	boolean getIgnoreMergeInfo();
+
 }

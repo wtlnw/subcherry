@@ -28,18 +28,18 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.tmatesoft.svn.core.SVNLogEntry;
+import com.subcherry.repository.core.LogEntry;
 
 public class TicketXRef {
 	private Map<Integer, Set<String>> branchesByTicket = new HashMap<Integer, Set<String>>();
-	private Map<Integer, List<SVNLogEntry>> commitsByTicket = new HashMap<Integer, List<SVNLogEntry>>();
-	private Map<String, List<SVNLogEntry>> invalidCommitsByReason = new HashMap<String, List<SVNLogEntry>>();
+	private Map<Integer, List<LogEntry>> commitsByTicket = new HashMap<Integer, List<LogEntry>>();
+	private Map<String, List<LogEntry>> invalidCommitsByReason = new HashMap<String, List<LogEntry>>();
 
-	public TicketXRef(Pattern commitMessagePattern, Pattern commitMessageIgnorePattern, Pattern pathPattern, Pattern fileIgnorePattern, Iterable<SVNLogEntry> svnLog) {
+	public TicketXRef(Pattern commitMessagePattern, Pattern commitMessageIgnorePattern, Pattern pathPattern, Pattern fileIgnorePattern, Iterable<LogEntry> svnLog) {
 		Set<String> branchesBuffer = new HashSet<String>();
 		
-		for (Iterator<SVNLogEntry> entries = svnLog.iterator(); entries.hasNext();) {
-			SVNLogEntry logEntry = entries.next();
+		for (Iterator<LogEntry> entries = svnLog.iterator(); entries.hasNext();) {
+			LogEntry logEntry = entries.next();
 			
 			boolean isCommitRelevant = false;
 			Set<String> changedPaths = logEntry.getChangedPaths().keySet();
@@ -112,7 +112,7 @@ public class TicketXRef {
 		return branchesByTicket.get(ticketId);
 	}
 
-	public List<SVNLogEntry> getCommits(Integer ticketId) {
+	public List<LogEntry> getCommits(Integer ticketId) {
 		return commitsByTicket.get(ticketId);
 	}
 
@@ -120,7 +120,7 @@ public class TicketXRef {
 		return commitsByTicket.keySet();
 	}
 	
-	public Map<String, List<SVNLogEntry>> getInvalidCommitsByReason() {
+	public Map<String, List<LogEntry>> getInvalidCommitsByReason() {
 		return invalidCommitsByReason;
 	}
 }

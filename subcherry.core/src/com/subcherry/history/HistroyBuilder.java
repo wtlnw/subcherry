@@ -21,15 +21,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
-import org.tmatesoft.svn.core.ISVNLogEntryHandler;
-import org.tmatesoft.svn.core.SVNException;
-import org.tmatesoft.svn.core.SVNLogEntry;
-import org.tmatesoft.svn.core.SVNLogEntryPath;
-
 import com.subcherry.history.Node.Kind;
+import com.subcherry.repository.command.log.LogEntryHandler;
+import com.subcherry.repository.core.ChangeType;
+import com.subcherry.repository.core.LogEntry;
+import com.subcherry.repository.core.LogEntryPath;
+import com.subcherry.repository.core.RepositoryException;
 
 /**
- * {@link ISVNLogEntryHandler} that creates a consolidated history of all nodes that are present in
+ * {@link LogEntryHandler} that creates a consolidated history of all nodes that are present in
  * the current view of a repository.
  * 
  * <p>
@@ -42,11 +42,11 @@ import com.subcherry.history.Node.Kind;
  * @author <a href="mailto:haui@haumacher.de">Bernhard Haumacher</a>
  * @version $Revision$ $Author$ $Date$
  */
-public class HistroyBuilder implements ISVNLogEntryHandler {
+public class HistroyBuilder implements LogEntryHandler {
 
-	private static final Comparator<SVNLogEntryPath> PATH_ORDER = new Comparator<SVNLogEntryPath>() {
+	private static final Comparator<LogEntryPath> PATH_ORDER = new Comparator<LogEntryPath>() {
 		@Override
-		public int compare(SVNLogEntryPath p1, SVNLogEntryPath p2) {
+		public int compare(LogEntryPath p1, LogEntryPath p2) {
 			return p1.getPath().compareTo(p2.getPath());
 		}
 	};
@@ -62,30 +62,30 @@ public class HistroyBuilder implements ISVNLogEntryHandler {
 	}
 
 	@Override
-	public void handleLogEntry(SVNLogEntry logEntry) throws SVNException {
+	public void handleLogEntry(LogEntry logEntry) throws RepositoryException {
 		Change change = createChange(logEntry);
 
-		ArrayList<SVNLogEntryPath> paths = new ArrayList<>(logEntry.getChangedPaths().values());
+		ArrayList<LogEntryPath> paths = new ArrayList<>(logEntry.getChangedPaths().values());
 		Collections.sort(paths, PATH_ORDER);
-		for (SVNLogEntryPath pathEntry : paths) {
+		for (LogEntryPath pathEntry : paths) {
 			String path = pathEntry.getPath();
 
-			char changeType = pathEntry.getType();
+			ChangeType changeType = pathEntry.getType();
 			Kind kind = Kind.fromSvn(pathEntry.getKind());
 			switch (changeType) {
-				case SVNLogEntryPath.TYPE_ADDED: {
+				case ADDED: {
 					_history.addedNode(kind, path, change, pathEntry.getCopyPath(), pathEntry.getCopyRevision());
 					break;
 				}
-				case SVNLogEntryPath.TYPE_DELETED: {
+				case DELETED: {
 					_history.deletedNode(kind, path, change);
 					break;
 				}
-				case SVNLogEntryPath.TYPE_MODIFIED: {
+				case MODIFIED: {
 					_history.modifiedNode(kind, path, change);
 					break;
 				}
-				case SVNLogEntryPath.TYPE_REPLACED: {
+				case REPLACED: {
 					_history.deletedNode(kind, path, change);
 					_history.addedNode(kind, path, change, pathEntry.getCopyPath(), pathEntry.getCopyRevision());
 					break;
@@ -95,7 +95,7 @@ public class HistroyBuilder implements ISVNLogEntryHandler {
 		}
 	}
 
-	private Change createChange(SVNLogEntry logEntry) {
+	private Change createChange(LogEntry logEntry) {
 		Change change =
 			_history.createChange(logEntry.getRevision(), logEntry.getAuthor(), logEntry.getDate(),
 				logEntry.getMessage());

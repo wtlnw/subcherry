@@ -21,15 +21,14 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.tmatesoft.svn.core.SVNLogEntry;
-
+import com.subcherry.repository.core.LogEntry;
 import com.subcherry.commit.Commit;
 
 public class CommitSet {
 
 	private final List<Commit> _commits;
 
-	public CommitSet(SVNLogEntry logEntry, Commit commit) {
+	public CommitSet(LogEntry logEntry, Commit commit) {
 		_commits = new ArrayList<Commit>(4);
 		add(commit);
 	}

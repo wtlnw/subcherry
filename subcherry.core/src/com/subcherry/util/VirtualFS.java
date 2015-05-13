@@ -64,17 +64,7 @@ public class VirtualFS {
 		removeDescendents(_addedPaths, resource);
 		removeDescendentsOrSelf(_deletedPaths, resource);
 
-		String ancestor = resource;
-		while (true) {
-			_addedPaths.add(ancestor);
-
-			int dirSeparatorIndex = ancestor.lastIndexOf('/');
-			if (dirSeparatorIndex < 0) {
-				break;
-			}
-
-			ancestor = ancestor.substring(0, dirSeparatorIndex);
-		}
+		_addedPaths.add(resource);
 	}
 
 	public boolean exists(final String resource) {
@@ -87,6 +77,11 @@ public class VirtualFS {
 		while (true) {
 			if (_deletedPaths.contains(ancestor)) {
 				return false;
+			}
+			if (_addedPaths.contains(ancestor)) {
+				// There is no evidence that the added parent might not provide the resource in
+				// question.
+				return true;
 			}
 
 			int dirSeparatorIndex = ancestor.lastIndexOf('/');

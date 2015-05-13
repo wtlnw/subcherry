@@ -26,8 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.tmatesoft.svn.core.SVNLogEntry;
-
+import com.subcherry.repository.core.LogEntry;
 import com.subcherry.history.Node.Kind;
 import com.subcherry.utils.Utils;
 
@@ -98,7 +97,7 @@ public class DependencyBuilder {
 		_modules = modules;
 	}
 
-	public void analyzeConflicts(History history, List<SVNLogEntry> mergeLog) {
+	public void analyzeConflicts(History history, List<LogEntry> mergeLog) {
 		history.expandContents(_sourceBranch);
 		history.expandContents(_targetBranch);
 
@@ -116,7 +115,7 @@ public class DependencyBuilder {
 		}
 
 		Map<Long, Change> mergedChanges = new HashMap<>();
-		for (SVNLogEntry logEntry : mergeLog) {
+		for (LogEntry logEntry : mergeLog) {
 			Change change = history.getChange(logEntry.getRevision());
 			mergedChanges.put(change.getRevision(), change);
 

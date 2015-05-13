@@ -115,6 +115,32 @@ public class TestMerge extends TestCase {
 		super.tearDown();
 	}
 
+	public void testConflictDetection() throws IOException, RepositoryException {
+		Scenario s = moduleScenario();
+		s.file("/branches/branch1/module1/foo");
+		s.file("/branches/branch1/module1/bar");
+
+		s.copy("/branches/branch2", "/branches/branch1");
+
+		WC wc1 = s.wc("branches/branch1");
+		wc1.update("module1/foo");
+		wc1.update("module1/bar");
+		long r1 = wc1.commit();
+
+		WC wc2 = s.wc("branches/branch2");
+		wc2.update("module1/foo");
+		wc2.commit();
+
+		MergeOperation merge = createMerge(s, wc2, s.log(r1));
+		Map<File, List<ConflictDescription>> conflicts = tryMerge(s, merge);
+		List<ConflictDescription> conflictsFoo = conflicts.get(wc2.toFile("module1/foo"));
+		assertNotNull(conflictsFoo);
+		assertEquals(1, conflictsFoo.size());
+
+		List<ConflictDescription> conflictsBar = conflicts.get(wc2.toFile("module1/bar"));
+		assertNull(conflictsBar);
+	}
+
 	public void testMergeInfo() throws IOException, RepositoryException {
 		Scenario s = moduleScenario();
 

@@ -4,6 +4,21 @@
 #
 autoCommit: true;
 
+# Merge intra-branch moves and copies as intra-branch moves and copies (instead of as cross-branch copies and deletes).
+semanticMoves: true
+
+# By default SVN merge info is considered when selecting change sets to merge. This can be turned off to gain performance, when no duplicate merges can occur (e.g. it's the first merge to/from a certain branch).
+ignoreMergeInfo: false
+
+# Before merge revisions to merge are checked for their conflict potential. A revision has a conflict potential, if it touches a resource that has been touched by another revision before, but this other revision is not yet ported to the target branch. This extra check can be turned off to gain performance.
+skipDependencies: false
+
+# To filter irrelevant dependency warnings, commits from tickets with certain milestones can be excluded. The value is a regular expression matching the ticket milestone to exclude.
+#dependencyReport.excludeTicketMilestone = ^V_1.0|^V_0.5
+
+# To filter irrelevant dependency warnings, potential conflicts on certain files can be excluded. The value is a regular expression matching the file path.
+#dependencyReport.excludePath = /WEB-INF/conf/|.*\.jsp
+
 # the first revision to patch
 startRevision: 1
 

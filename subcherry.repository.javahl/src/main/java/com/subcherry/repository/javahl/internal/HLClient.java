@@ -21,6 +21,7 @@ import static com.subcherry.repository.javahl.internal.Conversions.*;
 
 import java.io.File;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -86,6 +87,8 @@ public class HLClient extends DefaultClient {
 
 	private HLClientManager _clientManager;
 
+	private Collection<HLConflictListener> _listeners = new ArrayList<HLConflictListener>();
+
 	public HLClient(HLClientManager clientManager, LoginCredential credentials) {
 		_clientManager = clientManager;
 		_client = new SVNClient();
@@ -134,6 +137,10 @@ public class HLClient extends DefaultClient {
 			}
 
 			private ConflictResult postPone(ConflictDescriptor descriptor) {
+				for (HLConflictListener listener : _listeners) {
+					listener.conflictDetected(descriptor);
+				}
+
 				return new ConflictResult(Choice.postpone,
 						descriptor.getMergedPath());
 			}
@@ -506,6 +513,14 @@ public class HLClient extends DefaultClient {
 		} catch (SubversionException ex) {
 			throw wrap(ex);
 		}
+	}
+
+	public void addConflictListener(HLConflictListener listener) {
+		_listeners.add(listener);
+	}
+
+	public void removeConflictListener(HLConflictListener listener) {
+		_listeners.remove(listener);
 	}
 
 }

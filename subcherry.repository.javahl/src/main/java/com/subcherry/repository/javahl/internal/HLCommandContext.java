@@ -17,21 +17,40 @@
  */
 package com.subcherry.repository.javahl.internal;
 
+import static com.subcherry.repository.javahl.internal.Conversions.*;
+
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.subversion.javahl.ConflictDescriptor;
+
 import com.subcherry.repository.command.merge.CommandContext;
 import com.subcherry.repository.command.merge.ConflictDescription;
 
-class HLCommandContext implements CommandContext {
+class HLCommandContext implements CommandContext, HLConflictListener {
 
 	private Map<File, List<ConflictDescription>> _conflicts = new HashMap<File, List<ConflictDescription>>();
 
 	@Override
 	public Map<File, List<ConflictDescription>> getConflicts() {
 		return _conflicts;
+	}
+
+	@Override
+	public void conflictDetected(ConflictDescriptor descriptor) {
+		addConflict(wrapFile(descriptor.getPath()), wrap(descriptor));
+	}
+
+	private void addConflict(File file, ConflictDescription description) {
+		List<ConflictDescription> descriptions = _conflicts.get(file);
+		if (descriptions == null) {
+			descriptions = new ArrayList<ConflictDescription>();
+			_conflicts.put(file, descriptions);
+		}
+		descriptions.add(description);
 	}
 	
 }

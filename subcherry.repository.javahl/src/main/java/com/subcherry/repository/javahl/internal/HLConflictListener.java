@@ -15,11 +15,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.subcherry.repository.command.merge;
+package com.subcherry.repository.javahl.internal;
 
-public enum ConflictReason {
-	MISSING,
-	OBSTRUCTED,
-	EDITED
+import org.apache.subversion.javahl.ConflictDescriptor;
+
+public interface HLConflictListener {
+
+	void conflictDetected(ConflictDescriptor descriptor);
 
 }

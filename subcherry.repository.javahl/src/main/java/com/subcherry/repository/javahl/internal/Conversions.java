@@ -32,6 +32,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.subversion.javahl.ClientException;
+import org.apache.subversion.javahl.ConflictDescriptor;
+import org.apache.subversion.javahl.ConflictDescriptor.Reason;
 import org.apache.subversion.javahl.ConflictResult.Choice;
 import org.apache.subversion.javahl.SubversionException;
 import org.apache.subversion.javahl.callback.LogMessageCallback;
@@ -41,7 +43,12 @@ import org.apache.subversion.javahl.types.LogDate;
 
 import com.subcherry.repository.command.copy.CopySource;
 import com.subcherry.repository.command.log.LogEntryHandler;
+import com.subcherry.repository.command.merge.ConflictAction;
 import com.subcherry.repository.command.merge.ConflictDescription;
+import com.subcherry.repository.command.merge.ConflictReason;
+import com.subcherry.repository.command.merge.PropertyConflict;
+import com.subcherry.repository.command.merge.TextConflict;
+import com.subcherry.repository.command.merge.TreeConflictDescription;
 import com.subcherry.repository.command.status.Status;
 import com.subcherry.repository.core.BinaryValue;
 import com.subcherry.repository.core.ChangeType;
@@ -480,6 +487,52 @@ public class Conversions {
 			return Choice.postpone;
 		}
 		throw unsupported("No such resolution: " + resolution);
+	}
+
+	public static ConflictDescription wrap(ConflictDescriptor descriptor) {
+		switch (descriptor.getKind()) {
+		case property:
+			return new PropertyConflict();
+		case text:
+			return new TextConflict();
+		case tree:
+			return new TreeConflictDescription(wrap(descriptor.getAction()),
+					wrap(descriptor.getReason()));
+		}
+		throw unsupported("No such conflict kind: " + descriptor.getKind());
+	}
+
+	private static ConflictReason wrap(Reason reason) {
+		switch (reason) {
+		case added:
+			return ConflictReason.OBSTRUCTED;
+		case deleted:
+			return ConflictReason.MISSING;
+		case edited:
+			return ConflictReason.EDITED;
+		case missing:
+			return ConflictReason.MISSING;
+		case moved_away:
+			return ConflictReason.MISSING;
+		case moved_here:
+			return ConflictReason.OBSTRUCTED;
+		}
+		throw unsupported("No such reason: " + reason);
+	}
+
+	private static ConflictAction wrap(
+			org.apache.subversion.javahl.ConflictDescriptor.Action action) {
+		switch (action) {
+		case add:
+			return ConflictAction.ADDED;
+		case delete:
+			return ConflictAction.DELETED;
+		case edit:
+			return ConflictAction.EDITED;
+		case replace:
+			return ConflictAction.ADDED;
+		}
+		throw unsupported("No such action: " + action);
 	}
 
 }

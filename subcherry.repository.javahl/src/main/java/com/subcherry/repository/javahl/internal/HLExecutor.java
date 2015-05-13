@@ -54,10 +54,16 @@ class HLExecutor extends CommandExecutor implements CommandVisitor<Void, HLComma
 
 	@Override
 	public void execute(CommandContext context, Command command) throws RepositoryException {
+		HLCommandContext hlContext = (HLCommandContext) context;
+		HLClient client = client(command);
+
+		client.addConflictListener(hlContext);
 		try {
-			command.visit(this, (HLCommandContext) context);
+			command.visit(this, hlContext);
 		} catch (RepositoryRuntimeException ex) {
 			throw ex.getCause();
+		} finally {
+			client.removeConflictListener(hlContext);
 		}
 	}
 

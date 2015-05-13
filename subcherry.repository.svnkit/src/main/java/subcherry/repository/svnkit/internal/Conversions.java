@@ -219,6 +219,8 @@ public class Conversions {
 				return SVNConflictReason.MISSING;
 			case OBSTRUCTED:
 				return SVNConflictReason.OBSTRUCTED;
+			case EDITED:
+				return SVNConflictReason.EDITED;
 		}
 		throw new UnsupportedOperationException("No such reason: " + value);
 	}
@@ -394,8 +396,13 @@ public class Conversions {
 
 	private static Map<SVNConflictReason, ConflictReason> reasons() {
 		HashMap<SVNConflictReason, ConflictReason> result = new HashMap<>();
+		result.put(SVNConflictReason.EDITED, ConflictReason.EDITED);
 		result.put(SVNConflictReason.MISSING, ConflictReason.MISSING);
 		result.put(SVNConflictReason.OBSTRUCTED, ConflictReason.OBSTRUCTED);
+		result.put(SVNConflictReason.ADDED, ConflictReason.OBSTRUCTED);
+		result.put(SVNConflictReason.DELETED, ConflictReason.MISSING);
+		result.put(SVNConflictReason.REPLACED, ConflictReason.OBSTRUCTED);
+		result.put(SVNConflictReason.UNVERSIONED, ConflictReason.OBSTRUCTED);
 		return result;
 	}
 

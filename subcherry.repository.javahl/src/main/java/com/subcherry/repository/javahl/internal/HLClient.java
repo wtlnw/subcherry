@@ -1,5 +1,5 @@
 /*
- * TimeCollect records time you spent on your development work.
+ * SubCherry - Cherry Picking with Trac and Subversion
  * Copyright (C) 2015 Bernhard Haumacher and others
  *
  * This program is free software: you can redistribute it and/or modify
@@ -467,6 +467,7 @@ public class HLClient extends DefaultClient {
 		}
 	}
 
+	@Override
 	public MergeInfo getMergeInfo(Target target) throws RepositoryException {
 		try {
 			return wrap(_client.getMergeinfo(unwrap(target), unwrap(target.getPegRevision())));
@@ -500,6 +501,7 @@ public class HLClient extends DefaultClient {
 		}
 	}
 
+	@Override
 	public void resolve(File target, Depth depth, Resolution resolution)
 			throws RepositoryException {
 		if (!target.exists()) {

@@ -1,6 +1,6 @@
 /*
  * SubCherry - Cherry Picking with Trac and Subversion
- * Copyright (C) 2014 Bernhard Haumacher and others
+ * Copyright (C) 2015 Bernhard Haumacher and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

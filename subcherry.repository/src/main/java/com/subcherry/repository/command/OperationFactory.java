@@ -1,5 +1,5 @@
 /*
- * TimeCollect records time you spent on your development work.
+ * SubCherry - Cherry Picking with Trac and Subversion
  * Copyright (C) 2015 Bernhard Haumacher and others
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,8 +19,8 @@ package com.subcherry.repository.command;
 
 import com.subcherry.repository.command.copy.Copy;
 import com.subcherry.repository.command.merge.CommandExecutor;
-import com.subcherry.repository.command.merge.ScheduledTreeConflict;
 import com.subcherry.repository.command.merge.Merge;
+import com.subcherry.repository.command.merge.ScheduledTreeConflict;
 import com.subcherry.repository.command.wc.LocalDelete;
 import com.subcherry.repository.command.wc.LocalMkDir;
 

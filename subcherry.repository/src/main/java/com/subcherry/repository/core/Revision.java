@@ -47,7 +47,7 @@ public class Revision {
 	public static final Revision UNDEFINED = new Revision(Kind.UNDEFINED, Long.MIN_VALUE);
 
 	public static Revision create(long commitNumber) {
-		assert commitNumber > 0;
+		assert commitNumber >= 0 : "Commit number must be non-negative: " + commitNumber;
 		return new Revision(Kind.COMMIT, commitNumber);
 	}
 

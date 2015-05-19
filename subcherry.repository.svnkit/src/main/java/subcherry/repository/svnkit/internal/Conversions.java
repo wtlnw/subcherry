@@ -567,6 +567,9 @@ public class Conversions {
 	}
 
 	protected static List<RevisionRange> wrapRanges(SVNMergeRangeList svnMergeRangeList) {
+		if (svnMergeRangeList == null) {
+			return null;
+		}
 		ArrayList<RevisionRange> result = new ArrayList<>(svnMergeRangeList.getSize());
 		for (SVNMergeRange range : svnMergeRangeList.getRanges()) {
 			result.add(wrap(range));

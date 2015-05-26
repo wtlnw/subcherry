@@ -129,7 +129,7 @@ public class MergeHandler extends Handler<MergeConfig> {
 		}
 		
 		if (includePaths == null) {
-			boolean hasMoves = _config.getSemanticMoves() && handleCopies(logEntry);
+			boolean hasMoves = _config.getSemanticMoves() && (!_config.getRevert()) && handleCopies(logEntry);
 			if (hasMoves) {
 				addRecordOnly(logEntry, new CompleteModuleChangeSetBuilder());
 			} else {

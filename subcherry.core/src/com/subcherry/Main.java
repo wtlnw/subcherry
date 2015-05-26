@@ -212,7 +212,7 @@ public class Main {
 			analyzeDependencies(historyBuilder, sourceBranch, targetBranch, trac, mergedLogEntries);
 		}
 
-		if (!config().getIgnoreMergeInfo()) {
+		if (!config().getRevert() && !config().getIgnoreMergeInfo()) {
 			Log.info("Analyzing merge info.");
 
 			Map<String, MergeInfo> moduleMergeInfos = new HashMap<>();
@@ -288,7 +288,7 @@ public class Main {
 		}
 
 		List<CommitSet> commitSets = getCommitSets(commitHandler, mergedLogEntries);
-		if (config().getReorderCommits()) {
+		if (config().getReorderCommits() && !config().getRevert()) {
 			reorderCommits(commitSets);
 		}
 		for (CommitSet commitSet : commitSets) {

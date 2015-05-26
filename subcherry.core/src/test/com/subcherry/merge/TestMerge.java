@@ -399,6 +399,45 @@ public class TestMerge extends TestCase {
 		assertCopyFrom(mergedEntry, "/branches/branch2/module2/bar", "/branches/branch2/module1/bar");
 	}
 
+	public void testCyclicRename() throws IOException, RepositoryException {
+		Scenario s = moduleScenario();
+
+		// Create scenario base.
+		WC wc1 = s.wc("/branches/branch1");
+		wc1.mkdir("module1/folder");
+		wc1.file("module1/folder/foo");
+		wc1.file("module1/folder/bar");
+		wc1.file("module1/folder/zzz");
+		wc1.commit();
+
+		// Create target branch.
+		s.copy("/branches/branch2", "/branches/branch1");
+
+		// Create cyclic rename.
+		wc1.copy("module1/folder/tmp", "module1/folder/foo", Revision.WORKING);
+		wc1.delete("module1/folder/foo");
+		wc1.copy("module1/folder/foo", "module1/folder/bar", Revision.WORKING);
+		wc1.delete("module1/folder/bar");
+		wc1.copy("module1/folder/bar", "module1/folder/zzz", Revision.WORKING);
+		wc1.delete("module1/folder/zzz");
+		wc1.copy("module1/folder/zzz", "module1/folder/tmp", Revision.WORKING);
+		wc1.delete("module1/folder/tmp");
+		long origRevision = wc1.commit();
+
+		LogEntry mergedEntry = doMerge(s, origRevision);
+
+		assertType(mergedEntry, ChangeType.REPLACED, "/branches/branch2/module1/folder/foo");
+		assertType(mergedEntry, ChangeType.REPLACED, "/branches/branch2/module1/folder/bar");
+		assertType(mergedEntry, ChangeType.REPLACED, "/branches/branch2/module1/folder/zzz");
+
+		assertCopyFrom(mergedEntry, "/branches/branch2/module1/folder/bar",
+			"/branches/branch2/module1/folder/foo");
+		assertCopyFrom(mergedEntry, "/branches/branch2/module1/folder/zzz",
+			"/branches/branch2/module1/folder/bar");
+		assertCopyFrom(mergedEntry, "/branches/branch2/module1/folder/foo",
+			"/branches/branch2/module1/folder/zzz");
+	}
+
 	public void testMoveInRenamedFolder() throws IOException, RepositoryException {
 		Scenario s = moduleScenario();
 

@@ -20,6 +20,7 @@ package test.com.subcherry.scenario;
 import java.io.IOException;
 
 import com.subcherry.repository.core.RepositoryException;
+import com.subcherry.repository.core.Revision;
 
 public abstract class FileSystem {
 
@@ -63,10 +64,27 @@ public abstract class FileSystem {
 	 *        Path of the new copy.
 	 * @param fromPath
 	 *        Path of the resource to copy.
+	 * @param commit
+	 *        The revision number of the source resource to copy
+	 * @return The commit number of the operation, if the {@link FileSystem} is version-controlled
+	 *         or <tt>-1</tt> if not.
+	 */
+	public final long copy(String toPath, String fromPath, long commit) throws RepositoryException {
+		return copy(toPath, fromPath, Revision.create(commit));
+	}
+
+	/**
+	 * Creates a copy of the resource found under <tt>fromPath</tt> in the given revision at
+	 * <tt>toPath</tt>.
+	 * 
+	 * @param toPath
+	 *        Path of the new copy.
+	 * @param fromPath
+	 *        Path of the resource to copy.
 	 * @param revision
 	 *        The revision of the source resource to copy
 	 * @return The commit number of the operation, if the {@link FileSystem} is version-controlled
 	 *         or <tt>-1</tt> if not.
 	 */
-	public abstract long copy(String toPath, String fromPath, long revision) throws RepositoryException;
+	public abstract long copy(String toPath, String fromPath, Revision revision) throws RepositoryException;
 }

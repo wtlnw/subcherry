@@ -102,7 +102,7 @@ class HLExecutor extends CommandExecutor implements CommandVisitor<Void, HLComma
 
 		List<RevisionRange> revisions = Collections.singletonList(unwrap(command.getRevisionRange()));
 		String localPath = unwrap(unwrapFile(command.getTarget()));
-        boolean force = false;
+		boolean force = true;
         Depth depth = unwrap(command.getDepth());
         boolean ignoreAncestry = command.getIgnoreAnchestry();
         boolean dryRun = false; 
@@ -125,7 +125,7 @@ class HLExecutor extends CommandExecutor implements CommandVisitor<Void, HLComma
 				list(new TreeConflictDescription(ConflictAction.DELETED, ConflictReason.MISSING)));
 		} else {
 			Set<String> path = Collections.singleton(unwrap(target));
-			boolean force = false;
+			boolean force = true;
 			boolean keepLocal = false;
 			Map<String, String> revpropTable = null;
 			CommitMessageCallback handler = null;

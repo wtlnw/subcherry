@@ -139,7 +139,7 @@ public class WC extends FileSystem {
 	}
 
 	public void delete(String path) throws RepositoryException {
-		wcClient().delete(toFile(path), false, true, false);
+		wcClient().delete(toFile(path), true, true, false);
 	}
 
 	private Client wcClient() {

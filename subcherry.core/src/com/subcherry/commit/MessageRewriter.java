@@ -94,7 +94,7 @@ public class MessageRewriter {
 			if (!shouldRevert(oldMessage.ticketNumber) && !shouldReintegrate(oldMessage.ticketNumber)) {
 				addPort(oldMessage, newMesssage);
 			}
-			if (shouldReintegrate(oldMessage.ticketNumber) && !Utils.mergeToTrunk(_config)) {
+			if ((shouldRevert(oldMessage.ticketNumber) || shouldReintegrate(oldMessage.ticketNumber)) && !Utils.mergeToTrunk(_config)) {
 				addBranchChange(newMesssage);
 			}
 		}

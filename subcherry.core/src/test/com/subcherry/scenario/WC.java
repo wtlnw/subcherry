@@ -101,16 +101,12 @@ public class WC extends FileSystem {
 
 	@Override
 	public long copy(String toPath, String fromPath) throws RepositoryException {
-		return internalCopy(toPath, fromPath, Revision.BASE);
+		return copy(toPath, fromPath, Revision.BASE);
 	}
 
 	@Override
-	public long copy(String toPath, String fromPath, long revision) throws RepositoryException {
-		return internalCopy(toPath, fromPath, Revision.create(revision));
-	}
-
-	private long internalCopy(String toPath, String fromPath, Revision rev) throws RepositoryException {
-		CopySource[] sources = { CopySource.create(Revision.BASE, rev, toFile(fromPath)) };
+	public long copy(String toPath, String fromPath, Revision rev) throws RepositoryException {
+		CopySource[] sources = { CopySource.create(rev, rev, toFile(fromPath)) };
 		File dst = toFile(toPath);
 		clientManager().getClient().copy(sources, dst, false, false, true);
 		return -1;
@@ -143,7 +139,7 @@ public class WC extends FileSystem {
 	}
 
 	public void delete(String path) throws RepositoryException {
-		wcClient().delete(toFile(path), false, true, false);
+		wcClient().delete(toFile(path), true, true, false);
 	}
 
 	private Client wcClient() {

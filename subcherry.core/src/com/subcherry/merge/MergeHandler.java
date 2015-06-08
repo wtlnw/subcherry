@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -35,6 +36,7 @@ import com.subcherry.MergeConfig;
 import com.subcherry.repository.command.Client;
 import com.subcherry.repository.command.ClientManager;
 import com.subcherry.repository.command.Command;
+import com.subcherry.repository.command.CommandVisitor;
 import com.subcherry.repository.command.OperationFactory;
 import com.subcherry.repository.command.copy.Copy;
 import com.subcherry.repository.command.copy.CopySource;
@@ -56,6 +58,7 @@ import com.subcherry.repository.core.RepositoryURL;
 import com.subcherry.repository.core.Revision;
 import com.subcherry.repository.core.RevisionRange;
 import com.subcherry.repository.core.Target;
+import com.subcherry.repository.core.Target.FileTarget;
 import com.subcherry.util.VirtualFS;
 import com.subcherry.utils.Log;
 import com.subcherry.utils.Path;
@@ -116,6 +119,7 @@ public class MergeHandler extends Handler<MergeConfig> {
 		_additionalRevisions.clear();
 
 		buildOperations(logEntry);
+		resolveOperationDependencies();
 		return new MergeOperation(logEntry.getRevision(), _operations, _touchedResources);
 	}
 
@@ -129,7 +133,7 @@ public class MergeHandler extends Handler<MergeConfig> {
 		}
 		
 		if (includePaths == null) {
-			boolean hasMoves = _config.getSemanticMoves() && handleCopies(logEntry);
+			boolean hasMoves = _config.getSemanticMoves() && (!_config.getRevert()) && handleCopies(logEntry);
 			if (hasMoves) {
 				addRecordOnly(logEntry, new CompleteModuleChangeSetBuilder());
 			} else {
@@ -275,7 +279,7 @@ public class MergeHandler extends Handler<MergeConfig> {
 					}
 
 					hasMoves = true;
-					Target svnTarget = Target.fromFile(targetFile);
+					Target svnTarget = Target.fromFile(targetFile, Revision.WORKING);
 
 					boolean removeBeforeMerge;
 					if (target.getType() == ChangeType.REPLACED) {
@@ -301,7 +305,7 @@ public class MergeHandler extends Handler<MergeConfig> {
 								CopySource.create(Target.fromURL(srcUrl, copiedSvnRevision), copiedSvnRevision);
 						} else {
 							copySource =
-								CopySource.create(Target.fromFile(srcFile, Revision.BASE), Revision.BASE);
+								CopySource.create(Target.fromFile(srcFile, Revision.WORKING), Revision.WORKING);
 						}
 
 						Copy copy = operations().createCopy();
@@ -798,6 +802,212 @@ public class MergeHandler extends Handler<MergeConfig> {
 		LocalDelete remove = operations().createLocalFileDelete();
 		remove.setTarget(Target.fromFile(targetFile));
 		return remove;
+	}
+
+	private void resolveOperationDependencies() {
+		List<Command> originalOperations = _operations;
+
+		DelayDeletes delayDeletes = new DelayDeletes();
+		for (Command command : originalOperations) {
+			command.visit(delayDeletes, null);
+		}
+		List<Command> delayedDeletes = delayDeletes.getResult();
+
+		Collections.reverse(delayedDeletes);
+		InsertBackup insertBackup = new InsertBackup();
+		for (Command command : delayedDeletes) {
+			command.visit(insertBackup, null);
+		}
+
+		_operations = insertBackup.getResult();
+	}
+
+	abstract class CommandAnalyzer implements CommandVisitor<Void, Void> {
+
+		protected abstract void createDependency(File newFile, Command command);
+
+		protected abstract void copyDependency(File sourceFile, File destinationFile, Copy command);
+
+		protected abstract void deleteDependency(File oldFile, LocalDelete command);
+
+		protected abstract void modifyDependency(File file, Command command);
+
+		@Override
+		public Void visitCopy(Copy command, Void arg) {
+			Target destination = command.getTarget();
+
+			Target source = command.getCopySource().getTarget();
+			boolean local = source instanceof FileTarget;
+
+			if (local) {
+				copyDependency(file(source), file(destination), command);
+			} else {
+				createDependency(file(destination), command);
+			}
+
+			return null;
+		}
+
+		@Override
+		public Void visitMerge(Merge command, Void arg) {
+			modifyDependency(file(command.getTarget()), command);
+			return null;
+		}
+
+		@Override
+		public Void visitLocalDelete(LocalDelete command, Void arg) {
+			deleteDependency(file(command.getTarget()), command);
+			return null;
+		}
+
+		@Override
+		public Void visitLocalMkDir(LocalMkDir command, Void arg) {
+			createDependency(file(command.getTarget()), command);
+			return null;
+		}
+
+		@Override
+		public Void visitScheduledTreeConflict(ScheduledTreeConflict command, Void arg) {
+			modifyDependency(file(command.getTarget()), command);
+			return null;
+		}
+
+		private File file(Target target) {
+			return ((FileTarget) target).getFile();
+		}
+	}
+
+	abstract class CommandRewriter extends CommandAnalyzer {
+
+		private List<Command> _result = new ArrayList<>();
+
+		protected void add(Command command) {
+			_result.add(command);
+		}
+
+		public List<Command> getResult() {
+			return _result;
+		}
+
+	}
+
+	/**
+	 * {@link CommandRewriter} that delays deletes until the deleted path is created again, or until
+	 * the very end of the operations.
+	 */
+	final class DelayDeletes extends CommandRewriter {
+		private Map<File, Command> _deletes = new LinkedHashMap<>();
+
+		@Override
+		protected void createDependency(File newFile, Command command) {
+			addDelete(newFile);
+			add(command);
+		}
+
+		@Override
+		protected void copyDependency(File sourceFile, File destinationFile, Copy command) {
+			addDelete(destinationFile);
+			add(command);
+		}
+
+		@Override
+		protected void deleteDependency(File oldFile, LocalDelete command) {
+			_deletes.put(oldFile, command);
+		}
+
+		@Override
+		protected void modifyDependency(File file, Command command) {
+			addDelete(file);
+			add(command);
+		}
+
+		private void addDelete(File file) {
+			Command delete = _deletes.remove(file);
+			if (delete != null) {
+				add(delete);
+			}
+		}
+
+		@Override
+		public List<Command> getResult() {
+			List<Command> result = super.getResult();
+			result.addAll(_deletes.values());
+			_deletes.clear();
+			return result;
+		}
+
+	}
+
+	class InsertBackup extends CommandRewriter {
+
+		private Map<File, List<Copy>> _dependencies = new HashMap<>();
+
+		private List<Command> _cleanup = new ArrayList<>();
+
+		@Override
+		protected void createDependency(File newFile, Command command) {
+			add(command);
+		}
+
+		@Override
+		protected void copyDependency(File sourceFile, File destinationFile, Copy command) {
+			List<Copy> copies = _dependencies.get(sourceFile);
+			if (copies == null) {
+				copies = new ArrayList<>();
+				_dependencies.put(sourceFile, copies);
+			}
+			copies.add(command);
+			add(command);
+		}
+
+		@Override
+		protected void deleteDependency(File oldFile, LocalDelete command) {
+			add(command);
+
+			List<Copy> copies = _dependencies.remove(oldFile);
+			if (copies != null) {
+				// The deleted file is referenced later on in a copy. Therefore, a backup must be
+				// created.
+				Copy backup = operations().createCopy();
+				backup.setCopySource(CopySource.create(Target.fromFile(oldFile, Revision.WORKING), Revision.WORKING));
+				backup.setFailWhenDstExists(true);
+				backup.setMakeParents(false);
+				backup.setMove(false);
+
+				int id = 0;
+				File tmpFile;
+				do {
+					tmpFile = new File(oldFile.getParentFile(), oldFile.getName() + (id > 0 ? "." + id : "") + ".tmp");
+				} while (tmpFile.exists());
+
+				backup.setTarget(Target.fromFile(tmpFile));
+				add(backup);
+
+				// Rewrite copies to use backup.
+				for (Copy copy : copies) {
+					copy.setCopySource(CopySource.create(Target.fromFile(tmpFile, Revision.WORKING), Revision.WORKING));
+				}
+
+				LocalDelete cleanup = operations().createLocalFileDelete();
+				cleanup.setTarget(Target.fromFile(tmpFile, Revision.WORKING));
+				_cleanup.add(cleanup);
+			}
+		}
+
+		@Override
+		protected void modifyDependency(File file, Command command) {
+			add(command);
+		}
+
+		@Override
+		public List<Command> getResult() {
+			List<Command> result = super.getResult();
+			Collections.reverse(result);
+			result.addAll(_cleanup);
+			_cleanup.clear();
+			return result;
+		}
+
 	}
 
 	abstract class MergeBuilder {

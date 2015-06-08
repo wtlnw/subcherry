@@ -125,15 +125,11 @@ public class Scenario extends FileSystem {
 
 	@Override
 	public long copy(String toPath, String fromPath) throws RepositoryException {
-		return internalCopy(toPath, fromPath, Revision.HEAD);
+		return copy(toPath, fromPath, Revision.HEAD);
 	}
 
 	@Override
-	public long copy(String toPath, String fromPath, long revision) throws RepositoryException {
-		return internalCopy(toPath, fromPath, Revision.create(revision));
-	}
-
-	private long internalCopy(String toPath, String fromPath, Revision revision) throws RepositoryException {
+	public long copy(String toPath, String fromPath, Revision revision) throws RepositoryException {
 		RepositoryURL srcUrl = getRepositoryUrl().appendPath(fromPath);
 		CopySource source = CopySource.create(Revision.HEAD, revision, srcUrl);
 		CopySource[] sources = { source };

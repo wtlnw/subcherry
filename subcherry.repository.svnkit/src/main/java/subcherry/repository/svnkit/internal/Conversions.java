@@ -20,6 +20,7 @@ package subcherry.repository.svnkit.internal;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -98,6 +99,24 @@ import com.subcherry.repository.core.Target.FileTarget;
 import com.subcherry.repository.core.Target.UrlTarget;
 
 public class Conversions {
+
+	private static final class WrappingMergeInfo implements MergeInfo {
+		private final Map<SVNURL, SVNMergeRangeList> _info;
+
+		private WrappingMergeInfo(Map<SVNURL, SVNMergeRangeList> info) {
+			_info = info;
+		}
+
+		@Override
+		public List<RevisionRange> getRevisions(RepositoryURL path) {
+			return wrapRanges(_info.get(unwrap(path)));
+		}
+
+		@Override
+		public Set<RepositoryURL> getPaths() {
+			return wrapURLs(_info.keySet());
+		}
+	}
 
 	private static final Map<SVNConflictAction, ConflictAction> ACTIONS = actions();
 	private static final Map<SVNConflictReason, ConflictReason> REASONS = reasons();
@@ -544,18 +563,11 @@ public class Conversions {
 		};
 	}
 
-	public static MergeInfo wrapMergeInfo(final Map<SVNURL, SVNMergeRangeList> info) {
-		return new MergeInfo() {
-			@Override
-			public List<RevisionRange> getRevisions(RepositoryURL path) {
-				return wrapRanges(info.get(unwrap(path)));
-			}
-
-			@Override
-			public Set<RepositoryURL> getPaths() {
-				return wrapURLs(info.keySet());
-			}
-		};
+	public static MergeInfo wrapMergeInfo(Map<SVNURL, SVNMergeRangeList> info) {
+		if (info == null) {
+			info = Collections.emptyMap();
+		}
+		return new WrappingMergeInfo(info);
 	}
 
 	protected static Set<RepositoryURL> wrapURLs(Set<SVNURL> urls) {

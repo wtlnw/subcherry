@@ -18,9 +18,9 @@
 package com.subcherry.merge;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,9 +41,11 @@ public abstract class ResourceMapping {
 		private List<Replacer> _replacers = new ArrayList<>();
 
 		public RegexpResourceMapping(Map<String, String> patternReplacements) {
-			for (Entry<String, String> entry : patternReplacements.entrySet()) {
-				String key = stripPreceedingSlash(entry.getKey());
-				String value = stripPreceedingSlash(entry.getValue());
+			ArrayList<String> keys = new ArrayList<String>(patternReplacements.keySet());
+			Collections.sort(keys);
+			Collections.reverse(keys);
+			for (String key : keys) {
+				String value = stripPreceedingSlash(patternReplacements.get(key));
 
 				_replacers.add(new Replacer(Pattern.compile(key), value));
 			}

@@ -342,19 +342,35 @@ public class Conversions {
 
 	public static MergeInfo wrap(
 			final org.apache.subversion.javahl.types.Mergeinfo mergeinfo) {
-		return new MergeInfo() {
+		if (mergeinfo == null) {
+			return new MergeInfo() {
 
-			@Override
-			public Set<RepositoryURL> getPaths() {
-				return parseUrlSet(mergeinfo.getPaths());
-			}
+				@Override
+				public Set<RepositoryURL> getPaths() {
+					return Collections.emptySet();
+				}
 
-			@Override
-			public List<RevisionRange> getRevisions(RepositoryURL path) {
-				return wrapRanges(mergeinfo.getRevisions(path.toString()));
-			}
+				@Override
+				public List<RevisionRange> getRevisions(RepositoryURL path) {
+					return Collections.emptyList();
+				}
 
-		};
+			};
+		} else {
+			return new MergeInfo() {
+
+				@Override
+				public Set<RepositoryURL> getPaths() {
+					return parseUrlSet(mergeinfo.getPaths());
+				}
+
+				@Override
+				public List<RevisionRange> getRevisions(RepositoryURL path) {
+					return wrapRanges(mergeinfo.getRevisions(path.toString()));
+				}
+
+			};
+		}
 	}
 
 	public static Set<RepositoryURL> parseUrlSet(Set<String> paths) {

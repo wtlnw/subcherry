@@ -72,7 +72,7 @@ public class Commit {
 	}
 
 	public void join(Commit joinedCommit) {
-		setCommitMessage(getCommitMessage() + "\\n" + joinedCommit.getCommitMessage());
+		setCommitMessage(getCommitMessage() + "\n" + joinedCommit.getCommitMessage());
 		addTouchedResources(joinedCommit.getTouchedResources());
 	}
 

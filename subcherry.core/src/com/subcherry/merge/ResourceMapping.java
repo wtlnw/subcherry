@@ -57,14 +57,18 @@ public abstract class ResourceMapping {
 
 		@Override
 		public String map(String resource) {
+			final String origResource = resource;
 			for (int n = 0, cnt = _replacers.size(); n < cnt; n++) {
 				String replacement = _replacers.get(n).replace(resource);
 				if (replacement != null) {
-					return replacement;
+					resource = replacement;
 				}
 			}
 
-			return null;
+			if (origResource == resource) {
+				return null;
+			}
+			return resource;
 		}
 
 		private static final class Replacer {

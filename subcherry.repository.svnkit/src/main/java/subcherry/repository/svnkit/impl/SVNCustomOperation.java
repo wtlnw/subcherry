@@ -1,6 +1,6 @@
 /*
  * SubCherry - Cherry Picking with Trac and Subversion
- * Copyright (C) 2015 Bernhard Haumacher and others
+ * Copyright (C) 2014 Bernhard Haumacher and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -70,12 +70,17 @@ public abstract class SVNCustomOperation extends SvnOperation<Void> {
 			SVNConflictReason reason) throws SVNException {
 		SVNWCContext wcContext = getOperationFactory().getWcContext();
 
+		File rootFile;
+		if (reason == SVNConflictReason.MISSING) {
+			rootFile = file.getParentFile();
+		} else {
+			rootFile = file;
+		}
+
 		ISVNWCDb wcDb = wcContext.getDb();
 		SVNTreeConflictDescription treeConflict =
-				new SVNTreeConflictDescription(file, nodeKind, action,
-					reason, SVNOperation.MERGE,
-					null, null);
-		wcDb.opSetTreeConflict(file, treeConflict);
+			new SVNTreeConflictDescription(rootFile, nodeKind, action, reason, SVNOperation.MERGE, null, null);
+		wcDb.opSetTreeConflict(rootFile, treeConflict);
 
 		return SVNEventFactory.createSVNEvent(file, nodeKind, null, -1,
 			SVNEventAction.TREE_CONFLICT, SVNEventAction.TREE_CONFLICT, null, null);

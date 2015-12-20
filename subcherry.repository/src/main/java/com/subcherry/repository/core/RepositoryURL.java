@@ -40,7 +40,7 @@ public class RepositoryURL {
 	public static RepositoryURL parse(String url) {
 		URL parsed;
 		try {
-			parsed = new URL(url);
+			parsed = new URL(url.replace("#", "%23"));
 		} catch (MalformedURLException ex) {
 			throw new IllegalArgumentException(ex);
 		}

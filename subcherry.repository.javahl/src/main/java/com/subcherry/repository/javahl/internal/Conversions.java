@@ -532,6 +532,12 @@ public class Conversions {
 			return ConflictReason.MISSING;
 		case moved_here:
 			return ConflictReason.OBSTRUCTED;
+		case obstructed:
+			return ConflictReason.OBSTRUCTED;
+		case replaced:
+			return ConflictReason.MISSING;
+		case unversioned:
+			return ConflictReason.OBSTRUCTED;
 		}
 		throw unsupported("No such reason: " + reason);
 	}

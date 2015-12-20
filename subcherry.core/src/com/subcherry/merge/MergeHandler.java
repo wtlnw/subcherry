@@ -190,6 +190,11 @@ public class MergeHandler extends Handler<MergeConfig> {
 			if (!_modules.contains(target.getModule())) {
 				// The change happened in a module that is not among the merged modules, drop the
 				// change.
+				ScheduledTreeConflict conflict = operations().newScheduledTreeConflict();
+				conflict.setAction(toAction(target.getPathEntry().getType()));
+				conflict.setReason(ConflictReason.MISSING);
+				conflict.setTarget(Target.fromFile(new File(_config.getWorkspaceRoot(), target.getResource())));
+				addOperation(target.getResource(), conflict);
 				continue;
 			}
 
@@ -383,6 +388,20 @@ public class MergeHandler extends Handler<MergeConfig> {
 			_crossMergedDirectories.clear();
 		}
 		return hasMoves;
+	}
+
+	private ConflictAction toAction(ChangeType type) {
+		switch (type) {
+			case ADDED:
+				return ConflictAction.ADDED;
+			case DELETED:
+				return ConflictAction.DELETED;
+			case MODIFIED:
+				return ConflictAction.EDITED;
+			case REPLACED:
+				return ConflictAction.ADDED;
+		}
+		throw new IllegalArgumentException("No such type: " + type);
 	}
 
 	private Path mapPath(Path orig) {

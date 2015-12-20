@@ -337,6 +337,9 @@ public class MergeCommitHandler {
 					
 					commit.join(joinedCommit);
 					
+					// Do not directly commit, but ask again.
+					_stopOnRevisions.add(joinedCommit.getRevision());
+
 					merge(commit, joinedCommit.getLogEntry());
 					return InputResult.SKIP;
 				}

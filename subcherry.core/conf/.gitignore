@@ -1,6 +1,1 @@
-/configuration.properties
-/dependencyOptions.properties
-/loginCredentials.properties
-/logOptions.properties
-/svnConfig.properties
-/ticketConsistency.properties
+/*.properties

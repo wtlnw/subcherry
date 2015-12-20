@@ -17,14 +17,10 @@
  */
 package com.subcherry;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import de.haumacher.common.config.ObjectParser;
 import de.haumacher.common.config.Parser;
@@ -48,7 +44,7 @@ public class MappingParser extends ObjectParser<Map<String, String>> {
 
 	@Override
 	public Map<String, String> parse(String text) {
-		Map<String, String> result = new HashMap<>();
+		Map<String, String> result = new LinkedHashMap<>();
 		for (String entry : text.split("\\s*,\\s*")) {
 			String[] keyValue = entry.split("\\s*\\-\\>\\s*");
 			if (keyValue.length != 2) {
@@ -62,7 +58,7 @@ public class MappingParser extends ObjectParser<Map<String, String>> {
 	@Override
 	public String unparse(Map<String, String> value) {
 		StringBuilder buffer = new StringBuilder();
-		for (Entry<String, String> entry : sort(value.entrySet())) {
+		for (Entry<String, String> entry : value.entrySet()) {
 			if (buffer.length() > 0) {
 				buffer.append(", ");
 			}
@@ -71,17 +67,6 @@ public class MappingParser extends ObjectParser<Map<String, String>> {
 			buffer.append(entry.getValue());
 		}
 		return buffer.toString();
-	}
-
-	private List<Entry<String, String>> sort(Set<Entry<String, String>> set) {
-		ArrayList<Entry<String, String>> result = new ArrayList<>(set);
-		Collections.sort(result, new Comparator<Entry<String, String>>() {
-			@Override
-			public int compare(Entry<String, String> e1, Entry<String, String> e2) {
-				return e1.getKey().compareTo(e2.getKey());
-			}
-		});
-		return result;
 	}
 
 }

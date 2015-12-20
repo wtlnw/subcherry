@@ -52,7 +52,7 @@ public class MappingParser extends ObjectParser<Map<String, String>> {
 		for (String entry : text.split("\\s*,\\s*")) {
 			String[] keyValue = entry.split("\\s*\\-\\>\\s*");
 			if (keyValue.length != 2) {
-				throw new IllegalArgumentException("Invalid mapping specification: " + entry);
+				throw new IllegalArgumentException("Invalid mapping specification, missing '->': " + entry);
 			}
 			result.put(keyValue[0].trim(), keyValue[1].trim());
 		}

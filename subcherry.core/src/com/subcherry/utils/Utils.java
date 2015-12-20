@@ -24,16 +24,21 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.subcherry.Configuration;
+import com.subcherry.Globals;
 import com.subcherry.commit.MessageRewriter;
 
 /**
  * @version   $Revision$  $Author$  $Date$
  */
 public class Utils {
+
+	private static final Logger LOG = Globals.logger(Utils.class);
 
 	/**
 	 * {@link Exception} that is thrown when the commit message has illegal format.
@@ -75,33 +80,46 @@ public class Utils {
 		private final String _commitMessage;
 
 		private final long _leadRevision;
+
+		private boolean _hasMatch;
 		
 		public TicketMessage(String commitMessage) throws IllegalMessageFormat {
 			this(0, commitMessage, NO_REWRITE);
 		}
 
-		public TicketMessage(long originalRevision, String commitMessage, MessageRewriter messageRewriter)
-				throws IllegalMessageFormat {
+		public TicketMessage(long originalRevision, String commitMessage, MessageRewriter messageRewriter) {
 			_originalRevision = originalRevision;
 			_commitMessage = commitMessage;
 			_messageRewriter = messageRewriter;
 
 			matcher = TICKET_PATTERN.matcher(commitMessage);
-			if (!matcher.matches()) {
-				throw new IllegalMessageFormat("Message of [" + originalRevision + "] '" + commitMessage
-					+ "' has illegal format.");
+			_hasMatch = matcher.matches();
+			if (!_hasMatch) {
+				LOG.log(Level.WARNING,
+					"Unable to parse commit for revison '" + originalRevision + "':" + commitMessage);
+				ticketNumber = "0";
+				apiChange = null;
+				originalMessage = commitMessage;
+				_leadRevision = 0L;
+			} else {
+				ticketNumber = getTicketNumber(matcher);
+				apiChange = getApiChange(matcher);
+				originalMessage = getOriginalMessage(matcher);
+				_leadRevision = extractLeadRevision(matcher);
 			}
-			ticketNumber = getTicketNumber(matcher);
-			apiChange = getApiChange(matcher);
-			originalMessage = getOriginalMessage(matcher);
-			_leadRevision = extractLeadRevision(matcher);
 		}
 
 		public String getSourceBranch() {
+			if (!_hasMatch) {
+				return null;
+			}
 			return matcher.group(PORTED_FROM_GROUP);
 		}
 
 		public String getDestinationBranch() {
+			if (!_hasMatch) {
+				return null;
+			}
 			String toBranch = matcher.group(PORTED_TO_GROUP);
 			if (toBranch != null) {
 				return toBranch;
@@ -122,22 +140,37 @@ public class Utils {
 		}
 
 		public String getMergedRevision() {
+			if (!_hasMatch) {
+				return null;
+			}
 			return matcher.group(MERGED_REVISION_GROUP);
 		}
 		
 		public boolean isHotfix() {
+			if (!_hasMatch) {
+				return false;
+			}
 			return matcher.group(Utils.IS_HOTFIX_GROUP) != null;
 		}
 		
 		public boolean isPreview() {
+			if (!_hasMatch) {
+				return false;
+			}
 			return matcher.group(Utils.PREVIEW_BRANCH_GROUP) != null;
 		}
 		
 		public boolean isBranchChange() {
+			if (!_hasMatch) {
+				return false;
+			}
 			return matcher.group(Utils.ON_BRANCH_GROUP) != null;
 		}
 
 		public boolean isPort() {
+			if (!_hasMatch) {
+				return false;
+			}
 			return matcher.group(Utils.PORTED_FROM_GROUP) != null;
 		}
 

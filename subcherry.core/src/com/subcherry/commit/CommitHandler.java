@@ -17,11 +17,10 @@
  */
 package com.subcherry.commit;
 
-import com.subcherry.repository.core.LogEntry;
 import com.subcherry.CommitConfig;
 import com.subcherry.Configuration;
 import com.subcherry.merge.Handler;
-import com.subcherry.utils.Utils.IllegalMessageFormat;
+import com.subcherry.repository.core.LogEntry;
 import com.subcherry.utils.Utils.TicketMessage;
 
 /**
@@ -41,7 +40,7 @@ public class CommitHandler extends Handler<CommitConfig> {
 		_messageRewriter = messageRewriter;
 	}
 
-	public Commit parseCommit(LogEntry logEntry) throws IllegalMessageFormat {
+	public Commit parseCommit(LogEntry logEntry) {
 		TicketMessage ticketMessage = new TicketMessage(logEntry.getRevision(), logEntry.getMessage(), _messageRewriter);
 		return new Commit(_config, logEntry, ticketMessage);
 	}

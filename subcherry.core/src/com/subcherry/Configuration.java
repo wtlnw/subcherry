@@ -18,6 +18,7 @@
 package com.subcherry;
 
 import java.io.File;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import de.haumacher.common.config.ObjectParser;
@@ -97,9 +98,9 @@ public interface Configuration extends MergeConfig, CommitConfig, BranchConfig {
 
 	void setMilestones(String[] value);
 
-	Long[] getStopOnRevisions();
+	List<Long> getStopOnRevisions();
 
-	void setStopOnRevisions(Long[] value);
+	void setStopOnRevisions(List<Long> value);
 
 	String[] getAdditionalTickets();
 

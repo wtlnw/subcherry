@@ -19,7 +19,6 @@ package com.subcherry;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -45,6 +44,8 @@ import com.subcherry.repository.core.LogEntry;
 import com.subcherry.repository.core.RepositoryException;
 import com.subcherry.utils.Log;
 import com.subcherry.utils.Utils;
+
+import de.haumacher.common.config.Property;
 
 /**
  * @version $Revision$ $Author$ $Date$
@@ -87,7 +88,6 @@ public class MergeCommitHandler {
 	private final CommitContext _commitContext;
 
 	private final Client _client;
-	private final boolean _autoCommit;
 
 	private List<CommitSet> _commitSets;
 
@@ -99,8 +99,6 @@ public class MergeCommitHandler {
 	
 	private final UpdateableRevisionRewriter _revisionRewrite = new UpdateableRevisionRewriter();
 
-	private Set<Long> _stopOnRevisions;
-
 	private Configuration _config;
 
 	private ClientManager _clientManager;
@@ -110,13 +108,7 @@ public class MergeCommitHandler {
 		_clientManager = clientManager;
 		_config = config;
 		this._client = clientManager.getClient();
-		if (config.getNoCommit()) {
-			_commitContext = null;
-		} else {
-			_commitContext = new CommitContext(clientManager.getClient(), clientManager.getClient());
-		}
-		_autoCommit = config.getAutoCommit();
-		_stopOnRevisions = new HashSet<Long>(Arrays.asList(config.getStopOnRevisions()));
+		_commitContext = new CommitContext(clientManager.getClient(), clientManager.getClient());
 	}
 
 	public void run(List<CommitSet> commitSets) throws RepositoryException {
@@ -160,7 +152,7 @@ public class MergeCommitHandler {
 			return;
 		}
 		
-		boolean commitAproval = _autoCommit && !_stopOnRevisions.contains(merge.getRevision());
+		boolean commitAproval = _config.getAutoCommit() && !stopOn(merge.getRevision());
 		
 		System.out.println("Revision " + logEntry.getRevision() + " (" + _doneRevs + " of " + _totalRevs + "): "
 			+ encode(logEntry.getMessage()));
@@ -194,7 +186,7 @@ public class MergeCommitHandler {
 				commitAproval = true;
 			}
 
-			if (_commitContext == null) {
+			if (_config.getNoCommit()) {
 				Log.info("Revision '" + logEntry.getRevision() + "' applied but not committed.");
 			} else {
 				if (!commitAproval) {
@@ -242,6 +234,10 @@ public class MergeCommitHandler {
 		
 	}
 
+	private boolean stopOn(long revision) {
+		return _config.getStopOnRevisions().contains(revision);
+	}
+
 	private InputResult queryCommit(Commit commit, String continueCommand) throws RepositoryException {
 		String skipCommand = "skip";
 		String stopCommand = "stop";
@@ -252,6 +248,7 @@ public class MergeCommitHandler {
 		String commitCommand = "commit: ";
 		String joinCommand = "join: ";
 		String reloadCommand = "reload";
+		String setCommand = "set";
 		try {
 			while (true) {
 				System.out.println(commitCommand + encode(commit.getCommitMessage()));
@@ -264,6 +261,7 @@ public class MergeCommitHandler {
 				"'" + includeCommand + "<path to include>', to include a certain path from commit, " + 
 				"'" + skipCommand + "' to skip this revision or " + 
 				"'" + joinCommand + "<revision>' to join a following revision with the current commit, " + 
+				"'" + setCommand + ": property=value' updates the given configuration property to the given value, " + 
 				"'" + reloadCommand + "' to reload the current settings or " + 
 				"'" + stopCommand + "' to stop the tool!");
 				String input = Utils.SYSTEM_IN.readLine();
@@ -319,6 +317,34 @@ public class MergeCommitHandler {
 					Globals.reloadConfig();
 					continue;
 				}
+				if (input.startsWith(setCommand)) {
+					Pattern pattern = Pattern.compile(setCommand + "\\s+([a-zA-Z0-9_]+)\\s*=\\s*(.*)");
+					Matcher matcher = pattern.matcher(input);
+					if (matcher.matches()) {
+						String var = matcher.group(1);
+						String valueString = matcher.group(2);
+						Property property = _config.descriptor().getProperties().get(var);
+						if (property == null) {
+							System.err.println("No such configuration option: " + var);
+							continue;
+						}
+						Object value;
+						try {
+							value = property.getParser().parse(valueString);
+						} catch (RuntimeException ex) {
+							System.err.println("Parsing value failed: " + ex.getMessage());
+							continue;
+						}
+
+						try {
+							_config.putValue(property, value);
+						} catch (RuntimeException ex) {
+							System.err.println("Invalid value: " + ex.getMessage());
+							continue;
+						}
+						continue;
+					}
+				}
 				if (input.startsWith(joinCommand)) {
 					String revisionText = input.substring(joinCommand.length());
 					long joinedRevision;
@@ -338,7 +364,7 @@ public class MergeCommitHandler {
 					commit.join(joinedCommit);
 					
 					// Do not directly commit, but ask again.
-					_stopOnRevisions.add(joinedCommit.getRevision());
+					_config.getStopOnRevisions().add(joinedCommit.getRevision());
 
 					merge(commit, joinedCommit.getLogEntry());
 					return InputResult.SKIP;

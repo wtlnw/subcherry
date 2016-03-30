@@ -29,14 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import junit.extensions.TestSetup;
-import junit.framework.AssertionFailedError;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import test.com.subcherry.scenario.Scenario;
-import test.com.subcherry.scenario.WC;
-
 import com.subcherry.BranchConfig;
 import com.subcherry.CommitConfig;
 import com.subcherry.MergeCommitHandler;
@@ -68,6 +60,13 @@ import com.subcherry.repository.core.Target;
 import com.subcherry.utils.PathParser;
 
 import de.haumacher.common.config.ValueFactory;
+import junit.extensions.TestSetup;
+import junit.framework.AssertionFailedError;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+import test.com.subcherry.scenario.Scenario;
+import test.com.subcherry.scenario.WC;
 
 /**
  * Test case for {@link MergeHandler}.
@@ -397,6 +396,32 @@ public class TestMerge extends TestCase {
 		// Intra-branch copy has been created.
 		assertCopyFrom(mergedEntry, "/branches/branch2/module1/foo", "/branches/branch2/module2/foo");
 		assertCopyFrom(mergedEntry, "/branches/branch2/module2/bar", "/branches/branch2/module1/bar");
+	}
+
+	public void testModifyResourceCopiedFromModifiedSource() throws IOException, RepositoryException {
+		Scenario s = moduleScenario();
+
+		// Create scenario base.
+		WC wc1 = s.wc("/branches/branch1");
+		wc1.file("module1/A");
+		wc1.commit();
+
+		// Create target branch.
+		s.copy("/branches/branch2", "/branches/branch1");
+
+		// Create copy and modify both, source and target. The problem here is that the copy
+		// operation must be applied before applying any of the modifications. If operations are
+		// simply replayed in alphabetical order of the resources, the resulting merge fails.
+		wc1.copy("module1/B", "module1/A", Revision.WORKING);
+		wc1.update("module1/A");
+		wc1.update("module1/B");
+
+		long origRevision = wc1.commit();
+
+		LogEntry mergedEntry = doMerge(s, origRevision);
+
+		assertCopyFrom(mergedEntry, "/branches/branch2/module1/A",
+			"/branches/branch2/module1/B");
 	}
 
 	public void testCyclicRename() throws IOException, RepositoryException {

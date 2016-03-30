@@ -78,6 +78,10 @@ public class MergeHandler extends Handler<MergeConfig> {
 
 	private List<Command> _operations;
 
+	private List<Command> _operationsSetup;
+
+	private List<Command> _operationsCleanup;
+
 	private ClientManager _clientManager;
 
 	private Map<Revision, LogEntry> _additionalRevisions = new HashMap<>();
@@ -111,6 +115,8 @@ public class MergeHandler extends Handler<MergeConfig> {
 
 	public MergeOperation parseMerge(LogEntry logEntry) throws RepositoryException {
 		_operations = new ArrayList<>();
+		_operationsSetup = new ArrayList<>();
+		_operationsCleanup = new ArrayList<>();
 		_virtualFs.clear();
 		_crossMergedDirectories = new HashSet<>();
 		_touchedResources = new HashSet<>();
@@ -120,7 +126,11 @@ public class MergeHandler extends Handler<MergeConfig> {
 
 		buildOperations(logEntry);
 		resolveOperationDependencies();
-		return new MergeOperation(logEntry.getRevision(), _operations, _touchedResources);
+
+		_operationsSetup.addAll(_operations);
+		_operationsSetup.addAll(_operationsCleanup);
+
+		return new MergeOperation(logEntry.getRevision(), _operationsSetup, _touchedResources);
 	}
 
 	private void buildOperations(LogEntry logEntry) throws RepositoryException {
@@ -309,8 +319,40 @@ public class MergeHandler extends Handler<MergeConfig> {
 							copySource =
 								CopySource.create(Target.fromURL(srcUrl, copiedSvnRevision), copiedSvnRevision);
 						} else {
-							copySource =
+							CopySource origSrc =
 								CopySource.create(Target.fromFile(srcFile, Revision.WORKING), Revision.WORKING);
+
+							LogEntryPath srcChange = logEntry.getChangedPaths().get(srcPathMapped.getPath());
+							if (srcChange != null) {
+								// There is a change to the source resource of the copy within the
+								// same commit. Since the original copy was done from the original
+								// (unchanged version of the file), the source file has to be backed
+								// up before applying the regular merges. This allows to copy from
+								// the (backed up) working copy version of the source file without
+								// already copying the changes that are also applied to the source
+								// within the same commit.
+								File backupFile = backupFor(srcFile);
+								Target backupTarget = Target.fromFile(backupFile, Revision.WORKING);
+
+								Copy backup = operations().createCopy();
+								backup.setMakeParents(true);
+								backup.setFailWhenDstExists(true);
+								backup.setMove(false);
+								backup.setCopySource(origSrc);
+								backup.setTarget(backupTarget);
+
+								addOperationSetup(backup);
+
+								LocalDelete cleanup = operations().createLocalFileDelete();
+								cleanup.setTarget(backupTarget);
+
+								addOperationCleanup(cleanup);
+
+								copySource =
+									CopySource.create(Target.fromFile(backupFile, Revision.WORKING), Revision.WORKING);
+							} else {
+								copySource = origSrc;
+							}
 						}
 
 						Copy copy = operations().createCopy();
@@ -383,11 +425,17 @@ public class MergeHandler extends Handler<MergeConfig> {
 		if (!hasMoves) {
 			// Revert singleton merges.
 			_operations.clear();
+			_operationsSetup.clear();
+			_operationsCleanup.clear();
 			_touchedResources.clear();
 			_virtualFs.clear();
 			_crossMergedDirectories.clear();
 		}
 		return hasMoves;
+	}
+
+	protected File backupFor(File srcFile) {
+		return new File(srcFile.getParentFile(), srcFile.getName() + ".$$$");
 	}
 
 	private ConflictAction toAction(ChangeType type) {
@@ -707,6 +755,14 @@ public class MergeHandler extends Handler<MergeConfig> {
 				break;
 			}
 		}
+	}
+
+	private void addOperationSetup(Command operation) {
+		_operationsSetup.add(operation);
+	}
+
+	private void addOperationCleanup(Command operation) {
+		_operationsCleanup.add(operation);
 	}
 
 	private void addOperation(String targetResource, Command operation) {

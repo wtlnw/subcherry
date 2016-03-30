@@ -17,6 +17,11 @@
  */
 package com.subcherry;
 
+import java.awt.AWTException;
+import java.awt.Image;
+import java.awt.SystemTray;
+import java.awt.TrayIcon;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
@@ -27,6 +32,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.imageio.ImageIO;
 
 import com.subcherry.commit.Commit;
 import com.subcherry.commit.CommitContext;
@@ -51,6 +58,78 @@ import de.haumacher.common.config.Property;
  * @version $Revision$ $Author$ $Date$
  */
 public class MergeCommitHandler {
+
+	private interface SystemTrayIcon {
+
+		boolean isShown();
+
+		void show();
+
+		void hide();
+	}
+
+	public static abstract class AbstractSystemTrayIcon implements SystemTrayIcon {
+
+		public static final SystemTrayIcon NO_TRAY_ICON = new SystemTrayIcon() {
+
+			@Override
+			public void show() {
+				// nothing to show
+			}
+
+			@Override
+			public void hide() {
+				// nothing to hide
+			}
+
+			@Override
+			public boolean isShown() {
+				return false;
+			}
+		};
+
+		private final SystemTray _tray;
+
+		private final TrayIcon _trayIcon;
+
+		private boolean _shown;
+
+		AbstractSystemTrayIcon(SystemTray tray, Image image, String tooltip) {
+			_tray = tray;
+			_trayIcon = new TrayIcon(image, tooltip);
+		}
+
+		@Override
+		public void show() {
+			try {
+				_tray.add(_trayIcon);
+				_shown = true;
+			} catch (AWTException ex) {
+				// ignore
+			}
+		}
+
+		@Override
+		public void hide() {
+			_tray.remove(_trayIcon);
+			_shown = false;
+		}
+
+		@Override
+		public boolean isShown() {
+			return _shown;
+		}
+
+		public static SystemTrayIcon newIcon(Image image, String tooltip) {
+			if (SystemTray.isSupported()) {
+				return new AbstractSystemTrayIcon(SystemTray.getSystemTray(), image, tooltip) {
+				};
+			} else {
+				return AbstractSystemTrayIcon.NO_TRAY_ICON;
+			}
+		}
+
+	}
 
 	private enum InputResult {
 		SKIP,
@@ -103,12 +182,22 @@ public class MergeCommitHandler {
 
 	private ClientManager _clientManager;
 
+	private final SystemTrayIcon _mergeConflictIcon;
+
 	public MergeCommitHandler(MergeHandler mergeHandler, ClientManager clientManager, Configuration config) {
 		this._mergeHandler = mergeHandler;
 		_clientManager = clientManager;
 		_config = config;
 		this._client = clientManager.getClient();
 		_commitContext = new CommitContext(clientManager.getClient(), clientManager.getClient());
+		SystemTrayIcon mergeConflictIcon;
+		try {
+			BufferedImage image = ImageIO.read(MergeCommitHandler.class.getResource("warning.png"));
+			mergeConflictIcon = AbstractSystemTrayIcon.newIcon(image, "Merge has conflicts");
+		} catch (IOException ex) {
+			mergeConflictIcon = AbstractSystemTrayIcon.NO_TRAY_ICON;
+		}
+		_mergeConflictIcon = mergeConflictIcon;
 	}
 
 	public void run(List<CommitSet> commitSets) throws RepositoryException {
@@ -172,7 +261,18 @@ public class MergeCommitHandler {
 					System.out.println("Automatically skipping conflicts in [" + logEntry.getRevision() + "].");
 					return;
 				}
-				InputResult result = queryCommit(commit, "commit");
+				boolean mustDisplay = !_mergeConflictIcon.isShown();
+				if (mustDisplay) {
+					_mergeConflictIcon.show();
+				}
+				InputResult result;
+				try {
+					result = queryCommit(commit, "commit");
+				} finally {
+					if (mustDisplay) {
+						_mergeConflictIcon.hide();
+					}
+				}
 				switch (result) {
 					case SKIP:
 						return;

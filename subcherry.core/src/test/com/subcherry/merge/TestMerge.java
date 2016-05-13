@@ -143,26 +143,60 @@ public class TestMerge extends TestCase {
 	public void testMergeInfo() throws IOException, RepositoryException {
 		Scenario s = moduleScenario();
 
-		// Create branch2.
-		s.copy("/branches/branch2", "/branches/branch1");
+		s.copy("/branches/branch-intermediate", "/branches/branch1");
 
-		// Create change in original branch1.
+		// Create changes in original branch1.
 		WC wc1 = s.wc("/branches/branch1");
 		wc1.file("/module1/foo");
-		wc1.setProperty("/module1", "myproperty", "myvalue");
-		long r1 = wc1.commit();
+		long r1a = wc1.commit();
+		wc1.updateToHead("/module1");
 
-		// Merge changes into branch2.
-		LogEntry merge = doMerge(s, r1);
-		long r2 = merge.getRevision();
+		wc1.file("/module1/bar");
+		wc1.setProperty("/module1", "myproperty", "myvalue");
+		long r1b = wc1.commit();
+
+		wc1.file("/module1/foobar");
+		long r1c = wc1.commit();
+
+		// Merge first and last change into branch-intermediate.
+		long r2a = doMerge(s, r1a, "/branches/branch-intermediate").getRevision();
+		long r2c = doMerge(s, r1c, "/branches/branch-intermediate").getRevision();
+
+		assertTrue(r2a > 0);
+		assertTrue(r2c > 0);
+
+		// Create branch2 from branch-intermediate.
+		s.copy("/branches/branch2", "/branches/branch-intermediate");
+
+		// Merge middle change to branch-intermediate.
+		long r2b = doMerge(s, r1b, "/branches/branch-intermediate").getRevision();
+
+		MergeInfo mergeInfoBefore = s.mergeInfo("branches/branch2/module1");
+		assertEquals(set(s.url("branches/branch1/module1")), mergeInfoBefore.getPaths());
+		List<RevisionRange> mergedFromBranch1Before = mergeInfoBefore.getRevisions(s.url("branches/branch1/module1"));
+		assertFalse(RevisionRanges.containsAll(mergedFromBranch1Before, ranges(range(r1b))));
+
+		Map<String, List<RevisionRange>> mergeInfoDiff = s.mergeInfoDiff("branches/branch-intermediate/module1", r2b);
+		assertEquals(
+			Collections.singletonMap("/branches/branch1/module1", ranges(range(r1b))),
+			mergeInfoDiff);
+
+		List<RevisionRange> mergeInfoDiffFromBranch1 = mergeInfoDiff.get("/branches/branch1/module1");
+		assertFalse(RevisionRanges.containsAll(mergedFromBranch1Before, mergeInfoDiffFromBranch1));
+
+		// Finally merge the missing middle change to branch2.
+		long r3b = doMerge(s, r2b).getRevision();
+
+		assertTrue(r3b > 0);
 
 		MergeInfo mergeInfo = s.mergeInfo("branches/branch2/module1");
-		assertEquals(set(s.url("branches/branch1/module1")), mergeInfo.getPaths());
+		assertEquals(set(s.url("branches/branch1/module1"), s.url("branches/branch-intermediate/module1")),
+			mergeInfo.getPaths());
 		List<RevisionRange> mergedFromBranch1 = mergeInfo.getRevisions(s.url("branches/branch1/module1"));
-		assertTrue(RevisionRanges.containsAll(mergedFromBranch1, ranges(range(r1))));
-		assertFalse(RevisionRanges.containsAll(mergedFromBranch1, ranges(range(r1 + 1))));
-		assertFalse(RevisionRanges.containsAll(mergedFromBranch1, ranges(range(r1 - 1))));
-		
+		assertTrue(RevisionRanges.containsAll(mergedFromBranch1, ranges(range(r1b))));
+
+		assertTrue(RevisionRanges.containsAll(mergedFromBranch1, mergeInfoDiffFromBranch1));
+
 		Client client = s.clientManager().getClient();
 		LogEntryCollector collector = new LogEntryCollector();
 		client.getMergeInfoLog(
@@ -171,14 +205,8 @@ public class TestMerge extends TestCase {
 			Revision.create(1),
 			Revision.HEAD, collector);
 		List<LogEntry> entries = collector.getBuffer();
-		assertEquals(1, entries.size());
-		assertEquals(r1, entries.get(0).getRevision());
-
-		Map<String, List<RevisionRange>> mergeInfoDiff = s.mergeInfoDiff("branches/branch2/module1", r2);
-		assertEquals(
-			Collections.singletonMap("/branches/branch1/module1", ranges(range(r1))),
-			mergeInfoDiff);
-
+		assertEquals(3, entries.size());
+		assertEquals(r1b, entries.get(1).getRevision());
 
 		WC merged = s.wc("/branches/branch2");
 		merged.setProperty("/module1", "svn:mergeinfo", "");
@@ -996,12 +1024,21 @@ public class TestMerge extends TestCase {
 	}
 
 	private LogEntry doMerge(Scenario s, long revision) throws IOException, RepositoryException {
-		return doMerge(s, revision, Collections.<String, String> emptyMap());
+		return doMerge(s, revision, "/branches/branch2");
+	}
+
+	private LogEntry doMerge(Scenario s, long revision, String branch) throws IOException, RepositoryException {
+		return doMerge(s, revision, branch, Collections.<String, String> emptyMap());
 	}
 
 	private LogEntry doMerge(Scenario s, long revision, Map<String, String> resourceMapping)
 			throws IOException, RepositoryException {
-		WC wc2 = s.wc("/branches/branch2");
+		return doMerge(s, revision, "/branches/branch2", resourceMapping);
+	}
+
+	private LogEntry doMerge(Scenario s, long revision, String branch, Map<String, String> resourceMapping)
+			throws IOException, RepositoryException {
+		WC wc2 = s.wc(branch);
 		LogEntry entry = s.log(revision);
 
 		MergeOperation merge = createMerge(s, wc2, entry, resourceMapping);

@@ -73,6 +73,14 @@ public class WC extends FileSystem {
 		return commitInfo.getNewRevision();
 	}
 
+	public void updateToHead(String path) throws RepositoryException {
+		File[] paths = { toFile(path) };
+		boolean allowUnversionedObstructions = false;
+		boolean depthIsSticky = true;
+		clientManager().getClient().update(paths, Revision.HEAD, Depth.INFINITY, allowUnversionedObstructions,
+			depthIsSticky);
+	}
+
 	public File getDirectory() {
 		return _wcPath;
 	}

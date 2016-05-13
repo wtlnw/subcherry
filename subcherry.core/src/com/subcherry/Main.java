@@ -123,7 +123,7 @@ public class Main {
 		String targetBranch = config().getTargetBranch();
 		RepositoryURL targetBranchUrl = RepositoryURL.parse(config().getSvnURL()).appendPath(targetBranch);
 		if (config().getDetectCommonModules() || config().getModules().length == 0) {
-			_modules = DirCollector.getBranchModules(logClient, config().getModules(), sourceBranchUrl, pegRevision);
+			_modules = DirCollector.getBranchModules(logClient, config().getModules(), targetBranchUrl, pegRevision);
 		} else {
 			_modules = new HashSet<String>(Arrays.asList(config().getModules()));
 		}

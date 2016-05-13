@@ -63,7 +63,6 @@ import com.subcherry.repository.core.RepositoryURL;
 import com.subcherry.repository.core.Revision;
 import com.subcherry.repository.core.RevisionRange;
 import com.subcherry.repository.core.RevisionRanges;
-import com.subcherry.repository.core.Target;
 import com.subcherry.trac.TracConnection;
 import com.subcherry.trac.TracTicket;
 import com.subcherry.utils.Log;
@@ -214,16 +213,15 @@ public class Main {
 		if (!config().getRevert() && !config().getIgnoreMergeInfo()) {
 			Log.info("Analyzing merge info.");
 
-			Map<String, MergeInfo> moduleMergeInfos = new HashMap<>();
+			MergeInfoTester tester =
+				new MergeInfoTester(clientManager, url, config().getWorkspaceRoot(), getPegRevision());
 			for (int n = mergedLogEntries.size() - 1; n >= 0; n--) {
 				LogEntry entry = mergedLogEntries.get(n);
 
-				boolean alreadyMerged = false;
 				long mergedRevision = entry.getRevision();
-
 				Set<String> touchedModules = new HashSet<>();
 
-				searchMatchingMergeInfo:
+				boolean alreadyMerged = false;
 				for (String changedPath : entry.getChangedPaths().keySet()) {
 					Path parsedPath = paths.parsePath(changedPath);
 
@@ -239,24 +237,9 @@ public class Main {
 						continue;
 					}
 
-					MergeInfo moduleMergeInfo = lookupMergeInfo(clientManager, moduleMergeInfos, changedModuleName);
-					Target changedModuleUrl = Target.fromURL(url.appendPath(changedPath), getPegRevision());
-					Map<String, List<RevisionRange>> mergeInfoDiff =
-						clientManager.getClient().mergeInfoDiff(changedModuleUrl, mergedRevision);
-
-					for (Entry<String, List<RevisionRange>> mergeEntry : mergeInfoDiff.entrySet()) {
-						String mergedModulePath = mergeEntry.getKey();
-						RepositoryURL mergedModuleUrl = url.appendPath(mergedModulePath);
-
-						List<RevisionRange> transitivelyMergedRevisions = moduleMergeInfo.getRevisions(mergedModuleUrl);
-						if (transitivelyMergedRevisions == null) {
-							continue;
-						}
-						if (RevisionRanges.containsAll(transitivelyMergedRevisions, mergeEntry.getValue())) {
-							// This module has already been merged.
-							alreadyMerged = true;
-							break searchMatchingMergeInfo;
-						}
+					alreadyMerged = tester.isAlreadyMerged(mergedRevision, changedPath, changedModuleName);
+					if (alreadyMerged) {
+						break;
 					}
 				}
 
@@ -266,7 +249,7 @@ public class Main {
 							continue;
 						}
 
-						MergeInfo moduleMergeInfo = lookupMergeInfo(clientManager, moduleMergeInfos, touchedModule);
+						MergeInfo moduleMergeInfo = tester.lookupMergeInfo(touchedModule);
 						RepositoryURL mergeSrcUrl = sourceBranchUrl.appendPath(touchedModule);
 						List<RevisionRange> mergedRevisions = moduleMergeInfo.getRevisions(mergeSrcUrl);
 						if (mergedRevisions == null) {
@@ -298,21 +281,6 @@ public class Main {
 		mergeCommitHandler.run(commitSets);
 
 		Restart.clear();
-	}
-
-	private static MergeInfo lookupMergeInfo(ClientManager clientManager, Map<String, MergeInfo> moduleMergeInfos,
-			String moduleName) throws RepositoryException {
-		MergeInfo moduleMergeInfo;
-		{
-			File targetModuleFile = new File(config().getWorkspaceRoot(), moduleName);
-			moduleMergeInfo = moduleMergeInfos.get(moduleName);
-			if (moduleMergeInfo == null) {
-				moduleMergeInfo =
-					clientManager.getClient().getMergeInfo(Target.fromFile(targetModuleFile));
-				moduleMergeInfos.put(moduleName, moduleMergeInfo);
-			}
-		}
-		return moduleMergeInfo;
 	}
 
 	private static boolean isModulePath(Path parsedPath) {

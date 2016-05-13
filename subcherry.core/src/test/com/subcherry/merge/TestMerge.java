@@ -33,6 +33,7 @@ import com.subcherry.BranchConfig;
 import com.subcherry.CommitConfig;
 import com.subcherry.MergeCommitHandler;
 import com.subcherry.MergeConfig;
+import com.subcherry.MergeInfoTester;
 import com.subcherry.commit.Commit;
 import com.subcherry.commit.CommitContext;
 import com.subcherry.merge.MergeHandler;
@@ -50,12 +51,10 @@ import com.subcherry.repository.core.CommitInfo;
 import com.subcherry.repository.core.Depth;
 import com.subcherry.repository.core.LogEntry;
 import com.subcherry.repository.core.LogEntryPath;
-import com.subcherry.repository.core.MergeInfo;
 import com.subcherry.repository.core.RepositoryException;
 import com.subcherry.repository.core.Resolution;
 import com.subcherry.repository.core.Revision;
 import com.subcherry.repository.core.RevisionRange;
-import com.subcherry.repository.core.RevisionRanges;
 import com.subcherry.repository.core.Target;
 import com.subcherry.utils.PathParser;
 
@@ -171,31 +170,18 @@ public class TestMerge extends TestCase {
 		// Merge middle change to branch-intermediate.
 		long r2b = doMerge(s, r1b, "/branches/branch-intermediate").getRevision();
 
-		MergeInfo mergeInfoBefore = s.mergeInfo("branches/branch2/module1");
-		assertEquals(set(s.url("branches/branch1/module1")), mergeInfoBefore.getPaths());
-		List<RevisionRange> mergedFromBranch1Before = mergeInfoBefore.getRevisions(s.url("branches/branch1/module1"));
-		assertFalse(RevisionRanges.containsAll(mergedFromBranch1Before, ranges(range(r1b))));
-
-		Map<String, List<RevisionRange>> mergeInfoDiff = s.mergeInfoDiff("branches/branch-intermediate/module1", r2b);
-		assertEquals(
-			Collections.singletonMap("/branches/branch1/module1", ranges(range(r1b))),
-			mergeInfoDiff);
-
-		List<RevisionRange> mergeInfoDiffFromBranch1 = mergeInfoDiff.get("/branches/branch1/module1");
-		assertFalse(RevisionRanges.containsAll(mergedFromBranch1Before, mergeInfoDiffFromBranch1));
+		MergeInfoTester tester1 = new MergeInfoTester(_clientManager, s.getRepositoryUrl(),
+			s.wc("/branches/branch2").getDirectory(), Revision.HEAD);
+		assertFalse(tester1.isAlreadyMerged(r2b, "branches/branch-intermediate/module1", "module1"));
 
 		// Finally merge the missing middle change to branch2.
 		long r3b = doMerge(s, r2b).getRevision();
 
 		assertTrue(r3b > 0);
 
-		MergeInfo mergeInfo = s.mergeInfo("branches/branch2/module1");
-		assertEquals(set(s.url("branches/branch1/module1"), s.url("branches/branch-intermediate/module1")),
-			mergeInfo.getPaths());
-		List<RevisionRange> mergedFromBranch1 = mergeInfo.getRevisions(s.url("branches/branch1/module1"));
-		assertTrue(RevisionRanges.containsAll(mergedFromBranch1, ranges(range(r1b))));
-
-		assertTrue(RevisionRanges.containsAll(mergedFromBranch1, mergeInfoDiffFromBranch1));
+		MergeInfoTester tester2 = new MergeInfoTester(_clientManager, s.getRepositoryUrl(),
+			s.wc("/branches/branch2").getDirectory(), Revision.HEAD);
+		assertTrue(tester2.isAlreadyMerged(r2b, "branches/branch-intermediate/module1", "module1"));
 
 		Client client = s.clientManager().getClient();
 		LogEntryCollector collector = new LogEntryCollector();

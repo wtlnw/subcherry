@@ -198,13 +198,17 @@ public class MergeHandler extends Handler<MergeConfig> {
 			}
 
 			if (!_modules.contains(target.getModule())) {
-				// The change happened in a module that is not among the merged modules, drop the
-				// change.
-				ScheduledTreeConflict conflict = operations().newScheduledTreeConflict();
-				conflict.setAction(toAction(target.getPathEntry().getType()));
-				conflict.setReason(ConflictReason.MISSING);
-				conflict.setTarget(Target.fromFile(new File(_config.getWorkspaceRoot(), target.getResource())));
-				addOperation(target.getResource(), conflict);
+				if (_modules.contains(originalTarget.getModule())) {
+					/* Rewrite rule from a merge module to a non existing module. The rewrite rules
+					 * are inconsistent. */
+					ScheduledTreeConflict conflict = operations().newScheduledTreeConflict();
+					conflict.setAction(toAction(target.getPathEntry().getType()));
+					conflict.setReason(ConflictReason.MISSING);
+					conflict.setTarget(Target.fromFile(new File(_config.getWorkspaceRoot(), target.getResource())));
+					addOperation(target.getResource(), conflict);
+				}
+				/* The change happened in a module that is not among the merged modules, drop the
+				 * change. */
 				continue;
 			}
 

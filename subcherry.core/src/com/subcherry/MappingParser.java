@@ -45,7 +45,9 @@ public class MappingParser extends ObjectParser<Map<String, String>> {
 	@Override
 	public Map<String, String> parse(String text) {
 		Map<String, String> result = new LinkedHashMap<>();
-		for (String entry : text.split("\\s*,\\s*")) {
+		for (String entry : text.split("\\s*(?<!\\\\),\\s*")) {
+			entry = entry.replace("\\,", ",");
+
 			String[] keyValue = entry.split("\\s*\\-\\>\\s*");
 			if (keyValue.length != 2) {
 				throw new IllegalArgumentException("Invalid mapping specification, missing '->': " + entry);

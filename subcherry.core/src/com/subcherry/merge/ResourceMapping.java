@@ -17,35 +17,43 @@
  */
 package com.subcherry.merge;
 
+import java.io.File;
+import java.io.IOError;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.subcherry.MergeConfig;
+
 public abstract class ResourceMapping {
 
-	public static ResourceMapping create(Map<String, String> patternReplacements) {
-		if (patternReplacements != null && !patternReplacements.isEmpty()) {
-			return new RegexpResourceMapping(patternReplacements);
-		} else {
+	public static ResourceMapping create(MergeConfig config) {
+		String mappingName = config.getResourceMapping();
+		if (mappingName == null || mappingName.isEmpty()) {
 			return NoMapping.INSTANCE;
+		} else {
+			try {
+				return MappingLoader.loadMapping(new File(mappingName));
+			} catch (IOException ex) {
+				throw new IOError(ex);
+			}
 		}
 	}
 
 	public abstract String map(String resource);
 
-	private static class RegexpResourceMapping extends ResourceMapping {
+	static class RegexpResourceMapping extends ResourceMapping {
 
 		private List<Replacer> _replacers = new ArrayList<>();
 
-		public RegexpResourceMapping(Map<String, String> patternReplacements) {
-			ArrayList<String> keys = new ArrayList<String>(patternReplacements.keySet());
-			for (String key : keys) {
-				String value = stripPreceedingSlash(patternReplacements.get(key));
+		public RegexpResourceMapping() {
+			super();
+		}
 
-				_replacers.add(new Replacer(Pattern.compile(key), value));
-			}
+		public void addReplacement(String key, String value) {
+			_replacers.add(new Replacer(Pattern.compile(key), value));
 		}
 
 		private String stripPreceedingSlash(String resource) {

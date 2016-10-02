@@ -64,7 +64,6 @@ import com.subcherry.utils.Log;
 import com.subcherry.utils.Path;
 import com.subcherry.utils.PathParser;
 
-
 /**
  * @version $Revision$ $Author$ $Date$
  */
@@ -102,7 +101,7 @@ public class MergeHandler extends Handler<MergeConfig> {
 		_paths = paths;
 		_modules = modules;
 		_virtualFs = new VirtualFS(config.getWorkspaceRoot());
-		_mapping = ResourceMapping.create(config.getResourceMapping());
+		_mapping = ResourceMapping.create(config);
 	}
 
 	private OperationFactory operations() {

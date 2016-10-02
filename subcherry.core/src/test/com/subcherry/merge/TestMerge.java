@@ -20,13 +20,17 @@ package test.com.subcherry.merge;
 import static test.com.subcherry.scenario.Scenario.*;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import com.subcherry.BranchConfig;
@@ -1074,7 +1078,7 @@ public class TestMerge extends TestCase {
 		mergeConfig.setSvnURL(s.getRepositoryUrl().toString());
 		mergeConfig.setSemanticMoves(true);
 		mergeConfig.setWorkspaceRoot(wc.getDirectory());
-		mergeConfig.getResourceMapping().putAll(resourceMapping);
+		mergeConfig.setResourceMapping(materializeMapping(resourceMapping));
 		BranchConfig branchConfig = ValueFactory.newInstance(BranchConfig.class);
 		branchConfig.setBranchPattern("/branches/[^/]+/");
 		MergeHandler handler =
@@ -1083,6 +1087,27 @@ public class TestMerge extends TestCase {
 
 		MergeOperation merge = handler.parseMerge(entry);
 		return merge;
+	}
+
+	private String materializeMapping(Map<String, String> resourceMapping) {
+		if (resourceMapping.isEmpty()) {
+			return null;
+		}
+
+		try {
+			File file = File.createTempFile("resource-mapping", ".properties");
+			try (Writer writer = new OutputStreamWriter(new FileOutputStream(file), "ISO-8859-1")) {
+				for (Entry<String, String> entry : resourceMapping.entrySet()) {
+					writer.write(entry.getKey());
+					writer.write(" = ");
+					writer.write(entry.getValue());
+					writer.write("\n");
+				}
+			}
+			return file.getAbsolutePath();
+		} catch (IOException ex) {
+			throw (AssertionFailedError) new AssertionFailedError("Cannot materialize mapping.").initCause(ex);
+		}
 	}
 
 	private Scenario moduleScenario() throws IOException, RepositoryException {

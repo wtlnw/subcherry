@@ -100,6 +100,20 @@ targetMilestone:
 #
 #ignoreRevisions:
 
+# Name of a resource mapping file.
+#
+# The referenced file is a properties-like file with definition of the form
+#
+#   # Comment
+#   regexp1 = replacement1
+#   regexp2 = replacement2
+#
+# Each regexp is matched against the beginning of each merged path. If it matches, it is 
+# replaced with the associated replacement string. Mappings are applied in the order given
+# in the mappings file. 
+#
+#resourceMapping: path/to/mapping.properties
+
 # Regular expression that matches a branch at the beginning of a SVN changed log entry path.
 branchPattern: /branches/[^/]+/[^/]+/|/tags/[^/]+/[^/]+/
 

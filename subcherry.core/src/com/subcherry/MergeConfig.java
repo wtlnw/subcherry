@@ -48,7 +48,7 @@ public interface MergeConfig extends WorkspaceConfig, RepositoryConfig {
 	Pattern getExcludePaths();
 
 	/**
-	 * Mapping of resource names.
+	 * Name of the property file containing resource mappings.
 	 * 
 	 * <p>
 	 * The mapping is applied to resources in the source branch when deciding about a merge target
@@ -56,6 +56,11 @@ public interface MergeConfig extends WorkspaceConfig, RepositoryConfig {
 	 * the resource given as value.
 	 * </p>
 	 */
-	@ValueParser(MappingParser.class)
-	Map<String, String> getResourceMapping();
+	String getResourceMapping();
+	
+	/**
+	 * @see #getResourceMapping()
+	 */
+	void setResourceMapping(String value);
+
 }

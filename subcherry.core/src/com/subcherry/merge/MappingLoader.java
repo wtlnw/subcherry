@@ -21,7 +21,9 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,24 +43,58 @@ import com.subcherry.merge.ResourceMapping.RegexpResourceMapping;
  */
 public class MappingLoader {
 
-	private static Pattern SEPARATOR_PATTERN = Pattern.compile("\\s*=\\s*");
+	private static Pattern LINE_PATTERN =
+		Pattern.compile(
+			"((?:(?:[^\\\\=]+|(?:\\\\.))*(?:[^\\\\= ]+|(?:\\\\.)))?)\\s*=\\s*((?:[^ ](?:.*(?:[^ \\\\]|\\\\ ))?)?)\\s*");
 
 	public static ResourceMapping loadMapping(File mappingFile) throws IOException {
-		RegexpResourceMapping mapping = new RegexpResourceMapping();
 		try (FileInputStream in = new FileInputStream(mappingFile)) {
-			try (BufferedReader reader = new BufferedReader(new InputStreamReader(in, "ISO-8859-1"))) {
-				String definition;
-				while ((definition = nextDef(reader)) != null) {
-					Matcher separator = SEPARATOR_PATTERN.matcher(definition);
-					if (separator.find()) {
-						String key = definition.substring(0, separator.start());
-						String value = definition.substring(separator.end());
-						mapping.addReplacement(key, value);
-					}
+			return loadMapping(in);
+		}
+	}
+
+	public static ResourceMapping loadMapping(InputStream in) throws IOException, UnsupportedEncodingException {
+		RegexpResourceMapping mapping = new RegexpResourceMapping();
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(in, "ISO-8859-1"))) {
+			String definition;
+			while ((definition = nextDef(reader)) != null) {
+				Matcher separator = LINE_PATTERN.matcher(definition);
+				if (separator.matches()) {
+					String key = separator.group(1);
+					String value = separator.group(2);
+					mapping.addReplacement(unescape(key), unescape(value));
+				} else {
+					throw new IllegalArgumentException("Cannot read mapping definition: " + definition);
 				}
 			}
 		}
 		return mapping;
+	}
+
+	private static Pattern ESC_PATTERN =
+		Pattern.compile("(?:\\\\u([0-9a-fA-F]{4}))|(?:\\\\x([0-9a-fA-F]{2}))|(?:\\\\([^ux]))");
+
+	private static String unescape(String s) {
+		Matcher matcher = ESC_PATTERN.matcher(s);
+		if (matcher.find()) {
+			StringBuffer buffer = new StringBuffer();
+			do {
+				String replacement;
+				if (matcher.group(1) != null) {
+					replacement = "" + (char) (Integer.parseInt(matcher.group(1), 16));
+				} else if (matcher.group(2) != null) {
+					replacement = "" + (char) (Integer.parseInt(matcher.group(2), 16));
+				} else {
+					replacement = matcher.group(3);
+				}
+
+				matcher.appendReplacement(buffer, Matcher.quoteReplacement(replacement));
+			} while (matcher.find());
+			matcher.appendTail(buffer);
+			return buffer.toString();
+		} else {
+			return s;
+		}
 	}
 
 	private static String nextDef(BufferedReader reader) throws IOException {
@@ -73,7 +109,7 @@ public class MappingLoader {
 				break;
 			}
 
-			line += fragment;
+			line = line.substring(0, line.length() - 1) + fragment;
 		}
 
 		return line;
@@ -86,8 +122,7 @@ public class MappingLoader {
 				return null;
 			}
 
-			line = line.trim();
-			if (line.isEmpty()) {
+			if (line.trim().isEmpty()) {
 				continue;
 			}
 			if (line.charAt(0) == '#') {

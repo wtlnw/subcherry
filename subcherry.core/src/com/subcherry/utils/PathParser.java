@@ -51,6 +51,9 @@ public class PathParser {
 
 	public Path parsePath(String pathName) {
 		int moduleStartIndex = getModuleStartIndex(pathName);
+		if (moduleStartIndex < 0) {
+			return new Path(pathName, null, null, pathName);
+		}
 		String branch = getBranch(pathName, moduleStartIndex);
 		String resource = getResource(pathName, moduleStartIndex);
 		String moduleName = getModule(resource);

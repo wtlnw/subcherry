@@ -102,7 +102,7 @@ public class Main {
 
 	private static final String[] ROOT = { "/" };
 
-	private static Set<String> _modules;
+	static Set<String> _modules;
 
 	public static void main(String[] args) throws IOException, RepositoryException {
 		LoginCredential tracCredentials = PropertiesUtil.load("conf/loginCredentials.properties", "trac.",
@@ -391,7 +391,7 @@ public class Main {
 		}
 	}
 
-	private static String[] concat(String[] s1, String[] s2) {
+	static String[] concat(String[] s1, String[] s2) {
 		String[] result = new String[s1.length + s2.length];
 		System.arraycopy(s1, 0, result, 0, s1.length);
 		System.arraycopy(s2, 0, result, s1.length, s2.length);
@@ -414,7 +414,7 @@ public class Main {
 		return getLogPaths(config().getTargetBranch());
 	}
 
-	private static String[] getLogPaths(String sourceBranch) {
+	static String[] getLogPaths(String sourceBranch) {
 		Set<String> modules = _modules;
 		String[] paths = new String[modules.size() + 1];
 
@@ -477,7 +477,7 @@ public class Main {
 		return result;
 	}
 
-	private static Revision getPegRevision() {
+	static Revision getPegRevision() {
 		return getRevisionOrHead(config().getPegRevision());
 	}
 
@@ -511,7 +511,7 @@ public class Main {
 		}
 	}
 
-	private static Revision getEndRevision() {
+	static Revision getEndRevision() {
 		return getRevisionOrHead(config().getEndRevision());
 	}
 

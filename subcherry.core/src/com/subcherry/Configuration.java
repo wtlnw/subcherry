@@ -18,7 +18,10 @@
 package com.subcherry;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 import de.haumacher.common.config.ObjectParser;
@@ -106,6 +109,51 @@ public interface Configuration extends MergeConfig, CommitConfig, BranchConfig {
 
 	void setAdditionalTickets(String[] value);
 	
+	@ValueParser(TicketMappingFormat.class)
+	Map<String, String> getTicketMapping();
+
+	class TicketMappingFormat extends ObjectParser<Map<String, String>> {
+
+		@Override
+		public Map<String, String> init() {
+			return new HashMap<String, String>();
+		}
+
+		@Override
+		public Map<String, String> parse(String text) {
+			HashMap<String, String> result = new HashMap<>();
+			for (String pair : text.trim().split("\\s*,\\s*")) {
+				String[] entry = pair.split("\\s*=\\s*");
+				result.put(unwrap(entry[0]), unwrap(entry[1]));
+			}
+			return result;
+		}
+
+		private String unwrap(String ref) {
+			if (ref.startsWith("#")) {
+				return ref.substring(1);
+			}
+			return ref;
+		}
+
+		@Override
+		public String unparse(Map<String, String> value) {
+			StringBuilder result = new StringBuilder();
+			for (Entry<String, String> entry : value.entrySet()) {
+				if (result.length() > 0) {
+					result.append(',');
+				}
+				result.append('#');
+				result.append(entry.getKey());
+				result.append('=');
+				result.append('#');
+				result.append(entry.getValue());
+			}
+			return result.toString();
+		}
+
+	}
+
 	String getTicketQuery();
 
 	void setTicketQuery(String value);

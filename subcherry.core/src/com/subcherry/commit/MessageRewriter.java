@@ -68,7 +68,11 @@ public class MessageRewriter {
 
 	protected void appendTicketPrefix(StringBuilder newMesssage, TicketMessage message) {
 		newMesssage.append("Ticket #");
-		newMesssage.append(message.ticketNumber);
+		String targetTicket = _config.getTicketMapping().get(message.ticketNumber);
+		if (targetTicket == null) {
+			targetTicket = message.ticketNumber;
+		}
+		newMesssage.append(targetTicket);
 		newMesssage.append(": ");
 	}
 

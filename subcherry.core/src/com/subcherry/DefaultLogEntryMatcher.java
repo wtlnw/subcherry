@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import com.subcherry.repository.core.LogEntry;
 import com.subcherry.trac.Ticket;
@@ -48,6 +49,8 @@ public class DefaultLogEntryMatcher extends SVNLogEntryMatcher {
 	private Set<String> _ignoreTickets;
 	private Collection<String> _milestones;
 
+	private Pattern _excludeMessagePattern;
+
 	public DefaultLogEntryMatcher(TracConnection trac, Configuration config, PortingTickets portingTickets) throws MalformedURLException {
 		_trac = trac;
 		
@@ -56,6 +59,7 @@ public class DefaultLogEntryMatcher extends SVNLogEntryMatcher {
 		_portingTickets = portingTickets;
 		_ignoreTickets = getIgnoreTickets(config);
 		_milestones = getMilestones(config);
+		_excludeMessagePattern = config.getExcludeMessagePattern();
 	}
 	
 	public static ArrayList<String> toStringIds(Collection<Integer> ticketIds) {
@@ -108,6 +112,11 @@ public class DefaultLogEntryMatcher extends SVNLogEntryMatcher {
 		}
 
 		String message = logEntry.getMessage();
+		if (_excludeMessagePattern.matcher(message).matches()) {
+			Log.info("Ignore " + revision + " matching exclude pattern: " + message);
+			return false;
+		}
+
 		Ticket ticket = TicketStub.getTicket(_trac, message);
 
 		boolean accept = portByTicket(ticket);

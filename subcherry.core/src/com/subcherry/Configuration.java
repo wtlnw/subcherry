@@ -257,8 +257,9 @@ public interface Configuration extends MergeConfig, CommitConfig, BranchConfig {
 	String getRepositoryProvider();
 
 	/**
-	 * Whether to skip revisions that are already on the target branch by inspecting SVN merge info.
+	 * A regular expression that excludes the revision if it matches the commit message.
 	 */
-	boolean getIgnoreMergeInfo();
+	@ValueParser(PatternParser.class)
+	Pattern getExcludeMessagePattern();
 
 }

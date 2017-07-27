@@ -63,4 +63,8 @@ public interface MergeConfig extends WorkspaceConfig, RepositoryConfig {
 	 */
 	void setResourceMapping(String value);
 
+	/**
+	 * Whether to skip revisions that are already on the target branch by inspecting SVN merge info.
+	 */
+	boolean getIgnoreMergeInfo();
 }

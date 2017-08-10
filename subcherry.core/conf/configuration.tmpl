@@ -121,7 +121,7 @@ targetMilestone:
 branchPattern: /branches/[^/]+/[^/]+/|/tags/[^/]+/[^/]+/
 
 # Regular expression that matches a special branch "trunk" at the beginning of a SVN changed log entry path.
-branchPattern: /branches/[^/]+/[^/]+/|/tags/[^/]+/[^/]+/
+trunkPattern: /trunk/[^/\._]+/|/trunk/
 
 # Regular expression that excludes an otherwise accepted revision, if the pattern matches the commit message.
 excludeMessagePattern: .*\\bNOPORT: .*

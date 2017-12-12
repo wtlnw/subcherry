@@ -112,7 +112,7 @@ public class DefaultLogEntryMatcher extends SVNLogEntryMatcher {
 		}
 
 		String message = logEntry.getMessage();
-		if (_excludeMessagePattern.matcher(message).matches()) {
+		if (_excludeMessagePattern != null && _excludeMessagePattern.matcher(message).matches()) {
 			Log.info("Ignore " + revision + " matching exclude pattern: " + message);
 			return false;
 		}

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project basedir="." default="haumacher.common.util:jar" name="haumacher.common.util" xmlns:wtk="urn:net.sf.wtk.ant.dependencies"><property name="haumacher.common.util:basedir" value="${basedir}${file.separator}..${file.separator}de.haumacher.common.util"/><property name="haumacher.common.util:ant.file" value="build.xml"/><property name="haumacher.common.util:ant.project.name" value="haumacher.common.util"/>
+
+	<import file="${haumacher.common.util:basedir}/../net.sf.wtk.ant.dependencies/build.import.xml"/>
+	<import file="${haumacher.common.util:basedir}/../net.sf.wtk.ant.namespaces/build.import.xml"/>
+
+	<property name="haumacher.common.util:classes" value="${haumacher.common.util:basedir}/build/classes-ant"/>
+	<property name="haumacher.common.util:jars" value="${haumacher.common.util:basedir}${file.separator}build${file.separator}jars"/>
+	<property name="haumacher.common.util:export" value="${haumacher.common.util:basedir}/build/export"/>
+	<property name="haumacher.common.util:tmp" value="${haumacher.common.util:basedir}/build/tmp"/>
+	<property name="haumacher.common.util:lib" value="${haumacher.common.util:basedir}/lib"/>
+	
+	<property name="haumacher.common.util:jar" value="${haumacher.common.util:jars}${file.separator}${haumacher.common.util:ant.project.name}.jar"/>
+
+	<property file="${haumacher.common.util:basedir}/build.local.properties"/>
+	
+	<path id="haumacher.common.util:namespace4ant.cp">
+		<filelist dir="${haumacher.common.util:lib}">
+			<file name="namespace4ant.jar"/>
+		</filelist>
+	</path>
+
+	<target name="haumacher.common.util:clean">
+		<delete dir="${haumacher.common.util:classes}"/>
+		<delete dir="${haumacher.common.util:jars}"/>
+		<delete dir="${haumacher.common.util:tmp}"/>
+		<delete dir="${haumacher.common.util:lib}">
+			<include name="*.jar"/>
+			<include name="*.zip"/>
+		</delete>
+	</target>
+
+	<target depends="namespace4ant.namespace4ant:taskdef-namespace4ant" name="haumacher.common.util:prepare">
+		<namespace4ant/>
+
+		<path id="haumacher.common.util:cp">
+		</path>
+	</target>
+
+	<target depends="haumacher.common.util:prepare" name="haumacher.common.util:compile">
+		<mkdir dir="${haumacher.common.util:basedir}/build/classes-ant"/>
+		<javac classpathref="haumacher.common.util:cp" debug="true" destdir="${haumacher.common.util:classes}" includeantruntime="false" source="1.6" srcdir="${haumacher.common.util:basedir}/src/main/java" target="1.6"/>
+	</target>
+
+	<target depends="haumacher.common.util:compile" name="haumacher.common.util:jar">
+		<mkdir dir="${haumacher.common.util:jars}"/>
+		<jar destfile="${haumacher.common.util:jar}" manifest="${haumacher.common.util:basedir}/META-INF/MANIFEST.MF">
+			<fileset dir="${haumacher.common.util:classes}"/>
+		</jar>
+	</target>
+
+</project>

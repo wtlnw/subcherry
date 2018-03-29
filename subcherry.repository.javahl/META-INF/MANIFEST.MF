@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Javahl
+Bundle-SymbolicName: subcherry.repository.javahl
+Bundle-Version: 1.0.0.qualifier
+Export-Package: com.subcherry.repository.javahl,
+ com.subcherry.repository.javahl.internal
+Require-Bundle: subcherry.repository;bundle-version="1.0.0",
+ org.tmatesoft.svnkit;bundle-version="1.8.12"
+Automatic-Module-Name: subcherry.repository.javahl

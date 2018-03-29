@@ -17,3 +17,4 @@ Export-Package: org.apache.ws.commons.serialize,
  org.apache.xmlrpc.serializer,
  org.apache.xmlrpc.util
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Automatic-Module-Name: ext.org.apache.xmlrpc

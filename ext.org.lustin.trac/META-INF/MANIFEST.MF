@@ -6,3 +6,4 @@ Bundle-Version: 1.0.0
 Bundle-ClassPath: trac.jar
 Export-Package: org.lustin.trac.xmlprc;version="1.0.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Automatic-Module-Name: ext.org.lustin.trac

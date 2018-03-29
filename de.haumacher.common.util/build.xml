@@ -1,0 +1,51 @@
+<project name="haumacher.common.util" basedir="." xmlns:wtk="urn:net.sf.wtk.ant.dependencies" default="jar">
+
+	<import file="${basedir}/../net.sf.wtk.ant.dependencies/build.import.xml"/>
+	<import file="${basedir}/../net.sf.wtk.ant.namespaces/build.import.xml"/>
+
+	<property name="classes" value="${basedir}/build/classes-ant" />
+	<property name="jars" value="${basedir}${file.separator}build${file.separator}jars" />
+	<property name="export" value="${basedir}/build/export" />
+	<property name="tmp" value="${basedir}/build/tmp" />
+	<property name="lib" value="${basedir}/lib" />
+	
+	<property name="jar" value="${jars}${file.separator}${ant.project.name}.jar" />
+
+	<property file="${basedir}/build.local.properties" />
+	
+	<path id="namespace4ant.cp">
+		<filelist dir="${lib}">
+			<file name="namespace4ant.jar"/>
+		</filelist>
+	</path>
+
+	<target name="clean" description="Cleans generated files">
+		<delete dir="${classes}" />
+		<delete dir="${jars}" />
+		<delete dir="${tmp}" />
+		<delete dir="${lib}">
+			<include name="*.jar"/>
+			<include name="*.zip"/>
+		</delete>
+	</target>
+
+	<target name="prepare" depends="namespace4ant.namespace4ant:taskdef-namespace4ant" description="Resolve external dependencies.">
+		<namespace4ant/>
+
+		<path id="cp">
+		</path>
+	</target>
+
+	<target name="compile" depends="prepare">
+		<mkdir dir="${basedir}/build/classes-ant" />
+		<javac source="1.6" target="1.6" classpathref="cp" srcdir="${basedir}/src/main/java" destdir="${classes}" includeantruntime="false" debug="true" />
+	</target>
+
+	<target name="jar" depends="compile" description="Build the project jar.">
+		<mkdir dir="${jars}" />
+		<jar destfile="${jar}" manifest="${basedir}/META-INF/MANIFEST.MF">
+			<fileset dir="${classes}" />
+		</jar>
+	</target>
+
+</project>

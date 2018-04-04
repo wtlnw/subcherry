@@ -1,9 +1,10 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Trac
-Bundle-SymbolicName: ext.org.lustin.trac
-Bundle-Version: 1.0.0
+Bundle-SymbolicName: ext.org.lustin.trac;singleton:=true
+Bundle-Version: 1.0.0.qualifier
 Bundle-ClassPath: trac.jar
 Export-Package: org.lustin.trac.xmlprc;version="1.0.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Automatic-Module-Name: ext.org.lustin.trac
+Bundle-ActivationPolicy: lazy

@@ -1,24 +1,50 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Core
+Bundle-Name: Subcherry Core
 Bundle-SymbolicName: subcherry.core;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Export-Package: base64,
- com.subcherry,
- com.subcherry.commit,
+ com.subcherry;
+  uses:="com.subcherry.commit,
+   com.subcherry.repository,
+   com.subcherry.trac,
+   com.subcherry.repository.command,
+   com.subcherry.repository.command.log,
+   com.subcherry.merge,
+   com.subcherry.history,
+   com.subcherry.repository.core,
+   de.haumacher.common.config",
+ com.subcherry.commit;
+  uses:="com.subcherry.repository.core,
+   com.subcherry.repository.command,
+   com.subcherry,
+   com.subcherry.utils,
+   com.subcherry.merge",
+ com.subcherry.core;uses:="org.osgi.framework",
  com.subcherry.diff,
- com.subcherry.history,
- com.subcherry.log,
- com.subcherry.merge,
- com.subcherry.ticketcheck,
- com.subcherry.trac,
+ com.subcherry.history;uses:="com.subcherry.repository.core,com.subcherry.repository.command.log",
+ com.subcherry.log;uses:="com.subcherry.repository.core,com.subcherry.repository.command,com.subcherry.repository.command.log",
+ com.subcherry.merge;
+  uses:="com.subcherry.repository.core,
+   com.subcherry.repository.command.wc,
+   com.subcherry.repository.command.merge,
+   com.subcherry.repository.command.copy,
+   com.subcherry.repository.command.log,
+   com.subcherry.repository.command,
+   com.subcherry,
+   com.subcherry.utils",
+ com.subcherry.ticketcheck;uses:="de.haumacher.common.config",
+ com.subcherry.trac;uses:="org.lustin.trac.xmlprc",
  com.subcherry.util,
- com.subcherry.utils
-Require-Bundle: subcherry.repository.javahl;bundle-version="1.0.0",
+ com.subcherry.utils;uses:="com.subcherry.commit,com.subcherry.repository.core,com.subcherry"
+Require-Bundle: org.eclipse.core.runtime;bundle-version="3.13.0",
+ de.haumacher.common.config;bundle-version="1.0.0",
+ subcherry.repository.javahl;bundle-version="1.0.0",
  ext.org.lustin.trac;bundle-version="1.0.0",
  ext.org.apache.xmlrpc;bundle-version="1.0.0",
  ext.org.apache.ws.commons;bundle-version="1.0.0",
- ext.com.mysql.jdbc;bundle-version="1.0.0",
- subcherry.repository,
- de.haumacher.common.config
+ subcherry.repository
 Automatic-Module-Name: subcherry.core
+Bundle-ActivationPolicy: lazy
+Bundle-Activator: com.subcherry.core.SubcherryCore
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7

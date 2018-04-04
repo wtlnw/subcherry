@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Config
-Bundle-SymbolicName: de.haumacher.common.config
+Bundle-SymbolicName: de.haumacher.common.config;singleton:=true
 Bundle-Version: 1.0.0
 Bundle-Vendor: haumacher.de
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
@@ -9,3 +9,4 @@ Export-Package: de.haumacher.common.config,
  de.haumacher.common.config.annotate
 Import-Package: de.haumacher.common.util
 Automatic-Module-Name: de.haumacher.common.config
+Bundle-ActivationPolicy: lazy

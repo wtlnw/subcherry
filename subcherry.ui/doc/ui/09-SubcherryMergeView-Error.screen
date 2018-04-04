@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model:Screen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:model="http://wireframesketcher.com/1.0/model.ecore" theme="clean">
+  <widgets xsi:type="model:TabbedPane" id="24" x="8" y="24" width="497" height="241" text="Subcherry,History,Problems" measuredWidth="497" measuredHeight="241" selection="0">
+    <items x="10" y="0" width="74" height="27" text="Subcherry"/>
+    <items x="84" y="0" width="59" height="27" text="History"/>
+    <items x="143" y="0" width="71" height="27" text="Problems"/>
+    <font/>
+  </widgets>
+  <widgets xsi:type="model:Table" id="29" x="8" y="51" width="497" height="214" text="(w:30)=.State,(w:30)>.Rev,Message&#xD;&#xA;{circled-check},1,Ticket #1: On SOURCE_BRANCH: Commit 1.&#xD;&#xA;{circled-check},2,Ticket #1: On SOURCE_BRANCH: Commit 2.&#xD;&#xA;{circled-check},3,Ticket #1: On SOURCE_BRANCH: Commit 3.&#xD;&#xA;{circled-check},4,Ticket #2: On SOURCE_BRANCH: Commit 4.&#xD;&#xA;{error},5,Ticket #2: %(color:blue)Preview on% SOURCE_BRANCH: Commit 5." measuredWidth="497" measuredHeight="214" selection="5" verticalScrollbar="true">
+    <font/>
+  </widgets>
+  <widgets xsi:type="model:Icon" id="32" x="424" y="24" measuredWidth="24" measuredHeight="24" foreground="#00f" icon="refresh (medium)"/>
+  <widgets xsi:type="model:Icon" id="33" x="481" y="24" measuredWidth="24" measuredHeight="24" icon="stop-media (medium)"/>
+  <widgets xsi:type="model:Icon" id="35" x="455" y="24" measuredWidth="24" measuredHeight="24" foreground="#00f" icon="undo (medium)"/>
+  <hRuler/>
+  <vRuler/>
+  <font size="12px"/>
+</model:Screen>

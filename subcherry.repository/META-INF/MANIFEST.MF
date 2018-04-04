@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Repository
-Bundle-SymbolicName: subcherry.repository
+Bundle-SymbolicName: subcherry.repository;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Export-Package: com.subcherry.repository,
  com.subcherry.repository.command,
@@ -16,3 +16,5 @@ Export-Package: com.subcherry.repository,
  com.subcherry.repository.merge,
  com.subcherry.repository.merge.properties
 Automatic-Module-Name: subcherry.repository
+Bundle-ActivationPolicy: lazy
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7

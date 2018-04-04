@@ -1,0 +1,14 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Subcherry UI
+Bundle-SymbolicName: subcherry.ui;singleton:=true
+Bundle-Version: 1.0.0.qualifier
+Require-Bundle: org.eclipse.core.runtime,
+ org.eclipse.ui,
+ org.eclipse.team.ui;bundle-version="3.8.1",
+ de.haumacher.common.config;bundle-version="1.0.0",
+ subcherry.core;bundle-version="1.0.0"
+Automatic-Module-Name: subcherry.ui
+Bundle-Activator: com.subcherry.ui.SubcherryUI
+Bundle-ActivationPolicy: lazy
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7

@@ -1,8 +1,8 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Commons
-Bundle-SymbolicName: ext.org.apache.ws.commons
-Bundle-Version: 1.0.0
+Bundle-SymbolicName: ext.org.apache.ws.commons;singleton:=true
+Bundle-Version: 1.0.0.qualifier
 Bundle-ClassPath: commons-codec-1.6.jar
 Export-Package: org.apache.commons.codec,
  org.apache.commons.codec.binary,
@@ -12,3 +12,4 @@ Export-Package: org.apache.commons.codec,
  org.apache.commons.codec.net
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Automatic-Module-Name: ext.org.apache.ws.commons
+Bundle-ActivationPolicy: lazy

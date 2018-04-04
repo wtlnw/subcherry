@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model:Screen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:model="http://wireframesketcher.com/1.0/model.ecore" theme="clean">
+  <widgets xsi:type="model:WidgetGroup" id="14" x="8" y="32" measuredWidth="424" measuredHeight="319">
+    <widgets xsi:type="model:Window" id="1" width="424" height="319" text="Subcherry Merge" measuredWidth="424" measuredHeight="319"/>
+    <widgets xsi:type="model:WidgetGroup" id="10" y="270" measuredWidth="424" measuredHeight="49">
+      <widgets xsi:type="model:Panel" id="5" width="424" height="49" measuredWidth="424" measuredHeight="49"/>
+      <widgets xsi:type="model:Button" id="7" x="191" y="12" width="65" text="Next >" measuredWidth="65" measuredHeight="25">
+        <font/>
+      </widgets>
+      <widgets xsi:type="model:Button" id="8" x="271" y="12" width="65" text="Finish" measuredWidth="65" measuredHeight="25" state="disabled">
+        <font/>
+      </widgets>
+      <widgets xsi:type="model:Button" id="9" x="349" y="12" width="65" text="Cancel" measuredWidth="65" measuredHeight="25">
+        <font/>
+      </widgets>
+    </widgets>
+    <widgets xsi:type="model:WidgetGroup" id="13" y="19" measuredWidth="424" measuredHeight="60">
+      <widgets xsi:type="model:Panel" id="4" width="424" height="60" measuredWidth="424" measuredHeight="60"/>
+      <widgets xsi:type="model:TextArea" id="11" width="424" height="60" text="   *SVN Cherry Picking with Subcherry*&#xA;&#xA;      Please select the source branch" measuredWidth="424" measuredHeight="60">
+        <font/>
+      </widgets>
+      <widgets xsi:type="model:Icon" id="12" x="360" y="5" width="54" height="50" measuredWidth="54" measuredHeight="50" icon="wizard (xxl)"/>
+    </widgets>
+    <widgets xsi:type="model:Label" id="18" x="10" y="88" text="Branch:" measuredWidth="46" measuredHeight="23">
+      <font/>
+    </widgets>
+    <widgets xsi:type="model:TextField" id="19" x="86" y="88" width="259" text="Text field" measuredWidth="259" measuredHeight="23">
+      <font/>
+    </widgets>
+    <widgets xsi:type="model:Button" id="20" x="354" y="87" text="Select..." measuredWidth="60" measuredHeight="25">
+      <font/>
+    </widgets>
+    <widgets xsi:type="model:Label" id="21" x="10" y="120" text="Start revision:" measuredWidth="77" measuredHeight="23">
+      <font/>
+    </widgets>
+    <widgets xsi:type="model:TextField" id="22" x="86" y="120" width="259" text="BASE" measuredWidth="259" measuredHeight="23">
+      <font/>
+    </widgets>
+    <widgets xsi:type="model:Button" id="23" x="354" y="119" text="Select..." measuredWidth="60" measuredHeight="25">
+      <font/>
+    </widgets>
+  </widgets>
+  <hRuler/>
+  <vRuler/>
+  <font size="12px"/>
+</model:Screen>

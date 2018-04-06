@@ -1,11 +1,15 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Subcherry UI
-Bundle-SymbolicName: subcherry.ui;singleton:=true
+Bundle-SymbolicName: com.subcherry.ui;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.ui,
+ org.eclipse.team.core;bundle-version="3.8.100",
  org.eclipse.team.ui;bundle-version="3.8.1",
+ org.eclipse.core.resources;bundle-version="3.12.0",
+ org.tigris.subversion.subclipse.core;bundle-version="4.2.3",
+ org.tigris.subversion.subclipse.ui;bundle-version="4.2.3",
  de.haumacher.common.config;bundle-version="1.0.0",
  subcherry.core;bundle-version="1.0.0"
 Automatic-Module-Name: subcherry.ui

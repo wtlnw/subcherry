@@ -29,6 +29,7 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.Text;
 
@@ -41,6 +42,11 @@ import org.eclipse.swt.widgets.Text;
  */
 public class SubcherryMergeWizardTicketsPage extends WizardPage {
 
+	/**
+	 * @see #createTicketTable()
+	 */
+	private TableViewer _viewer;
+	
 	/**
 	 * Create a {@link SubcherryMergeWizardTicketsPage}.
 	 */
@@ -57,15 +63,49 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 	}
 	
 	@Override
+	public void setVisible(final boolean visible) {
+		// update the ticket table when this page becomes visible
+		if(visible) {
+			_viewer.setInput(getWizard().getBranch());
+		}
+		
+		// change visibility after table update
+		super.setVisible(visible);
+	}
+	
+	@Override
 	public void createControl(final Composite parent) {
 		final Composite contents = new Composite(parent, SWT.NONE);
 		contents.setLayout(new GridLayout());
 		
-		final Text filter = new Text(contents, SWT.BORDER);
+		createTicketFilter(contents);
+		_viewer = createTicketTable(contents);
+		createTicketTableButtons(contents);
+		
+		setControl(contents);
+		setPageComplete(false);
+	}
+
+	/**
+	 * Create the {@link Control}s allowing users to filter the
+	 * {@link #createTicketTable(Composite) table of tickets}
+	 * 
+	 * @param parent
+	 *            the {@link Composite} to create the controls in
+	 */
+	private void createTicketFilter(final Composite parent) {
+		final Text filter = new Text(parent, SWT.BORDER);
 		filter.setLayoutData(new GridData(SWT.FILL, SWT.NONE, true, false));
 		filter.setMessage("Enter ticket filter expression");
-		
-		final TableViewer viewer = new TableViewer(contents, SWT.BORDER|SWT.FULL_SELECTION);
+	}
+	
+	/**
+	 * @param parent
+	 *            the {@link Composite} to create the controls in
+	 * @return the {@link TableViewer} displaying available tickets
+	 */
+	private TableViewer createTicketTable(final Composite parent) {
+		final TableViewer viewer = new TableViewer(parent, SWT.BORDER|SWT.FULL_SELECTION);
 		final Table table = viewer.getTable();
 		table.setHeaderVisible(true);
 		table.setLinesVisible(true);
@@ -96,7 +136,19 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 		viewer.setContentProvider(new SubcherryTicketContentProvider());
 		viewer.setInput(getWizard().getBranch());
 		
-		final Composite buttons = new Composite(contents, SWT.NONE);
+		return viewer;
+	}
+	
+	/**
+	 * Create convenience {@link Button}s for the
+	 * {@link #createTicketTable(Composite) table of tickets} allowing users to
+	 * quickly select/deselect the currently displayed entries.
+	 * 
+	 * @param parent
+	 *            the {@link Composite} to create the controls in
+	 */
+	private void createTicketTableButtons(final Composite parent) {
+		final Composite buttons = new Composite(parent, SWT.NONE);
 		buttons.setLayoutData(new GridData(SWT.FILL, SWT.NONE, true, false));
 		final GridLayout buttonsLayout = new GridLayout(2, false);
 		buttonsLayout.marginWidth = 0;
@@ -110,9 +162,6 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 		final Button none = new Button(buttons, SWT.NONE);
 		none.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false));
 		none.setText("Deselect All");
-		
-		setControl(contents);
-		setPageComplete(false);
 	}
 	
 	/**

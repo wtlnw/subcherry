@@ -19,9 +19,9 @@ package com.subcherry.ui.wizards;
 
 import java.util.regex.Pattern;
 
-import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.resource.FontDescriptor;
 import org.eclipse.jface.viewers.CheckStateChangedEvent;
+import org.eclipse.jface.viewers.CheckboxTreeViewer;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.ICheckStateListener;
 import org.eclipse.jface.viewers.ICheckStateProvider;
@@ -44,7 +44,7 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Tree;
-import org.eclipse.ui.dialogs.ContainerCheckedTreeViewer;
+import org.eclipse.swt.widgets.TreeItem;
 
 import com.subcherry.trac.TracTicket;
 import com.subcherry.ui.DelayedModifyListener;
@@ -76,7 +76,7 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 	/**
 	 * @see #createTicketTable()
 	 */
-	private TreeViewer _viewer;
+	private CheckboxTreeViewer _viewer;
 	
 	/**
 	 * Create a {@link SubcherryMergeWizardTicketsPage}.
@@ -140,7 +140,7 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 					pattern = Pattern.compile(REGEX_ANY + Pattern.quote(expr) + REGEX_ANY, Pattern.CASE_INSENSITIVE); 
 				}
 				_viewer.setData(FILTER_PATTERN, pattern);
-				_viewer.refresh(false);
+				_viewer.refresh();
 			}
 		}));
 	}
@@ -148,11 +148,10 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 	/**
 	 * @param parent
 	 *            the {@link Composite} to create the controls in
-	 * @return the {@link TreeViewer} displaying available tickets
+	 * @return the {@link CheckboxTreeViewer} displaying available tickets
 	 */
-	private TreeViewer createTicketTable(final Composite parent) {
-		final ContainerCheckedTreeViewer viewer = new ContainerCheckedTreeViewer(parent, SWT.BORDER|SWT.FULL_SELECTION);
-		viewer.setUseHashlookup(true);
+	private CheckboxTreeViewer createTicketTable(final Composite parent) {
+		final CheckboxTreeViewer viewer = new CheckboxTreeViewer(parent, SWT.BORDER|SWT.FULL_SELECTION);
 		final Tree table = viewer.getTree();
 		table.setHeaderVisible(true);
 		table.setLinesVisible(true);
@@ -174,13 +173,17 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 		viewer.setCheckStateProvider(new ICheckStateProvider() {
 			@Override
 			public boolean isGrayed(final Object element) {
+				if(element instanceof Checkable) {
+					return ((Checkable) element).getState() == Check.GRAYED;
+				}
+				
 				return false;
 			}
 			
 			@Override
 			public boolean isChecked(final Object element) {
-				if(element instanceof ChangeNode) {
-					return ((ChangeNode) element).getState() != Check.UNCHECKED;
+				if(element instanceof Checkable) {
+					return ((Checkable) element).getState() != Check.UNCHECKED;
 				}
 				
 				return true;
@@ -191,12 +194,27 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 			public void checkStateChanged(final CheckStateChangedEvent event) {
 				final Checkable element = (Checkable) event.getElement();
 				final Check state;
+				
 				if(event.getChecked()) {
 					state = Check.CHECKED;
 				} else {
 					state = Check.UNCHECKED;
 				}
 				element.setState(state);
+				
+				if(element instanceof TicketNode) {
+					final TicketNode ticket = (TicketNode) element;
+					
+					// force the viewer to update both, the parent node AND children
+					_viewer.update(ticket, null);
+					_viewer.update(ticket.getChanges().toArray(), null);
+				} else {
+					final ChangeNode change = (ChangeNode) element;
+					
+					// force the viewer to update both, the child node and parent
+					_viewer.update(change, null);
+					_viewer.update(change.getTicket(), null);
+				}
 			}
 		});
 		
@@ -225,7 +243,15 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 		all.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(final SelectionEvent e) {
-				MessageDialog.openError(e.display.getActiveShell(), "Subcherry Merge Wizard", "Implement selecting all tickets.");
+				for (final TreeItem item : _viewer.getTree().getItems()) {
+					final Object element = item.getData();
+					if(element instanceof TicketNode) {
+						final TicketNode ticket = (TicketNode) element;
+						ticket.setState(Check.CHECKED);
+					}
+				}
+				
+				_viewer.refresh();
 			}
 		});
 		
@@ -235,7 +261,15 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 		none.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(final SelectionEvent e) {
-				MessageDialog.openError(e.display.getActiveShell(), "Subcherry Merge Wizard", "Implement deselecting all tickets.");
+				for (final TreeItem item : _viewer.getTree().getItems()) {
+					final Object element = item.getData();
+					if(element instanceof TicketNode) {
+						final TicketNode ticket = (TicketNode) element;
+						ticket.setState(Check.UNCHECKED);
+					}
+				}
+				
+				_viewer.refresh();
 			}
 		});
 	}

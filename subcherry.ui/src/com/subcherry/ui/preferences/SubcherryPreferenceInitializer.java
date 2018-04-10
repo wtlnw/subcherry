@@ -36,16 +36,16 @@ public class SubcherryPreferenceInitializer extends AbstractPreferenceInitialize
 		final Preferences node = DefaultScope.INSTANCE.getNode(SubcherryUI.getInstance().getBundle().getSymbolicName());
 		
 		// automatically detect common modules
-		node.putBoolean("detectCommonModules", true);
+		node.putBoolean(SubcherryPreferenceConstants.DETECT_COMMON_MODULES, true);
 
 		// detect semantic moves by default
-		node.putBoolean("semanticMoves", true);
+		node.putBoolean(SubcherryPreferenceConstants.SEMANTIC_MOVES, true);
 		
 		// do not wait for the timestamp
-		node.putBoolean("skipWaitForTimestamp", true);
+		node.putBoolean(SubcherryPreferenceConstants.SKIP_WAIT_FOR_TIMESTAMP, true);
 		
 		// assume default SVN layout
-		node.put("trunkPattern", "/trunk/[^/\\._]+/|/trunk/");
-		node.put("branchPattern", "/branches/[^/]+/[^/]+/|/tags/[^/]+/[^/]+/");
+		node.put(SubcherryPreferenceConstants.TRUNK_PATTERN, "/trunk/[^/\\._]+/|/trunk/");
+		node.put(SubcherryPreferenceConstants.BRANCH_PATTERN, "/branches/[^/]+/[^/]+/|/tags/[^/]+/[^/]+/");
 	}
 }

@@ -24,21 +24,16 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.subcherry.Configuration;
-import com.subcherry.Globals;
 import com.subcherry.commit.MessageRewriter;
 
 /**
  * @version   $Revision$  $Author$  $Date$
  */
 public class Utils {
-
-	private static final Logger LOG = Globals.logger(Utils.class);
 
 	/**
 	 * {@link Exception} that is thrown when the commit message has illegal format.
@@ -95,8 +90,6 @@ public class Utils {
 			matcher = TICKET_PATTERN.matcher(commitMessage);
 			_hasMatch = matcher.matches();
 			if (!_hasMatch) {
-				LOG.log(Level.WARNING,
-					"Unable to parse commit for revison '" + originalRevision + "':" + commitMessage);
 				ticketNumber = "0";
 				apiChange = null;
 				originalMessage = commitMessage;

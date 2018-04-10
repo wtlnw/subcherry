@@ -17,6 +17,7 @@
  */
 package com.subcherry.ui.wizards;
 
+import java.net.MalformedURLException;
 import java.util.ResourceBundle.Control;
 
 import org.eclipse.core.runtime.IStatus;
@@ -28,6 +29,8 @@ import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.VerifyEvent;
+import org.eclipse.swt.events.VerifyListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -36,6 +39,7 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.tigris.subversion.subclipse.core.ISVNRemoteResource;
 import org.tigris.subversion.subclipse.core.ISVNRepositoryLocation;
+import org.tigris.subversion.subclipse.core.SVNException;
 import org.tigris.subversion.subclipse.core.SVNProviderPlugin;
 import org.tigris.subversion.subclipse.core.history.ILogEntry;
 import org.tigris.subversion.subclipse.core.resources.RemoteFolder;
@@ -46,6 +50,7 @@ import org.tigris.subversion.svnclientadapter.SVNRevision;
 import org.tigris.subversion.svnclientadapter.SVNRevision.Number;
 import org.tigris.subversion.svnclientadapter.SVNUrl;
 
+import com.subcherry.Configuration;
 import com.subcherry.ui.DelayedModifyListener;
 import com.subcherry.ui.SubcherryUI;
 
@@ -118,8 +123,20 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 		input.addModifyListener(new DelayedModifyListener(new ModifyListener() {
 			@Override
 			public void modifyText(final ModifyEvent e) {
-				getWizard().setBranch(((Text)e.widget).getText());
-				validate();
+				final Text widget = (Text)e.widget;
+				final String text = widget.getText();
+				try {
+					final Configuration configuration = getWizard().getConfiguration();
+					final String repository = SVNProviderPlugin.getPlugin().getRepository(text).getLocation();
+					final String source = text.replace(repository, "");
+					
+					configuration.setSvnURL(repository);
+					configuration.setSourceBranch(source);
+				} catch (final SVNException ex) {
+					// ignore this one since we will validate input anyway
+				} finally {
+					validate();
+				}
 			}
 		}));
 		
@@ -157,11 +174,46 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 		
 		final Text input = new Text(parent, SWT.BORDER);
 		input.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-		input.setMessage("FIRST");
+		input.setMessage("HEAD");
+		input.addVerifyListener(new VerifyListener() {
+			@Override
+			public void verifyText(final VerifyEvent e) {
+				final Text widget = (Text) e.widget;
+				final String text = new StringBuilder(widget.getText()).replace(e.start, e.end, e.text).toString();
+				
+				if(!text.isEmpty()) {
+					try {
+						final long revision = Long.parseLong(text.toString());
+						
+						// disallow zero as starting revision since
+						// it is used to indicate HEAD. However, HEAD
+						// is mapped to empty input.
+						if(revision < 1) {
+							e.doit = false;
+						}
+						
+					} catch (NumberFormatException ex) {
+						e.doit = false;
+					}
+				} 
+				else {
+					// empty input is mapped to HEAD
+				}
+			}
+		});
 		input.addModifyListener(new DelayedModifyListener(new ModifyListener() {
 			@Override
 			public void modifyText(final ModifyEvent e) {
-				getWizard().setRevision(((Text)e.widget).getText());
+				final Text widget = (Text) e.widget;
+				final String text = widget.getText();
+				final Configuration config = getWizard().getConfiguration();
+				
+				if(text.isEmpty()) {
+					config.setStartRevision(0);
+				} else {
+					config.setStartRevision(Long.parseLong(text));
+				}
+				
 				validate();
 			}
 		}));
@@ -171,16 +223,16 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 		select.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(final SelectionEvent e) {
-				final String url = getWizard().getBranch();
+				final Configuration config = getWizard().getConfiguration();
 				
 				try {
-					final SVNUrl svnUrl = new SVNUrl(url);
+					final SVNUrl svnUrl = getSourceUrl(config);
 					
 					// check if the given URL is accessible
 					SVNProviderPlugin.getPlugin().getSVNClient().getInfo(svnUrl);
 					
 					// when we get here, the selected URL points to a valid remote directory
-					final ISVNRepositoryLocation svnRepo = SVNProviderPlugin.getPlugin().getRepository(url);
+					final ISVNRepositoryLocation svnRepo = SVNProviderPlugin.getPlugin().getRepository(svnUrl.toString());
 					final SVNRevision svnRev = SVNRevision.HEAD;
 					final ISVNRemoteResource svnLoc = new RemoteFolder(svnRepo, svnUrl, svnRev);
 					final HistoryDialog dialog = new HistoryDialog(e.display.getActiveShell(), svnLoc);
@@ -252,7 +304,7 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 		} else {
 			try {
 				final long rev = Long.valueOf(text).longValue();
-				final SVNUrl url = new SVNUrl(getWizard().getBranch());
+				final SVNUrl url = getSourceUrl(getWizard().getConfiguration());
 				final ISVNInfo info = SVNProviderPlugin.getPlugin().getSVNClient().getInfo(url);
 				final long startRev = 0;
 				final long endRev = info.getRevision().getNumber();
@@ -266,5 +318,17 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 				return "The given start revision is invalid.";
 			}
 		}
+	}
+	
+	/**
+	 * @param config
+	 *            the {@link Configuration} to build the source URL from
+	 * @return the {@link SVNUrl} defining the absolute path (including the
+	 *         repository URL) to the configured source branch
+	 * @throws MalformedURLException
+	 *             if the configured path is invalid
+	 */
+	public static SVNUrl getSourceUrl(final Configuration config) throws MalformedURLException {
+		return new SVNUrl(config.getSvnURL() + config.getSourceBranch());
 	}
 }

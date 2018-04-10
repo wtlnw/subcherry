@@ -20,11 +20,20 @@ package com.subcherry.ui.preferences;
 import org.eclipse.jface.preference.BooleanFieldEditor;
 import org.eclipse.jface.preference.FieldEditorPreferencePage;
 import org.eclipse.jface.preference.StringFieldEditor;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Group;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
 
 import com.subcherry.ui.SubcherryUI;
+import com.subcherry.ui.dialogs.SubcherryTracCredentialsDialog;
 
 /**
  * An {@link IWorkbenchPreferencePage} implementation for {@link SubcherryUI}.
@@ -46,17 +55,56 @@ public class SubcherryPreferencePage extends FieldEditorPreferencePage implement
 		final Composite container = getFieldEditorParent();
 		
 		// automatically detect common modules
-		addField(new BooleanFieldEditor("detectCommonModules", "&Detect common modules", container));
+		addField(new BooleanFieldEditor(SubcherryPreferenceConstants.DETECT_COMMON_MODULES, "&Detect common modules", container));
 		
 		// detect semantic moves by default
-		addField(new BooleanFieldEditor("semanticMoves", "&Enable semantic moves", container));
+		addField(new BooleanFieldEditor(SubcherryPreferenceConstants.SEMANTIC_MOVES, "&Enable semantic moves", container));
 		
 		// do not wait for the timestamp
-		addField(new BooleanFieldEditor("skipWaitForTimestamp", "&Skip waiting for timestamps", container));
+		addField(new BooleanFieldEditor(SubcherryPreferenceConstants.SKIP_WAIT_FOR_TIMESTAMP, "&Skip waiting for timestamps", container));
 		
 		// assume default SVN layout
-		addField(new StringFieldEditor("trunkPattern", "&Trunk pattern:", container));
-		addField(new StringFieldEditor("branchPattern", "&Brunch pattern:", container));
+		addField(new StringFieldEditor(SubcherryPreferenceConstants.TRUNK_PATTERN, "&Trunk pattern:", container));
+		addField(new StringFieldEditor(SubcherryPreferenceConstants.BRANCH_PATTERN, "&Brunch pattern:", container));
+		
+		// trac preferences
+		addTracFields(container);
+	}
+
+	/**
+	 * Add {@link Control}s allowing users to edit trac settings.
+	 * 
+	 * @param parent
+	 *            the parent {@link Composite}
+	 */
+	private void addTracFields(final Composite parent) {
+		final Group container = new Group(parent, SWT.NONE);
+		container.setText("Trac Connection Settings");
+		
+		final GridData layoutData = new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1);
+		layoutData.verticalIndent = 8;
+		container.setLayoutData(layoutData);
+		
+		// add trac URL preference
+		addField(new StringFieldEditor(SubcherryPreferenceConstants.TRAC_URL, "Trac &URL:", container));
+		
+		// allow users to change their credentials
+		final Button tracCredentials = new Button(container, SWT.PUSH);
+		tracCredentials.setText("Credentials...");
+		tracCredentials.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(final SelectionEvent e) {
+				new SubcherryTracCredentialsDialog(getShell()).open();
+			}
+		});
+		
+		// update the layout AFTER adding controls to the container
+		final GridLayout layout = new GridLayout(2, false);
+		layout.marginWidth = 5;
+		layout.marginHeight = 5;
+		layout.horizontalSpacing = 5;
+		layout.verticalSpacing = 5;
+		container.setLayout(layout);
 	}
 
 	@Override

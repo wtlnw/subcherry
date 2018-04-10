@@ -11,7 +11,10 @@ Require-Bundle: org.eclipse.core.runtime,
  org.tigris.subversion.subclipse.core;bundle-version="4.2.3",
  org.tigris.subversion.subclipse.ui;bundle-version="4.2.3",
  de.haumacher.common.config;bundle-version="1.0.0",
- subcherry.core;bundle-version="1.0.0"
+ subcherry.core;bundle-version="1.0.0",
+ subcherry.repository;bundle-version="1.0.0",
+ subcherry.repository.javahl;bundle-version="1.0.0",
+ org.eclipse.equinox.security;bundle-version="1.2.300"
 Automatic-Module-Name: subcherry.ui
 Bundle-Activator: com.subcherry.ui.SubcherryUI
 Bundle-ActivationPolicy: lazy

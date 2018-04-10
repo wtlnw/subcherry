@@ -39,10 +39,9 @@ Export-Package: base64,
  com.subcherry.utils;uses:="com.subcherry.commit,com.subcherry.repository.core,com.subcherry"
 Require-Bundle: org.eclipse.core.runtime;bundle-version="3.13.0",
  de.haumacher.common.config;bundle-version="1.0.0",
- subcherry.repository.javahl;bundle-version="1.0.0",
+ ext.org.apache.ws.commons,
+ ext.org.apache.xmlrpc,
  ext.org.lustin.trac;bundle-version="1.0.0",
- ext.org.apache.xmlrpc;bundle-version="1.0.0",
- ext.org.apache.ws.commons;bundle-version="1.0.0",
  subcherry.repository
 Automatic-Module-Name: subcherry.core
 Bundle-ActivationPolicy: lazy

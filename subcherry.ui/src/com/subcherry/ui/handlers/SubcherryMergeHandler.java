@@ -20,11 +20,14 @@ package com.subcherry.ui.handlers;
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.wizard.WizardDialog;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.handlers.HandlerUtil;
+import org.osgi.service.prefs.Preferences;
 
 import com.subcherry.ui.SubcherryUI;
+import com.subcherry.ui.preferences.SubcherryPreferenceConstants;
 import com.subcherry.ui.wizards.SubcherryMergeWizard;
 
 /**
@@ -38,10 +41,18 @@ public class SubcherryMergeHandler extends AbstractHandler {
 	@Override
 	public Object execute(final ExecutionEvent event) throws ExecutionException {
 		final IWorkbenchWindow window = HandlerUtil.getActiveWorkbenchWindowChecked(event);
-		final SubcherryMergeWizard wizard = new SubcherryMergeWizard();
-		final WizardDialog dialog = new WizardDialog(window.getShell(), wizard);
-		dialog.open();
 		
+		// check if trac connection has been specified
+		final Preferences prefs = SubcherryUI.getInstance().getPreferences();
+		final String url = prefs.get(SubcherryPreferenceConstants.TRAC_URL, null);
+		if(url == null) {
+			MessageDialog.openError(window.getShell(), "Subcherry Merge Wizard", "No trac URL configured.");
+		} else {
+			final SubcherryMergeWizard wizard = new SubcherryMergeWizard();
+			final WizardDialog dialog = new WizardDialog(window.getShell(), wizard);
+			dialog.open();
+		}
+
 		return null;
 	}
 }

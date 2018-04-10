@@ -17,9 +17,18 @@
  */
 package com.subcherry.ui.wizards;
 
+import org.eclipse.equinox.security.storage.ISecurePreferences;
 import org.eclipse.jface.wizard.Wizard;
+import org.osgi.service.prefs.Preferences;
 
+import com.subcherry.Configuration;
+import com.subcherry.repository.command.ClientManager;
+import com.subcherry.repository.javahl.HLRepositoryFactory;
+import com.subcherry.trac.TracConnection;
 import com.subcherry.ui.SubcherryUI;
+import com.subcherry.ui.preferences.SubcherryPreferenceConstants;
+
+import de.haumacher.common.config.ValueFactory;
 
 /**
  * An {@link Wizard} implementation for {@link SubcherryUI} which allows users to
@@ -31,14 +40,19 @@ import com.subcherry.ui.SubcherryUI;
 public class SubcherryMergeWizard extends Wizard {
 
 	/**
-	 * @see #getUrl();
+	 * @see #getClientManager()
 	 */
-	private String _branch;
+	private ClientManager _manager;
 	
 	/**
-	 * @see #getRevision();
+	 * @see #getTracConnection();
 	 */
-	private String _revision;
+	private TracConnection _trac;
+	
+	/**
+	 * @see #getConfiguration()
+	 */
+	private Configuration _config;
 	
 	/**
 	 * Create a {@link SubcherryMergeWizard}.
@@ -48,38 +62,48 @@ public class SubcherryMergeWizard extends Wizard {
 	}
 	
 	/**
-	 * @return the source branch URL or {@code null} if none was selected yet
+	 * @return the {@link ClientManager} to be used for SVN repository access
 	 */
-	public String getBranch() {
-		return _branch;
+	public ClientManager getClientManager() {
+		if (_manager == null) {
+			// use SVN internal authentication mechanics!
+			_manager = new HLRepositoryFactory().createClientManager(null);
+		}
+		
+		return _manager;
 	}
+	
+	/**
+	 * @return the {@link TracConnection} to be used for accessing trac tickets
+	 */
+	public TracConnection getTracConnection() {
+		if(_trac == null) {
+			try {
+				final Preferences defPrefs = SubcherryUI.getInstance().getPreferences();
+				final String url = defPrefs.get(SubcherryPreferenceConstants.TRAC_URL, null);
 
-	/**
-	 * Setter for {@link #getBranch()}.
-	 * 
-	 * @param url
-	 *            see {@link #getBranch()}
-	 */
-	public void setBranch(final String url) {
-		_branch = url;
+				final ISecurePreferences secPrefs = SubcherryUI.getInstance().getSecurePreferences();
+				final String username = secPrefs.get(SubcherryPreferenceConstants.TRAC_USERNAME, null);
+				final String password = secPrefs.get(SubcherryPreferenceConstants.TRAC_PASSWORD, null);
+
+				_trac = new TracConnection(url, username, password);
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		}
+		
+		return _trac;
 	}
 	
 	/**
-	 * @return the start revision number (as {@link String}) or {@code null} to use
-	 *         the very first revision of {@link #getBranch()}
+	 * @return the {@link Configuration} for the merge process
 	 */
-	public String getRevision() {
-		return _revision;
-	}
-	
-	/**
-	 * Setter for {@link #getRevision()}.
-	 * 
-	 * @param revision
-	 *            see {@link #getRevision()}
-	 */
-	public void setRevision(final String revision) {
-		_revision = revision;
+	public Configuration getConfiguration() {
+		if(_config == null) {
+			_config = ValueFactory.newInstance(Configuration.class);
+		}
+		
+		return _config;
 	}
 	
 	@Override

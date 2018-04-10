@@ -17,8 +17,12 @@
  */
 package com.subcherry.ui;
 
+import org.eclipse.core.runtime.preferences.InstanceScope;
+import org.eclipse.equinox.security.storage.ISecurePreferences;
+import org.eclipse.equinox.security.storage.SecurePreferencesFactory;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
+import org.osgi.service.prefs.Preferences;
 
 import com.subcherry.core.SubcherryCore;
 
@@ -49,6 +53,25 @@ public class SubcherryUI extends AbstractUIPlugin {
 		super.stop(context);
 	}
 
+	/**
+	 * @return the {@link Preferences} for this {@link #getBundle()} or {@code null}
+	 *         if {@link #getBundle()} has not been {@link #start(BundleContext)
+	 *         started} yet or has already been {@link #stop(BundleContext) stopped}
+	 */
+	public Preferences getPreferences() {
+		return InstanceScope.INSTANCE.getNode(getBundle().getSymbolicName());
+	}
+	
+	/**
+	 * @return the {@link ISecurePreferences} for this {@link #getBundle()} or
+	 *         {@code null} if {@link #getBundle()} has not been
+	 *         {@link #start(BundleContext) started} yet or has already been
+	 *         {@link #stop(BundleContext) stopped}
+	 */
+	public ISecurePreferences getSecurePreferences() {
+		return SecurePreferencesFactory.getDefault().node(getBundle().getSymbolicName());
+	}
+	
 	/**
 	 * @return the shared {@link SubcherryCore} instance or {@code null} if it has
 	 *         not been {@link #start(BundleContext) started} yet or has already

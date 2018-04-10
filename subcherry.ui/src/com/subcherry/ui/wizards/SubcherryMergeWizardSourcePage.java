@@ -96,7 +96,7 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 	
 	@Override
 	public void createControl(final Composite parent) {
-		final Composite contents = new Composite(parent, SWT.None);
+		final Composite contents = new Composite(parent, SWT.NONE);
 		contents.setLayout(new GridLayout(3, false));
 	
 		_branch = createBranchSelector(contents);

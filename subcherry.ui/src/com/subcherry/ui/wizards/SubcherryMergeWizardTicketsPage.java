@@ -114,7 +114,7 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 		createTicketTableButtons(contents);
 		
 		setControl(contents);
-		setPageComplete(false);
+		setPageComplete(true);
 	}
 
 	/**

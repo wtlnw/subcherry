@@ -113,6 +113,16 @@ public class SubcherryMergeWizard extends Wizard {
 	}
 	
 	@Override
+	public boolean canFinish() {
+		// disable Finish button when entering merge source and revision
+		if(getContainer().getCurrentPage() instanceof SubcherryMergeWizardSourcePage) {
+			return false;
+		}
+		
+		return super.canFinish();
+	}
+	
+	@Override
 	public boolean performFinish() {
 		// 1. Open/Display the SubcherryMergeView
 		// 2. Initialize the SubcherryMergeView with the selected revision

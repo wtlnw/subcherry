@@ -17,6 +17,12 @@
  */
 package com.subcherry.ui.wizards;
 
+import java.text.Collator;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import org.eclipse.jface.resource.FontDescriptor;
@@ -25,12 +31,16 @@ import org.eclipse.jface.viewers.CheckboxTreeViewer;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.ICheckStateListener;
 import org.eclipse.jface.viewers.ICheckStateProvider;
+import org.eclipse.jface.viewers.ISelectionChangedListener;
+import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.TreeViewerColumn;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerFilter;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -42,10 +52,13 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
 
+import com.subcherry.repository.core.LogEntry;
+import com.subcherry.repository.core.LogEntryPath;
 import com.subcherry.trac.TracTicket;
 import com.subcherry.ui.DelayedModifyListener;
 import com.subcherry.ui.wizards.SubcherryTicketContentProvider.ChangeNode;
@@ -77,6 +90,35 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 	 * @see #createTicketTable()
 	 */
 	private CheckboxTreeViewer _viewer;
+
+	/**
+	 * The {@link Text} control displaying the selected {@link ChangeNode}'s
+	 * revision number.
+	 */
+	private Text _revision;
+	
+	/**
+	 * The {@link Text} control displaying the selected {@link ChangeNode}'s
+	 * revision timestamp.
+	 */
+	private Text _timestamp;
+	
+	/**
+	 * The {@link Text} control displaying the selected {@link ChangeNode}'s author.
+	 */
+	private Text _author;
+	
+	/**
+	 * The {@link Text} control displaying the selected {@link ChangeNode}'s commit
+	 * message.
+	 */
+	private Text _message;
+	
+	/**
+	 * The {@link Text} control displaying the selected {@link ChangeNode}'s changed
+	 * paths.
+	 */
+	private Text _paths;
 	
 	/**
 	 * Create a {@link SubcherryMergeWizardTicketsPage}.
@@ -105,21 +147,122 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 	}
 	
 	@Override
+	public void dispose() {
+		// release all handles for finalization
+		_viewer = null;
+		_revision = null;
+		_timestamp = null;
+		_author = null;
+		_message = null;
+		_paths = null;
+	}
+	
+	@Override
 	public void createControl(final Composite parent) {
-		final Composite contents = new Composite(parent, SWT.NONE);
-		contents.setLayout(new GridLayout());
+		final SashForm contents = new SashForm(parent, SWT.HORIZONTAL);
 		
-		createTicketFilter(contents);
-		_viewer = createTicketTable(contents);
-		createTicketTableButtons(contents);
+		createTicketsView(contents);
+		createDetailsView(contents);
 		
 		setControl(contents);
 		setPageComplete(true);
 	}
 
 	/**
+	 * Create {@link Control}s for the details view displaying the selected
+	 * {@link ChangeNode}'s details.
+	 * 
+	 * @param parent
+	 *            the {@link Composite} to create the controls in
+	 */
+	private void createDetailsView(final Composite parent) {
+		final SashForm contents = new SashForm(parent, SWT.VERTICAL);
+		
+		createRevisionDetailsView(contents);
+		createPathDetailsView(contents);
+	}
+
+	/**
+	 * Create {@link Control}s displaying detailed information for
+	 * {@link ChangeNode}s.
+	 * 
+	 * @param parent
+	 *            the {@link Composite} to create the controls in
+	 */
+	private Composite createRevisionDetailsView(final SashForm contents) {
+		final Composite ticketsView = new Composite(contents, SWT.NONE);
+		ticketsView.setLayout(new GridLayout(2, false));
+		
+		/* revision information */
+		final Label labelRev = new Label(ticketsView, SWT.NONE);
+		labelRev.setLayoutData(new GridData());
+		labelRev.setText("Revision:");
+		
+		_revision = new Text(ticketsView, SWT.BORDER | SWT.READ_ONLY);
+		_revision.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+		
+		/* date information */
+		final Label labelTimestamp = new Label(ticketsView, SWT.NONE);
+		labelTimestamp.setLayoutData(new GridData());
+		labelTimestamp.setText("Date:");
+		
+		_timestamp = new Text(ticketsView, SWT.BORDER | SWT.READ_ONLY);
+		_timestamp.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+		
+		/* author information */
+		final Label labelAuthor = new Label(ticketsView, SWT.NONE);
+		labelAuthor.setLayoutData(new GridData());
+		labelAuthor.setText("Author:");
+		
+		_author = new Text(ticketsView, SWT.BORDER | SWT.READ_ONLY);
+		_author.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+		
+		/* affected paths information */
+		final Label labelMsg = new Label(ticketsView, SWT.NONE);
+		labelMsg.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false));
+		labelMsg.setText("Message:");
+		
+		_message = new Text(ticketsView, SWT.BORDER | SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.READ_ONLY);
+		_message.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+		return ticketsView;
+	}
+
+	/**
+	 * Create {@link Control}s displaying a {@link ChangeNode}'s affected paths.
+	 * 
+	 * @param parent
+	 *            the {@link Composite} to create the controls in
+	 */
+	private void createPathDetailsView(final Composite parent) {
+		final Composite contents = new Composite(parent, SWT.NONE);
+		contents.setLayout(new GridLayout());
+		
+		final Label labelPaths = new Label(contents, SWT.NONE);
+		labelPaths.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+		labelPaths.setText("Affected paths:");
+		
+		_paths = new Text(contents, SWT.BORDER | SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
+		_paths.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+	}
+	
+	/**
+	 * Create {@link Control}s for the tickets view.
+	 * 
+	 * @param parent
+	 *            the {@link Composite} to create the controls in
+	 */
+	private void createTicketsView(final Composite parent) {
+		final Composite ticketsView = new Composite(parent, SWT.NONE);
+		ticketsView.setLayout(new GridLayout());
+		
+		createTicketFilter(ticketsView);
+		_viewer = createTicketViewer(ticketsView);
+		createTicketTableButtons(ticketsView);
+	}
+
+	/**
 	 * Create the {@link Control}s allowing users to filter the
-	 * {@link #createTicketTable(Composite) table of tickets}
+	 * {@link #createTicketViewer(Composite) table of tickets}
 	 * 
 	 * @param parent
 	 *            the {@link Composite} to create the controls in
@@ -150,7 +293,7 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 	 *            the {@link Composite} to create the controls in
 	 * @return the {@link CheckboxTreeViewer} displaying available tickets
 	 */
-	private CheckboxTreeViewer createTicketTable(final Composite parent) {
+	private CheckboxTreeViewer createTicketViewer(final Composite parent) {
 		final CheckboxTreeViewer viewer = new CheckboxTreeViewer(parent, SWT.BORDER|SWT.FULL_SELECTION);
 		final Tree table = viewer.getTree();
 		table.setHeaderVisible(true);
@@ -218,12 +361,72 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 			}
 		});
 		
+		viewer.addSelectionChangedListener(new ISelectionChangedListener() {
+			@Override
+			public void selectionChanged(final SelectionChangedEvent event) {
+				final IStructuredSelection selection = event.getStructuredSelection();
+
+				final StringBuilder revisionText = new StringBuilder();
+				final StringBuilder timestampText = new StringBuilder();
+				final StringBuilder authorText = new StringBuilder();
+				final StringBuilder messageText = new StringBuilder();
+				final StringBuilder pathText = new StringBuilder();
+				
+				// append changed paths to the text field
+				if(!selection.isEmpty()) {
+					final Object element = selection.getFirstElement();
+					
+					if(element instanceof ChangeNode) {
+						final ChangeNode node = (ChangeNode) element;
+						final LogEntry change = node.getChange();
+						
+						revisionText.append(change.getRevision());
+						timestampText.append(change.getDate());
+						authorText.append(change.getAuthor());
+						messageText.append(change.getMessage());
+						
+						final List<LogEntryPath> entries = new ArrayList<>(change.getChangedPaths().values());
+						Collections.sort(entries, new Comparator<LogEntryPath>() {
+							final Collator _collator = Collator.getInstance();
+							
+							@Override
+							public int compare(final LogEntryPath o1, final LogEntryPath o2) {
+								// sort by change type first
+								int result = o1.getType().compareTo(o2.getType());
+								
+								// sort by change path after that
+								if(result == 0) {
+									result = _collator.compare(o1.getPath(), o2.getPath());
+								}
+								
+								return result;
+							}
+						});
+						
+						final Iterator<LogEntryPath> iterator = entries.iterator();
+						while(iterator.hasNext()) {
+							pathText.append(iterator.next().toString());
+							if(iterator.hasNext()) {
+								pathText.append("\n");
+							}
+						}
+					}
+				}
+				
+				_revision.setText(revisionText.toString());
+				_timestamp.setText(timestampText.toString());
+				_author.setText(authorText.toString());
+				_message.setText(messageText.toString());
+				_paths.setText(pathText.toString());
+			}
+		});
+		
 		return viewer;
 	}
 	
 	/**
 	 * Create convenience {@link Button}s for the
-	 * {@link #createTicketTable(Composite) table of tickets} allowing users to
+	 * {@link #createTicketViewer(Composite) table of tickets} allowing users to
 	 * quickly select/deselect the currently displayed entries.
 	 * 
 	 * @param parent
@@ -239,7 +442,7 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 		
 		final Button all = new Button(buttons, SWT.NONE);
 		all.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false));
-		all.setText("Select All");
+		all.setText("Select All Visible");
 		all.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(final SelectionEvent e) {
@@ -257,7 +460,7 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 		
 		final Button none = new Button(buttons, SWT.NONE);
 		none.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false));
-		none.setText("Deselect All");
+		none.setText("Deselect All Visible");
 		none.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(final SelectionEvent e) {

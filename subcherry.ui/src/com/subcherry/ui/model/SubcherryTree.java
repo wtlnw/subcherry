@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.subcherry.ui.wizards;
+package com.subcherry.ui.model;
 
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
@@ -31,8 +31,6 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.dialogs.ErrorDialog;
-import org.eclipse.jface.viewers.ITreeContentProvider;
-import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.widgets.Display;
 import org.tigris.subversion.subclipse.core.SVNProviderPlugin;
 
@@ -51,62 +49,84 @@ import com.subcherry.ui.SubcherryUI;
 import com.subcherry.utils.Utils;
 
 /**
- * An {@link ITreeContentProvider} implementation computing all available
- * tickets.
+ * Instances of this class represent the SVN tree to pick the cherries from.
  * 
  * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
  * @version $Revision: $ $Author: $ $Date: $
  */
-final class SubcherryTicketContentProvider implements ITreeContentProvider {
-	
+public class SubcherryTree {
+
 	/**
-	 * The {@link ClientManager} to be used for accessing the remote repository.
+	 * @see #getClientManager()
 	 */
 	private final ClientManager _mgr;
 
 	/**
-	 * The {@link TracConnection} to be used for accessing trac tickets.
+	 * @see #getTracConnection()
 	 */
 	private final TracConnection _trac;
 	
 	/**
-	 * @see #getElements(Object)
+	 * @see #getConfiguration()
 	 */
-	private Object[] _elements;
+	private final Configuration _config;
 	
 	/**
-	 * Create a {@link SubcherryTicketContentProvider}.
+	 * @see #getTickets()
+	 */
+	private List<SubcherryTreeTicketNode> _nodes;
+	
+	/**
+	 * Create a {@link SubcherryTree}.
 	 * 
 	 * @param mgr
-	 *            see {@link #_mgr}
+	 *            see {@link #getClientManager()}
 	 * @param trac
-	 *            see {@link #_trac}
+	 *            see {@link #getTracConnection()}
+	 * @param config
+	 *            see {@link #getConfiguration()}
 	 */
-	public SubcherryTicketContentProvider(final ClientManager mgr, final TracConnection trac) {
+	public SubcherryTree(final ClientManager mgr, final TracConnection trac, final Configuration config) {
 		_mgr = mgr;
 		_trac = trac;
+		_config = config;
 	}
 	
-	@Override
-	public void inputChanged(final Viewer viewer, final Object oldInput, final Object newInput) {
-		_elements = null;
+	/**
+	 * @return the {@link ClientManager} to be used for accessing the remote
+	 *         repository
+	 */
+	protected ClientManager getClientManager() {
+		return _mgr;
 	}
 	
-	@Override
-	public void dispose() {
-		_elements = null;
+	/**
+	 * @return the {@link TracConnection} to be used for accessing trac tickets
+	 */
+	protected TracConnection getTracConnection() {
+		return _trac;
 	}
 	
-	@Override
-	public Object[] getElements(final Object model) {
-		if(_elements == null) {
+	/**
+	 * @return the {@link Configuration} containing user preferences
+	 */
+	protected Configuration getConfiguration() {
+		return _config;
+	}
+	
+	/**
+	 * @return a (possibly empty) {@link List} of top-level
+	 *         {@link SubcherryTreeTicketNode}s
+	 */
+	public List<SubcherryTreeTicketNode> getTickets() {
+		if(_nodes == null) {
 			try {
-				final Configuration config = (Configuration) model;
+				final Configuration config = getConfiguration();
 				final LogReader log = newLogReader(config);
 				final List<String> paths = computePaths(config);
 				final List<LogEntry> entries = readHistory(log, paths);
 			
-				_elements = groupByTicket(config, entries).toArray();
+				_nodes = groupByTicket(config, entries);
 			} catch(Exception e) {
 				final Throwable cause;
 				if(e instanceof UndeclaredThrowableException) {
@@ -118,13 +138,13 @@ final class SubcherryTicketContentProvider implements ITreeContentProvider {
 				ErrorDialog.openError(Display.getCurrent().getActiveShell(), "Subcherry Merge", "Failed to resolve trac tickets.", status);
 				
 				// no data upon failure
-				_elements = new Object[0];
+				_nodes = Collections.emptyList();
 			}
 		}
 		
-		return _elements;
+		return _nodes;
 	}
-
+	
 	/**
 	 * Group the given changes by the ticket they have been committed for.
 	 * 
@@ -132,28 +152,28 @@ final class SubcherryTicketContentProvider implements ITreeContentProvider {
 	 *            the {@link Configuration} providing common user settings
 	 * @param entries
 	 *            a (possibly empty) {@link List} of {@link LogEntry}s to group
-	 * @return a (possibly empty) {@link List} of {@link TicketNode}s representing
+	 * @return a (possibly empty) {@link List} of {@link SubcherryTreeTicketNode}s representing
 	 *         {@link TracTicket}s
 	 */
-	private List<TicketNode> groupByTicket(final Configuration config, final List<LogEntry> entries) {
-		final Map<Integer, TicketNode> tickets = new HashMap<>();
+	private List<SubcherryTreeTicketNode> groupByTicket(final Configuration config, final List<LogEntry> entries) {
+		final Map<Integer, SubcherryTreeTicketNode> tickets = new HashMap<>();
 		for (final LogEntry entry : entries) {
 			final String msg = entry.getMessage();
 			final String id = Utils.getTicketId(msg);
 
-			TicketNode ticket = null;
+			SubcherryTreeTicketNode ticket = null;
 			if(id != null) {
 				final int number = Integer.parseInt(id);
 				
 				ticket = tickets.get(number);
 				if(ticket == null) {
-					ticket = new TicketNode(TracTicket.getTicket(_trac, number));
+					ticket = new SubcherryTreeTicketNode(TracTicket.getTicket(_trac, number));
 					tickets.put(number, ticket);
 				}
 			} else {
 				ticket = tickets.get(null);
 				if(ticket == null) {
-					ticket = new TicketNode(null);
+					ticket = new SubcherryTreeTicketNode(null);
 					tickets.put(null, ticket);
 				}
 			}
@@ -162,32 +182,12 @@ final class SubcherryTicketContentProvider implements ITreeContentProvider {
 		}
 		
 		// sort by ticket number
-		final ArrayList<TicketNode> result = new ArrayList<>(tickets.values());
-		Collections.sort(result, new Comparator<TicketNode>() {
-			@Override
-			public int compare(final TicketNode n1, final TicketNode n2) {
-				final TracTicket t1 = n1.getTicket();
-				final TracTicket t2 = n2.getTicket();
-				
-				if(t1 != null) {
-					if(t2 != null) {
-						return t1.getNumber().compareTo(t2.getNumber());
-					} else {
-						return 1;
-					}
-				} else {
-					if(t2 != null) {
-						return -1;
-					} else {
-						return 0;
-					}
-				}
-			}
-		});
+		final List<SubcherryTreeTicketNode> result = new ArrayList<>(tickets.values());
+		Collections.sort(result, new SubcherryTreeTicketNodeComparator());
 		
 		return result;
 	}
-
+	
 	/**
 	 * Read the SVN history for the given paths using the given log.
 	 * 
@@ -219,7 +219,7 @@ final class SubcherryTicketContentProvider implements ITreeContentProvider {
 		
 		return entries;
 	}
-
+	
 	/**
 	 * Compute the remove SVN paths to read the history for based on the current
 	 * workspace modules.
@@ -253,7 +253,7 @@ final class SubcherryTicketContentProvider implements ITreeContentProvider {
 		
 		return paths;
 	}
-
+	
 	/**
 	 * @param config
 	 *            the {@link Configuration} providing common user settings
@@ -274,33 +274,6 @@ final class SubcherryTicketContentProvider implements ITreeContentProvider {
 		return log;
 	}
 	
-	@Override
-	public Object[] getChildren(final Object parent) {
-		if(parent instanceof TicketNode) {
-			return ((TicketNode) parent).getChanges().toArray();
-		}
-		
-		return new Object[0];
-	}
-	
-	@Override
-	public boolean hasChildren(final Object parent) {
-		if(parent instanceof TicketNode) {
-			return !((TicketNode) parent).getChanges().isEmpty();
-		}
-		
-		return false;
-	}
-	
-	@Override
-	public Object getParent(final Object child) {
-		if(child instanceof ChangeNode) {
-			return ((ChangeNode) child).getTicket();
-		}
-		
-		return null;
-	}
-	
 	/**
 	 * @param commitNumber
 	 *            the commit number to return the revision for
@@ -316,198 +289,35 @@ final class SubcherryTicketContentProvider implements ITreeContentProvider {
 	}
 	
 	/**
-	 * Implementing classes provide functionality for checking/unchecking instances.
+	 * A {@link Comparator} implementation for {@link SubcherryTreeTicketNode}s.
 	 * 
-	 * @author wta
-	 */
-	public static interface Checkable {
-		
-		/**
-		 * This enumeration defines all available states for {@link Checkable}s.
-		 * 
-		 * @author wta
-		 */
-		enum Check {
-			CHECKED,
-			GRAYED,
-			UNCHECKED
-		}
-		
-		/**
-		 * @return the {@link Check} state of this node
-		 */
-		Check getState();
-
-		/**
-		 * Setter for {@link #getState()}.
-		 * 
-		 * @param state
-		 *            see {@link #getState()}
-		 */
-		void setState(Check state);
-	}
-	
-	/**
-	 * Instances of this class represent {@link TracTicket}s displayed to the user.
+	 * <p>
+	 * This implementation sorts {@link SubcherryTreeTicketNode}s by their ticket
+	 * number in ascending order.
+	 * </p>
 	 * 
-	 * @author wta
+	 * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
 	 */
-	public static class TicketNode implements Checkable {
-		
-		/**
-		 * @see #getTicket()
-		 */
-		private final TracTicket _ticket;
-		
-		/**
-		 * @see #getChanges()
-		 */
-		private final List<ChangeNode> _changes = new ArrayList<>();
-		
-		/**
-		 * Create a {@link TicketNode}.
-		 * 
-		 * @param ticket
-		 *            see {@link #getTicket()}
-		 */
-		public TicketNode(final TracTicket ticket) {
-			_ticket = ticket;
-		}
-
-		/**
-		 * @return the {@link TracTicket} this {@link TicketNode} represents or
-		 *         {@code null} if {@link #getChanges()} were committed without a ticket
-		 */
-		public TracTicket getTicket() {
-			return _ticket;
-		}
-		
-		/**
-		 * @return a (possibly empty) {@link List} of {@link ChangeNode} committed for
-		 *         {@link #getTicket()}
-		 */
-		public List<ChangeNode> getChanges() {
-			return Collections.unmodifiableList(_changes);
-		}
-		
-		/**
-		 * Add the given {@link LogEntry} to the {@link List} of {@link #getChanges()}
-		 * committed for {@link #getTicket()}.
-		 * 
-		 * @param entry
-		 *            the {@link LogEntry} to add
-		 * @return a new {@link ChangeNode} representing the given entr<
-		 */
-		public ChangeNode addChange(final LogEntry entry) {
-			final ChangeNode change = new ChangeNode(this, entry);
-			
-			_changes.add(change);
-			
-			Collections.sort(_changes, new Comparator<ChangeNode>() {
-				@Override
-				public int compare(final ChangeNode o1, final ChangeNode o2) {
-					final Long r1 = Long.valueOf(o1.getChange().getRevision());
-					final Long r2 = Long.valueOf(o2.getChange().getRevision());
-
-					return r1.compareTo(r2);
-				}
-			});
-			
-			return change;
-		}
+	private static class SubcherryTreeTicketNodeComparator implements Comparator<SubcherryTreeTicketNode> {
 		
 		@Override
-		public Check getState() {
-			final List<ChangeNode> changes = getChanges();
-			int checked = 0;
+		public int compare(final SubcherryTreeTicketNode n1, final SubcherryTreeTicketNode n2) {
+			final TracTicket t1 = n1.getTicket();
+			final TracTicket t2 = n2.getTicket();
 			
-			for (final ChangeNode change : changes) {
-				if(Check.CHECKED == change.getState()) {
-					checked++;
+			if(t1 != null) {
+				if(t2 != null) {
+					return t1.getNumber().compareTo(t2.getNumber());
+				} else {
+					return 1;
 				}
-			}
-			
-			if(checked == 0) {
-				return Check.UNCHECKED;
-			} else if(checked == changes.size()) {
-				return Check.CHECKED;
 			} else {
-				return Check.GRAYED; 
+				if(t2 != null) {
+					return -1;
+				} else {
+					return 0;
+				}
 			}
-		}
-		
-		@Override
-		public void setState(final Check state) {
-			// this state does not change anything
-			if(Check.GRAYED == state) {
-				return;
-			}
-			
-			// propagate the new state to all changes
-			for(final ChangeNode change : getChanges()) {
-				change.setState(state);
-			}
-		}
-	}
-	
-	/**
-	 * Instances of this class represent {@link LogEntry}s displayed to the user.
-	 * 
-	 * @author wta
-	 */
-	public static class ChangeNode implements Checkable {
-		
-		/**
-		 * @see #getTicket()
-		 */
-		private final TicketNode _ticket;
-		
-		/**
-		 * @see #getChange()
-		 */
-		private final LogEntry _change;
-		
-		/**
-		 * @see #getState()
-		 */
-		private Check _state;
-		
-		/**
-		 * Create a {@link ChangeNode}.
-		 * 
-		 * @param ticket
-		 *            see {@link #getTicket()}
-		 * @param change
-		 *            see {@link #getChange()}
-		 */
-		protected ChangeNode(final TicketNode ticket, final LogEntry change) {
-			_ticket = ticket;
-			_change = change;
-			_state = Check.CHECKED;
-		}
-		
-		/**
-		 * @return the {@link TicketNode} this {@link ChangeNode} belongs to
-		 */
-		public TicketNode getTicket() {
-			return _ticket;
-		}
-		
-		/**
-		 * @return the {@link LogEntry} this {@link ChangeNode} represents
-		 */
-		public LogEntry getChange() {
-			return _change;
-		}
-		
-		@Override
-		public Check getState() {
-			return _state;
-		}
-		
-		@Override
-		public void setState(final Check state) {
-			_state = state;
 		}
 	}
 }

@@ -33,6 +33,7 @@ import org.eclipse.jface.viewers.ICheckStateListener;
 import org.eclipse.jface.viewers.ICheckStateProvider;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.TreeViewerColumn;
@@ -57,14 +58,18 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
 
+import com.subcherry.Configuration;
+import com.subcherry.repository.command.ClientManager;
 import com.subcherry.repository.core.LogEntry;
 import com.subcherry.repository.core.LogEntryPath;
+import com.subcherry.trac.TracConnection;
 import com.subcherry.trac.TracTicket;
 import com.subcherry.ui.DelayedModifyListener;
-import com.subcherry.ui.wizards.SubcherryTicketContentProvider.ChangeNode;
-import com.subcherry.ui.wizards.SubcherryTicketContentProvider.Checkable;
-import com.subcherry.ui.wizards.SubcherryTicketContentProvider.Checkable.Check;
-import com.subcherry.ui.wizards.SubcherryTicketContentProvider.TicketNode;
+import com.subcherry.ui.model.SubcherryTree;
+import com.subcherry.ui.model.SubcherryTreeNode;
+import com.subcherry.ui.model.SubcherryTreeNode.Check;
+import com.subcherry.ui.model.SubcherryTreeRevisionNode;
+import com.subcherry.ui.model.SubcherryTreeTicketNode;
 
 /**
  * An {@link WizardPage} implementation for {@link SubcherryMergeWizard} which
@@ -92,30 +97,30 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 	private CheckboxTreeViewer _viewer;
 
 	/**
-	 * The {@link Text} control displaying the selected {@link ChangeNode}'s
+	 * The {@link Text} control displaying the selected {@link SubcherryTreeRevisionNode}'s
 	 * revision number.
 	 */
 	private Text _revision;
 	
 	/**
-	 * The {@link Text} control displaying the selected {@link ChangeNode}'s
+	 * The {@link Text} control displaying the selected {@link SubcherryTreeRevisionNode}'s
 	 * revision timestamp.
 	 */
 	private Text _timestamp;
 	
 	/**
-	 * The {@link Text} control displaying the selected {@link ChangeNode}'s author.
+	 * The {@link Text} control displaying the selected {@link SubcherryTreeRevisionNode}'s author.
 	 */
 	private Text _author;
 	
 	/**
-	 * The {@link Text} control displaying the selected {@link ChangeNode}'s commit
+	 * The {@link Text} control displaying the selected {@link SubcherryTreeRevisionNode}'s commit
 	 * message.
 	 */
 	private Text _message;
 	
 	/**
-	 * The {@link Text} control displaying the selected {@link ChangeNode}'s changed
+	 * The {@link Text} control displaying the selected {@link SubcherryTreeRevisionNode}'s changed
 	 * paths.
 	 */
 	private Text _paths;
@@ -127,7 +132,7 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 		super("Tickets");
 		
 		setTitle("SVN Cherry Picking With Subcherry");
-		setMessage("Please select the tickets to merge.");
+		setMessage("Please select the revisions to merge.");
 	}
 	
 	@Override
@@ -139,7 +144,13 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 	public void setVisible(final boolean visible) {
 		// update the ticket table when this page becomes visible
 		if(visible) {
-			_viewer.setInput(getWizard().getConfiguration());
+			final SubcherryMergeWizard wizard = getWizard();
+			final ClientManager mgr = wizard.getClientManager();
+			final TracConnection trac = wizard.getTracConnection();
+			final Configuration config = wizard.getConfiguration();
+			final SubcherryTree tree = new SubcherryTree(mgr, trac, config);
+			
+			_viewer.setInput(tree);
 		}
 		
 		// change visibility after table update
@@ -170,7 +181,7 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 
 	/**
 	 * Create {@link Control}s for the details view displaying the selected
-	 * {@link ChangeNode}'s details.
+	 * {@link SubcherryTreeRevisionNode}'s details.
 	 * 
 	 * @param parent
 	 *            the {@link Composite} to create the controls in
@@ -184,7 +195,7 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 
 	/**
 	 * Create {@link Control}s displaying detailed information for
-	 * {@link ChangeNode}s.
+	 * {@link SubcherryTreeRevisionNode}s.
 	 * 
 	 * @param parent
 	 *            the {@link Composite} to create the controls in
@@ -228,7 +239,7 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 	}
 
 	/**
-	 * Create {@link Control}s displaying a {@link ChangeNode}'s affected paths.
+	 * Create {@link Control}s displaying a {@link SubcherryTreeRevisionNode}'s affected paths.
 	 * 
 	 * @param parent
 	 *            the {@link Composite} to create the controls in
@@ -271,21 +282,7 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 		final Text filter = new Text(parent, SWT.BORDER);
 		filter.setLayoutData(new GridData(SWT.FILL, SWT.NONE, true, false));
 		filter.setMessage("Enter ticket filter expression");
-		filter.addModifyListener(new DelayedModifyListener(new ModifyListener() {
-			@Override
-			public void modifyText(final ModifyEvent e) {
-				final String expr = filter.getText();
-				final Pattern pattern;
-				
-				if(expr.isEmpty()) {
-					pattern = null;
-				} else {
-					pattern = Pattern.compile(REGEX_ANY + Pattern.quote(expr) + REGEX_ANY, Pattern.CASE_INSENSITIVE); 
-				}
-				_viewer.setData(FILTER_PATTERN, pattern);
-				_viewer.refresh();
-			}
-		}));
+		filter.addModifyListener(new DelayedModifyListener(new TicketFilterModifyListener()));
 	}
 	
 	/**
@@ -312,114 +309,11 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 		colTicket.setLabelProvider(new SubcherryIdLabelProvider());
 
 		viewer.addFilter(new SubcherryTicketFilter());
-		viewer.setContentProvider(new SubcherryTicketContentProvider(getWizard().getClientManager(), getWizard().getTracConnection()));
-		viewer.setCheckStateProvider(new ICheckStateProvider() {
-			@Override
-			public boolean isGrayed(final Object element) {
-				if(element instanceof Checkable) {
-					return ((Checkable) element).getState() == Check.GRAYED;
-				}
-				
-				return false;
-			}
-			
-			@Override
-			public boolean isChecked(final Object element) {
-				if(element instanceof Checkable) {
-					return ((Checkable) element).getState() != Check.UNCHECKED;
-				}
-				
-				return true;
-			}
-		});
-		viewer.addCheckStateListener(new ICheckStateListener() {
-			@Override
-			public void checkStateChanged(final CheckStateChangedEvent event) {
-				final Checkable element = (Checkable) event.getElement();
-				final Check state;
-				
-				if(event.getChecked()) {
-					state = Check.CHECKED;
-				} else {
-					state = Check.UNCHECKED;
-				}
-				element.setState(state);
-				
-				if(element instanceof TicketNode) {
-					final TicketNode ticket = (TicketNode) element;
-					
-					// force the viewer to update both, the parent node AND children
-					_viewer.update(ticket, null);
-					_viewer.update(ticket.getChanges().toArray(), null);
-				} else {
-					final ChangeNode change = (ChangeNode) element;
-					
-					// force the viewer to update both, the child node and parent
-					_viewer.update(change, null);
-					_viewer.update(change.getTicket(), null);
-				}
-			}
-		});
+		viewer.setContentProvider(new ViewerContentProvider());
+		viewer.setCheckStateProvider(new ViewerCheckStateProvider());
+		viewer.addCheckStateListener(new ViewerCheckStateListener());
 		
-		viewer.addSelectionChangedListener(new ISelectionChangedListener() {
-			@Override
-			public void selectionChanged(final SelectionChangedEvent event) {
-				final IStructuredSelection selection = event.getStructuredSelection();
-
-				final StringBuilder revisionText = new StringBuilder();
-				final StringBuilder timestampText = new StringBuilder();
-				final StringBuilder authorText = new StringBuilder();
-				final StringBuilder messageText = new StringBuilder();
-				final StringBuilder pathText = new StringBuilder();
-				
-				// append changed paths to the text field
-				if(!selection.isEmpty()) {
-					final Object element = selection.getFirstElement();
-					
-					if(element instanceof ChangeNode) {
-						final ChangeNode node = (ChangeNode) element;
-						final LogEntry change = node.getChange();
-						
-						revisionText.append(change.getRevision());
-						timestampText.append(change.getDate());
-						authorText.append(change.getAuthor());
-						messageText.append(change.getMessage());
-						
-						final List<LogEntryPath> entries = new ArrayList<>(change.getChangedPaths().values());
-						Collections.sort(entries, new Comparator<LogEntryPath>() {
-							final Collator _collator = Collator.getInstance();
-							
-							@Override
-							public int compare(final LogEntryPath o1, final LogEntryPath o2) {
-								// sort by change type first
-								int result = o1.getType().compareTo(o2.getType());
-								
-								// sort by change path after that
-								if(result == 0) {
-									result = _collator.compare(o1.getPath(), o2.getPath());
-								}
-								
-								return result;
-							}
-						});
-						
-						final Iterator<LogEntryPath> iterator = entries.iterator();
-						while(iterator.hasNext()) {
-							pathText.append(iterator.next().toString());
-							if(iterator.hasNext()) {
-								pathText.append("\n");
-							}
-						}
-					}
-				}
-				
-				_revision.setText(revisionText.toString());
-				_timestamp.setText(timestampText.toString());
-				_author.setText(authorText.toString());
-				_message.setText(messageText.toString());
-				_paths.setText(pathText.toString());
-			}
-		});
+		viewer.addSelectionChangedListener(new ViewerSelectionChangedListener());
 		
 		return viewer;
 	}
@@ -448,8 +342,8 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 			public void widgetSelected(final SelectionEvent e) {
 				for (final TreeItem item : _viewer.getTree().getItems()) {
 					final Object element = item.getData();
-					if(element instanceof TicketNode) {
-						final TicketNode ticket = (TicketNode) element;
+					if(element instanceof SubcherryTreeTicketNode) {
+						final SubcherryTreeTicketNode ticket = (SubcherryTreeTicketNode) element;
 						ticket.setState(Check.CHECKED);
 					}
 				}
@@ -466,8 +360,8 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 			public void widgetSelected(final SelectionEvent e) {
 				for (final TreeItem item : _viewer.getTree().getItems()) {
 					final Object element = item.getData();
-					if(element instanceof TicketNode) {
-						final TicketNode ticket = (TicketNode) element;
+					if(element instanceof SubcherryTreeTicketNode) {
+						final SubcherryTreeTicketNode ticket = (SubcherryTreeTicketNode) element;
 						ticket.setState(Check.UNCHECKED);
 					}
 				}
@@ -478,12 +372,183 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 	}
 	
 	/**
+	 * An {@link Comparator} implementation for {@link LogEntryPath}s which compares
+	 * by the {@link LogEntryPath#getType()} first and then by
+	 * {@link LogEntryPath#getPath()}.
+	 * 
+	 * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
+	 */
+	protected static class LogEntryPathComparator implements Comparator<LogEntryPath> {
+		
+		/**
+		 * The {@link Collator} instance to be used for comparing
+		 * {@link LogEntryPath#getPath()}s.
+		 */
+		private final Collator _collator = Collator.getInstance();
+		
+		@Override
+		public int compare(final LogEntryPath o1, final LogEntryPath o2) {
+			// sort by change type first
+			int result = o1.getType().compareTo(o2.getType());
+			
+			// sort by change path after that
+			if(result == 0) {
+				result = _collator.compare(o1.getPath(), o2.getPath());
+			}
+			
+			return result;
+		}
+	}
+	
+	/**
+	 * An {@link ISelectionChangedListener} implementation which updates {@link Control}s
+	 * displaying detail information on the selected {@link SubcherryTreeRevisionNode}.
+	 * 
+	 * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
+	 */
+	protected class ViewerSelectionChangedListener implements ISelectionChangedListener {
+
+		@Override
+		public void selectionChanged(final SelectionChangedEvent event) {
+			final IStructuredSelection selection = event.getStructuredSelection();
+
+			final StringBuilder revisionText = new StringBuilder();
+			final StringBuilder timestampText = new StringBuilder();
+			final StringBuilder authorText = new StringBuilder();
+			final StringBuilder messageText = new StringBuilder();
+			final StringBuilder pathText = new StringBuilder();
+			
+			// append changed paths to the text field
+			if(!selection.isEmpty()) {
+				final Object element = selection.getFirstElement();
+				
+				if(element instanceof SubcherryTreeRevisionNode) {
+					final SubcherryTreeRevisionNode node = (SubcherryTreeRevisionNode) element;
+					final LogEntry change = node.getChange();
+					
+					revisionText.append(change.getRevision());
+					timestampText.append(change.getDate());
+					authorText.append(change.getAuthor());
+					messageText.append(change.getMessage());
+					
+					final List<LogEntryPath> entries = new ArrayList<>(change.getChangedPaths().values());
+					Collections.sort(entries, new LogEntryPathComparator());
+					
+					final Iterator<LogEntryPath> iterator = entries.iterator();
+					while(iterator.hasNext()) {
+						pathText.append(iterator.next().toString());
+						if(iterator.hasNext()) {
+							pathText.append("\n");
+						}
+					}
+				}
+			}
+			
+			_revision.setText(revisionText.toString());
+			_timestamp.setText(timestampText.toString());
+			_author.setText(authorText.toString());
+			_message.setText(messageText.toString());
+			_paths.setText(pathText.toString());
+		}
+	}
+
+	/**
+	 * An {@link ICheckStateListener} implementation which updates the check state
+	 * of {@link SubcherryTreeNode}s recursively and updates only affected nodes of
+	 * the specified {@link TreeViewer}.
+	 * 
+	 * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
+	 */
+	protected class ViewerCheckStateListener implements ICheckStateListener {
+		
+		@Override
+		public void checkStateChanged(final CheckStateChangedEvent event) {
+			final SubcherryTreeNode element = (SubcherryTreeNode) event.getElement();
+			final Check state;
+			
+			if(event.getChecked()) {
+				state = Check.CHECKED;
+			} else {
+				state = Check.UNCHECKED;
+			}
+			element.setState(state);
+			
+			if(element instanceof SubcherryTreeTicketNode) {
+				final SubcherryTreeTicketNode ticket = (SubcherryTreeTicketNode) element;
+				
+				// force the viewer to update both, the parent node AND children
+				_viewer.update(ticket, null);
+				_viewer.update(ticket.getChanges().toArray(), null);
+			} else {
+				final SubcherryTreeRevisionNode change = (SubcherryTreeRevisionNode) element;
+				
+				// force the viewer to update both, the child node and parent
+				_viewer.update(change, null);
+				_viewer.update(change.getTicket(), null);
+			}
+		}
+	}
+
+	/**
+	 * An {@link ICheckStateProvider} implementation which delegates
+	 * {@link ICheckStateProvider#isGrayed(Object)} and
+	 * {@link ICheckStateProvider#isChecked(Object)} to {@link SubcherryTreeNode}s
+	 * 
+	 * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
+	 */
+	protected static class ViewerCheckStateProvider implements ICheckStateProvider {
+		
+		@Override
+		public boolean isGrayed(final Object element) {
+			if(element instanceof SubcherryTreeNode) {
+				return ((SubcherryTreeNode) element).getState() == Check.GRAYED;
+			}
+			
+			return false;
+		}
+
+		@Override
+		public boolean isChecked(final Object element) {
+			if(element instanceof SubcherryTreeNode) {
+				return ((SubcherryTreeNode) element).getState() != Check.UNCHECKED;
+			}
+			
+			return true;
+		}
+	}
+	
+	/**
+	 * A {@link ModifyListener} implementation which updates the specified
+	 * {@link TreeViewer} upon filter text modification.
+	 * 
+	 * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
+	 */
+	protected class TicketFilterModifyListener implements ModifyListener {
+		
+		@Override
+		public void modifyText(final ModifyEvent e) {
+			final String expr = ((Text) e.widget).getText();
+			final Pattern pattern;
+			
+			if(expr.isEmpty()) {
+				pattern = null;
+			} else {
+				pattern = Pattern.compile(REGEX_ANY + Pattern.quote(expr) + REGEX_ANY, Pattern.CASE_INSENSITIVE); 
+			}
+			
+			_viewer.setData(FILTER_PATTERN, pattern);
+			_viewer.refresh();
+		}
+	}
+
+	/**
 	 * An {@link ViewerFilter} implementation which accepts only tickets matching
 	 * the filter pattern.
 	 * 
 	 * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
 	 */
-	private static final class SubcherryTicketFilter extends ViewerFilter {
+	protected static class SubcherryTicketFilter extends ViewerFilter {
+		
 		@Override
 		public boolean select(final Viewer viewer, final Object parentElement, final Object element) {
 			final Pattern filter = (Pattern) viewer.getData(FILTER_PATTERN);
@@ -494,7 +559,7 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 			}
 			
 			// filter tickets using their ticket summary
-			if(element instanceof TicketNode) {
+			if(element instanceof SubcherryTreeTicketNode) {
 				final TreeViewer tree = (TreeViewer) viewer;
 				final ColumnLabelProvider labels = (ColumnLabelProvider) tree.getLabelProvider(0);
 				final String label = labels.getText(element);
@@ -513,18 +578,19 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 	 * 
 	 * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
 	 */
-	private static final class SubcherryIdLabelProvider extends ColumnLabelProvider {
+	protected static class SubcherryIdLabelProvider extends ColumnLabelProvider {
+		
 		@Override
 		public String getText(final Object element) {
-			if (element instanceof TicketNode) {
-				final TicketNode node = (TicketNode) element;
+			if (element instanceof SubcherryTreeTicketNode) {
+				final SubcherryTreeTicketNode node = (SubcherryTreeTicketNode) element;
 				final TracTicket ticket = node.getTicket();
 
 				if (ticket != null) {
 					return "#" + String.valueOf(ticket.getNumber());
 				}
-			} else if (element instanceof ChangeNode) {
-				final ChangeNode node = (ChangeNode) element;
+			} else if (element instanceof SubcherryTreeRevisionNode) {
+				final SubcherryTreeRevisionNode node = (SubcherryTreeRevisionNode) element;
 
 				return "[" + String.valueOf(node.getChange().getRevision()) + "]";
 			}
@@ -539,30 +605,30 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 	 * 
 	 * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
 	 */
-	private static final class SubcherryDescriptionLabelProvider extends ColumnLabelProvider {
+	protected static class SubcherryDescriptionLabelProvider extends ColumnLabelProvider {
 		
 		/**
-		 * The label text to be used for {@link TicketNode}s without actual
+		 * The label text to be used for {@link SubcherryTreeTicketNode}s without actual
 		 * {@link TracTicket}s.
 		 */
 		public static final String TICKET_NONE = "NONE";
 		
 		/**
-		 * The {@link Font} to be used for rendering {@link TicketNode}s.
+		 * The {@link Font} to be used for rendering {@link SubcherryTreeTicketNode}s.
 		 */
 		private Font _ticketFont;
 
 		@Override
 		public String getText(final Object element) {
-			if (element instanceof TicketNode) {
-				final TicketNode node = (TicketNode) element;
+			if (element instanceof SubcherryTreeTicketNode) {
+				final SubcherryTreeTicketNode node = (SubcherryTreeTicketNode) element;
 				final TracTicket ticket = node.getTicket();
 				
 				if (ticket != null) {
 					return ticket.getSummary();
 				}
-			} else if(element instanceof ChangeNode) {
-				final ChangeNode node = (ChangeNode) element;
+			} else if(element instanceof SubcherryTreeRevisionNode) {
+				final SubcherryTreeRevisionNode node = (SubcherryTreeRevisionNode) element;
 				
 				return node.getChange().getMessage();
 			}
@@ -572,7 +638,7 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 		
 		@Override
 		public Font getFont(final Object element) {
-			if(element instanceof TicketNode) {
+			if(element instanceof SubcherryTreeTicketNode) {
 				if(_ticketFont == null) {
 					final Display device = Display.getCurrent();
 					_ticketFont = FontDescriptor.createFrom(device.getSystemFont()).setStyle(SWT.BOLD).createFont(device);
@@ -591,6 +657,51 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 			}
 			
 			super.dispose();
+		}
+	}
+	
+	/**
+	 * An {@link ITreeContentProvider} implementation providing access to the
+	 * {@link SubcherryTree}.
+	 * 
+	 * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
+	 */
+	protected static class ViewerContentProvider implements ITreeContentProvider {
+		
+		@Override
+		public Object[] getElements(final Object model) {
+			if(model instanceof SubcherryTree) {
+				return ((SubcherryTree) model).getTickets().toArray();
+			}
+			
+			return new Object[0];
+		}
+		
+		@Override
+		public Object[] getChildren(final Object parent) {
+			if(parent instanceof SubcherryTreeTicketNode) {
+				return ((SubcherryTreeTicketNode) parent).getChanges().toArray();
+			}
+			
+			return new Object[0];
+		}
+		
+		@Override
+		public boolean hasChildren(final Object parent) {
+			if(parent instanceof SubcherryTreeTicketNode) {
+				return !((SubcherryTreeTicketNode) parent).getChanges().isEmpty();
+			}
+			
+			return false;
+		}
+		
+		@Override
+		public Object getParent(final Object child) {
+			if(child instanceof SubcherryTreeRevisionNode) {
+				return ((SubcherryTreeRevisionNode) child).getTicket();
+			}
+			
+			return null;
 		}
 	}
 }

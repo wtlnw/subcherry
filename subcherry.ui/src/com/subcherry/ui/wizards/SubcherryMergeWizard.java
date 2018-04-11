@@ -26,6 +26,7 @@ import com.subcherry.repository.command.ClientManager;
 import com.subcherry.repository.javahl.HLRepositoryFactory;
 import com.subcherry.trac.TracConnection;
 import com.subcherry.ui.SubcherryUI;
+import com.subcherry.ui.model.SubcherryTree;
 import com.subcherry.ui.preferences.SubcherryPreferenceConstants;
 
 import de.haumacher.common.config.ValueFactory;
@@ -53,6 +54,11 @@ public class SubcherryMergeWizard extends Wizard {
 	 * @see #getConfiguration()
 	 */
 	private Configuration _config;
+	
+	/**
+	 * @see #getSubcherryTree()
+	 */
+	private SubcherryTree _tree;
 	
 	/**
 	 * Create a {@link SubcherryMergeWizard}.
@@ -106,10 +112,29 @@ public class SubcherryMergeWizard extends Wizard {
 		return _config;
 	}
 	
+	/**
+	 * @return the {@link SubcherryTree} with the picked cherries or {@code null} if
+	 *         no cherries have been picked yet
+	 */
+	public SubcherryTree getSubcherryTree() {
+		return _tree;
+	}
+	
+	/**
+	 * Setter for {@link #getSubcherryTree()}.
+	 * 
+	 * @param tree
+	 *            see {@link #getSubcherryTree()}
+	 */
+	public void setSubcherryTree(final SubcherryTree tree) {
+		_tree = tree;
+	}
+	
 	@Override
 	public void addPages() {
 		addPage(new SubcherryMergeWizardSourcePage());
 		addPage(new SubcherryMergeWizardTicketsPage());
+		addPage(new SubcherryMergeWizardSummaryPage());
 	}
 	
 	@Override
@@ -124,9 +149,6 @@ public class SubcherryMergeWizard extends Wizard {
 	
 	@Override
 	public boolean performFinish() {
-		// 1. Open/Display the SubcherryMergeView
-		// 2. Initialize the SubcherryMergeView with the selected revision
-		// 3. Start the merge process
 		return true;
 	}
 }

@@ -25,6 +25,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.eclipse.jface.dialogs.IPageChangingListener;
+import org.eclipse.jface.dialogs.PageChangingEvent;
 import org.eclipse.jface.resource.FontDescriptor;
 import org.eclipse.jface.viewers.CheckStateChangedEvent;
 import org.eclipse.jface.viewers.CheckboxTreeViewer;
@@ -39,6 +41,8 @@ import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.TreeViewerColumn;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerFilter;
+import org.eclipse.jface.wizard.IWizardPage;
+import org.eclipse.jface.wizard.WizardDialog;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
@@ -141,23 +145,6 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 	}
 	
 	@Override
-	public void setVisible(final boolean visible) {
-		// update the ticket table when this page becomes visible
-		if(visible) {
-			final SubcherryMergeWizard wizard = getWizard();
-			final ClientManager mgr = wizard.getClientManager();
-			final TracConnection trac = wizard.getTracConnection();
-			final Configuration config = wizard.getConfiguration();
-			final SubcherryTree tree = new SubcherryTree(mgr, trac, config);
-			
-			_viewer.setInput(tree);
-		}
-		
-		// change visibility after table update
-		super.setVisible(visible);
-	}
-	
-	@Override
 	public void dispose() {
 		// release all handles for finalization
 		_viewer = null;
@@ -177,8 +164,53 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 		
 		setControl(contents);
 		setPageComplete(true);
+		
+		final WizardDialog dialog = (WizardDialog) getContainer();
+		dialog.addPageChangingListener(new IPageChangingListener() {
+			@Override
+			public void handlePageChanging(final PageChangingEvent event) {
+				final IWizardPage thisPage = SubcherryMergeWizardTicketsPage.this;
+				final IWizardPage prevPage = SubcherryMergeWizardTicketsPage.this.getPreviousPage();
+				final IWizardPage nextPage = SubcherryMergeWizardTicketsPage.this.getNextPage();
+
+				// switching from previous to this page -> update viewer 
+				if (event.getCurrentPage() == prevPage && event.getTargetPage() == thisPage) {
+					updatePage();
+					return;
+				}
+				
+				// switching from this page to next page -> store subcherry tree
+				if(event.getCurrentPage() == thisPage && event.getTargetPage() == nextPage) {
+					storePage();
+					return;
+				}
+				
+				// ignore all other page changes
+			}
+		});
 	}
 
+	/**
+	 * Store data from this page to {@link #getWizard()}.
+	 */
+	private void storePage() {
+		final SubcherryMergeWizard wizard = SubcherryMergeWizardTicketsPage.this.getWizard();
+		wizard.setSubcherryTree((SubcherryTree) _viewer.getInput());
+	}
+
+	/**
+	 * Update this page with current data from {@link #getWizard()}.
+	 */
+	private void updatePage() {
+		final SubcherryMergeWizard wizard = getWizard();
+		final ClientManager mgr = wizard.getClientManager();
+		final TracConnection trac = wizard.getTracConnection();
+		final Configuration config = wizard.getConfiguration();
+		final SubcherryTree tree = new SubcherryTree(mgr, trac, config);
+
+		_viewer.setInput(tree);
+	}
+	
 	/**
 	 * Create {@link Control}s for the details view displaying the selected
 	 * {@link SubcherryTreeRevisionNode}'s details.
@@ -252,7 +284,7 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 		labelPaths.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 		labelPaths.setText("Affected paths:");
 		
-		_paths = new Text(contents, SWT.BORDER | SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
+		_paths = new Text(contents, SWT.BORDER | SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.READ_ONLY);
 		_paths.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 	}
 	
@@ -279,7 +311,7 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 	 *            the {@link Composite} to create the controls in
 	 */
 	private void createTicketFilter(final Composite parent) {
-		final Text filter = new Text(parent, SWT.BORDER);
+		final Text filter = new Text(parent, SWT.BORDER | SWT.SEARCH | SWT.ICON_SEARCH | SWT.ICON_CANCEL);
 		filter.setLayoutData(new GridData(SWT.FILL, SWT.NONE, true, false));
 		filter.setMessage("Enter ticket filter expression");
 		filter.addModifyListener(new DelayedModifyListener(new TicketFilterModifyListener()));
@@ -291,7 +323,7 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 	 * @return the {@link CheckboxTreeViewer} displaying available tickets
 	 */
 	private CheckboxTreeViewer createTicketViewer(final Composite parent) {
-		final CheckboxTreeViewer viewer = new CheckboxTreeViewer(parent, SWT.BORDER|SWT.FULL_SELECTION);
+		final CheckboxTreeViewer viewer = new CheckboxTreeViewer(parent, SWT.BORDER | SWT.FULL_SELECTION);
 		final Tree table = viewer.getTree();
 		table.setHeaderVisible(true);
 		table.setLinesVisible(true);

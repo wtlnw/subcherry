@@ -78,7 +78,7 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 	 * Create a {@link SubcherryMergeWizardSourcePage}.
 	 */
 	public SubcherryMergeWizardSourcePage() {
-		super("Branch");
+		super("Source");
 		
 		setTitle("SVN Cherry Picking With Subcherry");
 		setMessage("Please select the source branch with an optional start revision.");

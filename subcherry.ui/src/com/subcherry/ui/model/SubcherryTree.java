@@ -146,6 +146,28 @@ public class SubcherryTree {
 	}
 	
 	/**
+	 * @return a (possibly empty) {@link List} of {@link SubcherryTreeTicketNode}s
+	 *         with at least one selected revision
+	 */
+	public List<SubcherryTreeTicketNode> getSelectedTickets() {
+		final List<SubcherryTreeTicketNode> tickets = new ArrayList<>();
+		
+		for (final SubcherryTreeTicketNode ticket : getTickets()) {
+			switch(ticket.getState()) {
+			case CHECKED: // fall through
+			case GRAYED:
+				tickets.add(ticket);
+				break;
+			default:
+				// ignore
+				break;
+			}
+		}
+		
+		return tickets;
+	}
+	
+	/**
 	 * Group the given changes by the ticket they have been committed for.
 	 * 
 	 * @param config

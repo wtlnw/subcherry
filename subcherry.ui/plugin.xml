@@ -18,18 +18,46 @@
    </extension>
    <extension
          point="org.eclipse.ui.commands">
+      <category
+            id="com.subcherry.ui.category"
+            name="Subcherry">
+      </category>
       <command
-            categoryId="org.eclipse.team.ui.category.team"
+            categoryId="com.subcherry.ui.category"
+            defaultHandler="com.subcherry.ui.handlers.SubcherryWizardHandler"
             id="subcherry.ui.commands.merge"
             name="Subcherry Merge">
       </command>
-   </extension>
-   <extension
-         point="org.eclipse.ui.handlers">
-      <handler
-            class="com.subcherry.ui.handlers.SubcherryMergeHandler"
-            commandId="subcherry.ui.commands.merge">
-      </handler>
+      <command
+            categoryId="com.subcherry.ui.category"
+            id="com.subcherry.ui.commands.run"
+            name="Run Merge">
+      </command>
+      <command
+            categoryId="com.subcherry.ui.category"
+            id="com.subcherry.ui.commands.pause"
+            name="Pause Merge">
+      </command>
+      <command
+            categoryId="com.subcherry.ui.category"
+            id="com.subcherry.ui.commands.skip"
+            name="Skip Revision">
+      </command>
+      <command
+            categoryId="com.subcherry.ui.category"
+            id="com.subcherry.ui.commands.revert"
+            name="Revert Revision">
+      </command>
+      <command
+            categoryId="com.subcherry.ui.category"
+            id="com.subcherry.ui.commands.merge"
+            name="Merge Revision">
+      </command>
+      <command
+            categoryId="com.subcherry.ui.category"
+            id="com.subcherry.ui.commands.commit"
+            name="Commit Revision">
+      </command>
    </extension>
    <extension
          point="org.eclipse.ui.menus">
@@ -39,11 +67,126 @@
                id="subcherry.ui.toolbars">
             <command
                   commandId="subcherry.ui.commands.merge"
-                  icon="icons/sample.png"
+                  icon="icons/etool/mrg_wiz.png"
                   id="subcherry.ui.toolbars.merge"
                   tooltip="Open the merge wizard.">
             </command>
          </toolbar>
       </menuContribution>
+      <menuContribution
+            allPopups="false"
+            locationURI="toolbar:com.subcherry.ui.views.SubcherryMergeView">
+         <command
+               commandId="com.subcherry.ui.commands.run"
+               id="subcherry.ui.toolbars.run"
+               label="Run"
+               tooltip="Merge all revisions automatically.">
+         </command>
+         <command
+               commandId="com.subcherry.ui.commands.pause"
+               id="subcherry.ui.toolbars.pause"
+               label="Pause"
+               tooltip="Pause automatic merge.">
+         </command>
+         <command
+               commandId="com.subcherry.ui.commands.skip"
+               id="subcherry.ui.toolbars.skip"
+               label="Skip"
+               tooltip="Skip the current revision.">
+         </command>
+         <command
+               commandId="com.subcherry.ui.commands.revert"
+               id="subcherry.ui.toolbars.revert"
+               label="Revert"
+               tooltip="Revert the current revision.">
+         </command>
+         <command
+               commandId="com.subcherry.ui.commands.merge"
+               id="subcherry.ui.toolbars.merge"
+               label="Merge"
+               tooltip="Merge the current revision.">
+         </command>
+         <command
+               commandId="com.subcherry.ui.commands.commit"
+               id="subcherry.ui.toolbars.commit"
+               label="Commit"
+               tooltip="Commit the current revision.">
+         </command>
+      </menuContribution>
+   </extension>
+   <extension
+         point="org.eclipse.ui.views">
+      <view
+            allowMultiple="false"
+            category="org.tigris.subversion.subclipse"
+            class="com.subcherry.ui.views.SubcherryMergeView"
+            id="com.subcherry.ui.views.SubcherryMergeView"
+            inject="false"
+            name="Subcherry Merge"
+            restorable="false">
+      </view>
+   </extension>
+   <extension
+         point="org.eclipse.ui.handlers">
+      <handler
+            class="com.subcherry.ui.handlers.SubcherryRunHandler"
+            commandId="com.subcherry.ui.commands.run">
+         <activeWhen>
+            <reference
+                  definitionId="com.subcherry.ui.expressions.SubcherryMergeViewActive">
+            </reference></activeWhen>
+      </handler>
+      <handler
+            class="com.subcherry.ui.handlers.SubcherryPauseHandler"
+            commandId="com.subcherry.ui.commands.pause">
+         <activeWhen>
+            <reference
+                  definitionId="com.subcherry.ui.expressions.SubcherryMergeViewActive">
+            </reference></activeWhen>
+      </handler>
+      <handler
+            class="com.subcherry.ui.handlers.SubcherrySkipHandler"
+            commandId="com.subcherry.ui.commands.skip">
+         <activeWhen>
+            <reference
+                  definitionId="com.subcherry.ui.expressions.SubcherryMergeViewActive">
+            </reference></activeWhen>
+      </handler>
+      <handler
+            class="com.subcherry.ui.handlers.SubcherryRevertHandler"
+            commandId="com.subcherry.ui.commands.revert">
+         <activeWhen>
+            <reference
+                  definitionId="com.subcherry.ui.expressions.SubcherryMergeViewActive">
+            </reference></activeWhen>
+      </handler>
+      <handler
+            class="com.subcherry.ui.handlers.SubcherryMergeHandler"
+            commandId="com.subcherry.ui.commands.merge">
+         <activeWhen>
+            <reference
+                  definitionId="com.subcherry.ui.expressions.SubcherryMergeViewActive">
+            </reference></activeWhen>
+      </handler>
+      <handler
+            class="com.subcherry.ui.handlers.SubcherryCommitHandler"
+            commandId="com.subcherry.ui.commands.commit">
+         <activeWhen>
+            <reference
+                  definitionId="com.subcherry.ui.expressions.SubcherryMergeViewActive">
+            </reference></activeWhen>
+      </handler>
+   </extension>
+   <extension
+         point="org.eclipse.core.expressions.definitions">
+      <definition
+            id="com.subcherry.ui.expressions.SubcherryMergeViewActive">
+         <with
+               variable="activePartId">
+            <equals
+                  value="com.subcherry.ui.views.SubcherryMergeView">
+            </equals>
+         </with>
+      </definition>
    </extension>
 </plugin>

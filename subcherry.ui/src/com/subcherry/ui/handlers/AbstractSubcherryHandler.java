@@ -17,28 +17,35 @@
  */
 package com.subcherry.ui.handlers;
 
+import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
+import org.eclipse.ui.handlers.HandlerUtil;
 
-import com.subcherry.ui.jobs.SubcherryMergeJob;
-import com.subcherry.ui.jobs.SubcherryRefreshJob;
 import com.subcherry.ui.views.SubcherryMergeContext;
-import com.subcherry.ui.views.SubcherryMergeEntry;
+import com.subcherry.ui.views.SubcherryMergeView;
 
 /**
- * An {@link AbstractSubcherryHandler} implementation which merges the current
- * {@link SubcherryMergeEntry}.
+ * A base {@link AbstractHandler} implementation for all commands in the
+ * {@link SubcherryMergeView}.
  * 
  * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
+ * @version $Revision: $ $Author: $ $Date: $
  */
-public class SubcherryMergeHandler extends AbstractSubcherryHandler {
+public abstract class AbstractSubcherryHandler extends AbstractHandler {
 
-	@Override
-	public Object execute(final ExecutionEvent event) throws ExecutionException {
-		final SubcherryMergeContext context = getContext(event);
-
-		new SubcherryMergeJob(context).next(new SubcherryRefreshJob(context)).schedule();
+	/**
+	 * @param event
+	 *            the {@link ExecutionEvent} for this
+	 *            {@link AbstractSubcherryHandler}
+	 * @return the {@link SubcherryMergeContext} resolved from the given event
+	 * @throws ExecutionException
+	 *             if an error occurred when resolving the context
+	 */
+	protected SubcherryMergeContext getContext(final ExecutionEvent event) throws ExecutionException {
+		final SubcherryMergeView view = (SubcherryMergeView) HandlerUtil.getActivePartChecked(event);
+		final SubcherryMergeContext context = (SubcherryMergeContext) view.getViewer().getInput();
 		
-		return null;
+		return context;
 	}
 }

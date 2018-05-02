@@ -15,30 +15,27 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.subcherry.ui.handlers;
+package com.subcherry.ui.views;
 
-import org.eclipse.core.commands.ExecutionEvent;
-import org.eclipse.core.commands.ExecutionException;
-
-import com.subcherry.ui.jobs.SubcherryMergeJob;
-import com.subcherry.ui.jobs.SubcherryRefreshJob;
-import com.subcherry.ui.views.SubcherryMergeContext;
-import com.subcherry.ui.views.SubcherryMergeEntry;
+import com.subcherry.ui.SubcherryUI;
 
 /**
- * An {@link AbstractSubcherryHandler} implementation which merges the current
- * {@link SubcherryMergeEntry}.
+ * Implementing classes react to changes during the merge operation with {@link SubcherryUI}.
  * 
  * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
+ * @version $Revision: $ $Author: $ $Date: $
  */
-public class SubcherryMergeHandler extends AbstractSubcherryHandler {
+public interface SubcherryMergeListener {
 
-	@Override
-	public Object execute(final ExecutionEvent event) throws ExecutionException {
-		final SubcherryMergeContext context = getContext(event);
-
-		new SubcherryMergeJob(context).next(new SubcherryRefreshJob(context)).schedule();
-		
-		return null;
-	}
+	/**
+	 * This method is called when a {@link SubcherryMergeEntry}'s state has changed.
+	 * 
+	 * @param entry
+	 *            the {@link SubcherryMergeEntry} whose state has changed
+	 * @param oldState
+	 *            the previous {@link SubcherryMergeState}
+	 * @param newState
+	 *            the new {@link SubcherryMergeState}
+	 */
+	void onStateChanged(SubcherryMergeEntry entry, SubcherryMergeState oldState, SubcherryMergeState newState);
 }

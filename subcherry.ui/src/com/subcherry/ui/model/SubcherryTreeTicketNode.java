@@ -70,6 +70,22 @@ public class SubcherryTreeTicketNode implements SubcherryTreeNode {
 	}
 	
 	/**
+	 * @return a (possibly empty) {@link List} of selected
+	 *         {@link SubcherryTreeRevisionNode} committed for {@link #getTicket()}
+	 */
+	public List<SubcherryTreeRevisionNode> getSelectedChanges() {
+		final List<SubcherryTreeRevisionNode> selection = new ArrayList<>();
+
+		for (final SubcherryTreeRevisionNode change : getChanges()) {
+			if (change.getState() == Check.CHECKED) {
+				selection.add(change);
+			}
+		}
+		
+		return selection;
+	}
+	
+	/**
 	 * Add the given {@link LogEntry} to the {@link List} of {@link #getChanges()}
 	 * committed for {@link #getTicket()}.
 	 * 

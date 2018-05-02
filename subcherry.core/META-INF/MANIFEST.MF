@@ -37,11 +37,11 @@ Export-Package: base64,
  com.subcherry.trac;uses:="org.lustin.trac.xmlprc",
  com.subcherry.util,
  com.subcherry.utils;uses:="com.subcherry.commit,com.subcherry.repository.core,com.subcherry"
-Require-Bundle: org.eclipse.core.runtime;bundle-version="3.13.0",
- de.haumacher.common.config;bundle-version="1.0.0",
+Require-Bundle: org.eclipse.core.runtime,
+ de.haumacher.common.config,
  ext.org.apache.ws.commons,
  ext.org.apache.xmlrpc,
- ext.org.lustin.trac;bundle-version="1.0.0",
+ ext.org.lustin.trac,
  subcherry.repository
 Automatic-Module-Name: subcherry.core
 Bundle-ActivationPolicy: lazy

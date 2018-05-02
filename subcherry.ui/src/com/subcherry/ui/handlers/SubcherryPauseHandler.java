@@ -19,25 +19,26 @@ package com.subcherry.ui.handlers;
 
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
+import org.eclipse.core.runtime.jobs.Job;
 
-import com.subcherry.ui.jobs.SubcherryMergeJob;
-import com.subcherry.ui.jobs.SubcherryRefreshJob;
-import com.subcherry.ui.views.SubcherryMergeContext;
-import com.subcherry.ui.views.SubcherryMergeEntry;
+import com.subcherry.ui.SubcherryUI;
+import com.subcherry.ui.jobs.AbstractSubcherryJob;
 
 /**
- * An {@link AbstractSubcherryHandler} implementation which merges the current
- * {@link SubcherryMergeEntry}.
+ * An {@link AbstractSubcherryHandler} implementation for {@link SubcherryUI} which
+ * pauses automatic merge execution.
  * 
  * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
+ * @version $Revision: $ $Author: $ $Date: $
  */
-public class SubcherryMergeHandler extends AbstractSubcherryHandler {
+public class SubcherryPauseHandler extends AbstractSubcherryHandler {
 
 	@Override
 	public Object execute(final ExecutionEvent event) throws ExecutionException {
-		final SubcherryMergeContext context = getContext(event);
-
-		new SubcherryMergeJob(context).next(new SubcherryRefreshJob(context)).schedule();
+		// terminate all currently scheduled SubcherryMergeJobs
+		for (final Job job : Job.getJobManager().find(AbstractSubcherryJob.class)) {
+			job.cancel();
+		}
 		
 		return null;
 	}

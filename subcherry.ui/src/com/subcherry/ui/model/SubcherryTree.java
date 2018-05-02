@@ -25,14 +25,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IWorkspace;
-import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.swt.widgets.Display;
-import org.tigris.subversion.subclipse.core.SVNProviderPlugin;
 
 import com.subcherry.Configuration;
 import com.subcherry.LogReader;
@@ -96,21 +92,21 @@ public class SubcherryTree {
 	 * @return the {@link ClientManager} to be used for accessing the remote
 	 *         repository
 	 */
-	protected ClientManager getClientManager() {
+	public ClientManager getClientManager() {
 		return _mgr;
 	}
 	
 	/**
 	 * @return the {@link TracConnection} to be used for accessing trac tickets
 	 */
-	protected TracConnection getTracConnection() {
+	public TracConnection getTracConnection() {
 		return _trac;
 	}
 	
 	/**
 	 * @return the {@link Configuration} containing user preferences
 	 */
-	protected Configuration getConfiguration() {
+	public Configuration getConfiguration() {
 		return _config;
 	}
 	
@@ -121,12 +117,11 @@ public class SubcherryTree {
 	public List<SubcherryTreeTicketNode> getTickets() {
 		if(_nodes == null) {
 			try {
-				final Configuration config = getConfiguration();
-				final LogReader log = newLogReader(config);
-				final List<String> paths = computePaths(config);
+				final LogReader log = newLogReader();
+				final List<String> paths = computePaths();
 				final List<LogEntry> entries = readHistory(log, paths);
 			
-				_nodes = groupByTicket(config, entries);
+				_nodes = groupByTicket(entries);
 			} catch(Exception e) {
 				final Throwable cause;
 				if(e instanceof UndeclaredThrowableException) {
@@ -134,7 +129,7 @@ public class SubcherryTree {
 				} else {
 					cause = e;
 				}
-				final Status status = new Status(IStatus.ERROR, SubcherryUI.getInstance().getBundle().getSymbolicName(), "Trac access failed.", cause);
+				final Status status = new Status(IStatus.ERROR, SubcherryUI.id(), "Trac access failed.", cause);
 				ErrorDialog.openError(Display.getCurrent().getActiveShell(), "Subcherry Merge", "Failed to resolve trac tickets.", status);
 				
 				// no data upon failure
@@ -170,14 +165,12 @@ public class SubcherryTree {
 	/**
 	 * Group the given changes by the ticket they have been committed for.
 	 * 
-	 * @param config
-	 *            the {@link Configuration} providing common user settings
 	 * @param entries
 	 *            a (possibly empty) {@link List} of {@link LogEntry}s to group
 	 * @return a (possibly empty) {@link List} of {@link SubcherryTreeTicketNode}s representing
 	 *         {@link TracTicket}s
 	 */
-	private List<SubcherryTreeTicketNode> groupByTicket(final Configuration config, final List<LogEntry> entries) {
+	private List<SubcherryTreeTicketNode> groupByTicket(final List<LogEntry> entries) {
 		final Map<Integer, SubcherryTreeTicketNode> tickets = new HashMap<>();
 		for (final LogEntry entry : entries) {
 			final String msg = entry.getMessage();
@@ -232,7 +225,7 @@ public class SubcherryTree {
 				}
 			});
 		} catch (RepositoryException e) {
-			final Status status = new Status(IStatus.ERROR, SubcherryUI.getInstance().getBundle().getSymbolicName(), "Failed to access remote location.", e);
+			final Status status = new Status(IStatus.ERROR, SubcherryUI.id(), "Failed to access remote location.", e);
 			ErrorDialog.openError(Display.getCurrent().getActiveShell(), "Subcherry Merge", "No revision logs available.", status);
 		}
 		
@@ -246,28 +239,22 @@ public class SubcherryTree {
 	 * Compute the remove SVN paths to read the history for based on the current
 	 * workspace modules.
 	 * 
-	 * @param config
-	 *            the {@link Configuration} providing common user settings
 	 * @return a (possibly empty) {@link List} of repository local SVN paths to read
 	 *         the history for
 	 */
-	private List<String> computePaths(final Configuration config) {
-		final SVNProviderPlugin svn = SVNProviderPlugin.getPlugin();
-		final IWorkspace workspace = ResourcesPlugin.getWorkspace();
-		final String source = config.getSourceBranch();
+	private List<String> computePaths() {
+		// list all paths in the client workspace
+		final String source = getConfiguration().getSourceBranch();
 		final List<String> paths = new ArrayList<>();
 		
-		for (final IProject module : workspace.getRoot().getProjects()) {
-			if(module.isAccessible() && svn.isManagedBySubversion(module)) {
-				final StringBuilder path = new StringBuilder();
-				path.append(source);
-				if(!source.endsWith("/")) {
-					path.append('/');
-				}
-				path.append(module.getName());
-				
-				paths.add(path.toString());
+		for (final String module : getConfiguration().getModules()) {
+			final StringBuilder path = new StringBuilder();
+			path.append(source);
+			if (!source.endsWith("/")) {
+				path.append('/');
 			}
+			path.append(module);
+			paths.add(path.toString());
 		}
 		
 		// append the branch itself to handle adding/removing modules
@@ -277,12 +264,11 @@ public class SubcherryTree {
 	}
 	
 	/**
-	 * @param config
-	 *            the {@link Configuration} providing common user settings
 	 * @return a new {@link LogReader} instance
 	 */
-	private LogReader newLogReader(final Configuration config) {
-		final Client client = _mgr.getClient();
+	private LogReader newLogReader() {
+		final Configuration config = getConfiguration();
+		final Client client = getClientManager().getClient();
 		final RepositoryURL url = RepositoryURL.parse(config.getSvnURL());
 
 		final LogReader log = new LogReader(client, url);

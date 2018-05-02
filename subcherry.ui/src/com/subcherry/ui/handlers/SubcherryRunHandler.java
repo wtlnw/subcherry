@@ -20,24 +20,26 @@ package com.subcherry.ui.handlers;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 
-import com.subcherry.ui.jobs.SubcherryMergeJob;
+import com.subcherry.ui.SubcherryUI;
 import com.subcherry.ui.jobs.SubcherryRefreshJob;
+import com.subcherry.ui.jobs.SubcherryRunJob;
 import com.subcherry.ui.views.SubcherryMergeContext;
-import com.subcherry.ui.views.SubcherryMergeEntry;
 
 /**
- * An {@link AbstractSubcherryHandler} implementation which merges the current
- * {@link SubcherryMergeEntry}.
+ * An {@link AbstractSubcherryHandler} implementation for {@link SubcherryUI} which
+ * merges all revisions automatically and stops only upon merge conflicts or
+ * commit errors.
  * 
  * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
+ * @version $Revision: $ $Author: $ $Date: $
  */
-public class SubcherryMergeHandler extends AbstractSubcherryHandler {
+public class SubcherryRunHandler extends AbstractSubcherryHandler {
 
 	@Override
 	public Object execute(final ExecutionEvent event) throws ExecutionException {
 		final SubcherryMergeContext context = getContext(event);
 
-		new SubcherryMergeJob(context).next(new SubcherryRefreshJob(context)).schedule();
+		new SubcherryRunJob(context).next(new SubcherryRefreshJob(context).setIncremental(false)).schedule();
 		
 		return null;
 	}

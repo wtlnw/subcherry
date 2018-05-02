@@ -245,7 +245,7 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 						}
 					}
 				} catch (final Exception ex) {
-					final Status status = new Status(IStatus.ERROR, SubcherryUI.getInstance().getBundle().getSymbolicName(), "Failed to access remote location.", ex);
+					final Status status = new Status(IStatus.ERROR, SubcherryUI.id(), "Failed to access remote location.", ex);
 					ErrorDialog.openError(e.display.getActiveShell(), "Subcherry Merge", "Revision information not available.", status);
 				}
 			}
@@ -318,6 +318,15 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 				return "The given start revision is invalid.";
 			}
 		}
+	}
+	
+	@Override
+	public void dispose() {
+		_branch = null;
+		_revision = null;
+		
+		// call super implementation
+		super.dispose();
 	}
 	
 	/**

@@ -15,30 +15,46 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.subcherry.ui.handlers;
+package com.subcherry.ui.jobs;
 
-import org.eclipse.core.commands.ExecutionEvent;
-import org.eclipse.core.commands.ExecutionException;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
 
-import com.subcherry.ui.jobs.SubcherryMergeJob;
-import com.subcherry.ui.jobs.SubcherryRefreshJob;
+import com.subcherry.ui.SubcherryUI;
 import com.subcherry.ui.views.SubcherryMergeContext;
 import com.subcherry.ui.views.SubcherryMergeEntry;
 
 /**
- * An {@link AbstractSubcherryHandler} implementation which merges the current
- * {@link SubcherryMergeEntry}.
+ * An {@link AbstractSubcherryJob} which merges the next {@link SubcherryMergeEntry}.
  * 
  * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
+ * @version $Revision: $ $Author: $ $Date: $
  */
-public class SubcherryMergeHandler extends AbstractSubcherryHandler {
+public class SubcherryMergeJob extends AbstractSubcherryJob {
 
+	/**
+	 * Create a {@link SubcherryMergeJob}.
+	 * 
+	 * @param context
+	 *            see {@link #getContext()}
+	 */
+	public SubcherryMergeJob(final SubcherryMergeContext context) {
+		super("Merge Revision", context);
+	}
+	
 	@Override
-	public Object execute(final ExecutionEvent event) throws ExecutionException {
-		final SubcherryMergeContext context = getContext(event);
-
-		new SubcherryMergeJob(context).next(new SubcherryRefreshJob(context)).schedule();
+	protected IStatus run(final IProgressMonitor monitor) {
+		final SubcherryMergeEntry entry = getContext().getCurrentEntry();
 		
-		return null;
+		try {
+			entry.merge();
+		} catch(Throwable ex) {
+			return new Status(IStatus.ERROR, SubcherryUI.id(), String.format("Failed merging revision: %d", entry.getChange().getRevision()), ex);
+		} finally {
+			monitor.done();
+		}
+		
+		return Status.OK_STATUS;
 	}
 }

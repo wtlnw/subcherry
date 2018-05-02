@@ -20,24 +20,34 @@ package com.subcherry.ui.handlers;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 
-import com.subcherry.ui.jobs.SubcherryMergeJob;
-import com.subcherry.ui.jobs.SubcherryRefreshJob;
+import com.subcherry.ui.jobs.SubcherryRevertJob;
+import com.subcherry.ui.jobs.SubcherrySkipJob;
 import com.subcherry.ui.views.SubcherryMergeContext;
 import com.subcherry.ui.views.SubcherryMergeEntry;
 
 /**
- * An {@link AbstractSubcherryHandler} implementation which merges the current
- * {@link SubcherryMergeEntry}.
+ * An {@link AbstractSubcherryHandler} implementation which reverts uncommitted changes
+ * and skips the current {@link SubcherryMergeEntry}.
  * 
  * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
  */
-public class SubcherryMergeHandler extends AbstractSubcherryHandler {
+public class SubcherrySkipHandler extends AbstractSubcherryHandler {
 
 	@Override
 	public Object execute(final ExecutionEvent event) throws ExecutionException {
 		final SubcherryMergeContext context = getContext(event);
-
-		new SubcherryMergeJob(context).next(new SubcherryRefreshJob(context)).schedule();
+		final SubcherryMergeEntry entry = context.getCurrentEntry();
+		
+		if (entry != null) {
+			final SubcherrySkipJob skip = new SubcherrySkipJob(context);
+			
+			// schedule revert for work-in-progress entries
+			if (entry.getState().isWorking()) {
+				new SubcherryRevertJob(context).next(skip).schedule();
+			} else {
+				skip.schedule();
+			}
+		}
 		
 		return null;
 	}

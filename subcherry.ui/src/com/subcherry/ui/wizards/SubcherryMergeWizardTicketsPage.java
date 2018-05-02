@@ -27,7 +27,6 @@ import java.util.regex.Pattern;
 
 import org.eclipse.jface.dialogs.IPageChangingListener;
 import org.eclipse.jface.dialogs.PageChangingEvent;
-import org.eclipse.jface.resource.FontDescriptor;
 import org.eclipse.jface.viewers.CheckStateChangedEvent;
 import org.eclipse.jface.viewers.CheckboxTreeViewer;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
@@ -56,7 +55,6 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Tree;
@@ -69,6 +67,7 @@ import com.subcherry.repository.core.LogEntryPath;
 import com.subcherry.trac.TracConnection;
 import com.subcherry.trac.TracTicket;
 import com.subcherry.ui.DelayedModifyListener;
+import com.subcherry.ui.SubcherryUI;
 import com.subcherry.ui.model.SubcherryTree;
 import com.subcherry.ui.model.SubcherryTreeNode;
 import com.subcherry.ui.model.SubcherryTreeNode.Check;
@@ -153,6 +152,9 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 		_author = null;
 		_message = null;
 		_paths = null;
+		
+		// call super implementation
+		super.dispose();
 	}
 	
 	@Override
@@ -644,11 +646,6 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 		 * {@link TracTicket}s.
 		 */
 		public static final String TICKET_NONE = "NONE";
-		
-		/**
-		 * The {@link Font} to be used for rendering {@link SubcherryTreeTicketNode}s.
-		 */
-		private Font _ticketFont;
 
 		@Override
 		public String getText(final Object element) {
@@ -671,24 +668,10 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 		@Override
 		public Font getFont(final Object element) {
 			if(element instanceof SubcherryTreeTicketNode) {
-				if(_ticketFont == null) {
-					final Display device = Display.getCurrent();
-					_ticketFont = FontDescriptor.createFrom(device.getSystemFont()).setStyle(SWT.BOLD).createFont(device);
-				}
-				
-				return _ticketFont;
+				return SubcherryUI.getInstance().getFontRegistry().getBold(SubcherryUI.DEFAULT);
 			}
 			
 			return super.getFont(element);
-		}
-		
-		@Override
-		public void dispose() {
-			if(_ticketFont != null && !_ticketFont.isDisposed()) {
-				_ticketFont.dispose();
-			}
-			
-			super.dispose();
 		}
 	}
 	

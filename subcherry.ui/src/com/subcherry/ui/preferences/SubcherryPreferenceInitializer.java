@@ -33,7 +33,7 @@ public class SubcherryPreferenceInitializer extends AbstractPreferenceInitialize
 
 	@Override
 	public void initializeDefaultPreferences() {
-		final Preferences node = DefaultScope.INSTANCE.getNode(SubcherryUI.getInstance().getBundle().getSymbolicName());
+		final Preferences node = DefaultScope.INSTANCE.getNode(SubcherryUI.id());
 		
 		// automatically detect common modules
 		node.putBoolean(SubcherryPreferenceConstants.DETECT_COMMON_MODULES, true);

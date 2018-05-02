@@ -142,7 +142,7 @@ public class MergeCommitHandler {
 		}
 	}
 
-	private static class UpdateableRevisionRewriter implements RevisionRewriter {
+	public static class UpdateableRevisionRewriter implements RevisionRewriter {
 
 		private Map<Long, Long> _buffer = new HashMap<Long, Long>();
 

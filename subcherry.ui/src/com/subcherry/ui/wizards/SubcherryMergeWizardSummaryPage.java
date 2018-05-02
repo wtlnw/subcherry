@@ -80,6 +80,9 @@ public class SubcherryMergeWizardSummaryPage extends WizardPage {
 		_branch = null;
 		_tickets = null;
 		_revisions = null;
+		
+		// call super implementation
+		super.dispose();
 	}
 	
 	@Override

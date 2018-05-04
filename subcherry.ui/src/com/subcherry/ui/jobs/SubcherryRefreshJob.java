@@ -28,6 +28,7 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.SubMonitor;
+import org.tigris.subversion.subclipse.core.SVNProviderPlugin;
 
 import com.subcherry.repository.command.merge.MergeOperation;
 import com.subcherry.ui.SubcherryUI;
@@ -94,16 +95,17 @@ public class SubcherryRefreshJob extends AbstractSubcherryJob {
 	private void refreshIncremental(final Map<IProject, Set<IResource>> changes, final SubMonitor monitor) {
 		monitor.setWorkRemaining(changes.size());
 		
-		changes.entrySet().forEach(entry -> {
-			monitor.subTask(String.format("Refreshing: %s", entry.getKey().getName()));
-			
-			entry.getValue().forEach(resource -> {
-				try {
-					resource.refreshLocal(IResource.DEPTH_ZERO, monitor.split(1));
-				} catch (Throwable ex) {
-					SubcherryUI.getInstance().getLog().log(new Status(IStatus.ERROR, SubcherryUI.id(), String.format("Failed to refresh resource: %s", resource.getLocation()), ex));
-				}
-			});
+		changes.keySet().forEach(project -> {
+			monitor.subTask(String.format("Refreshing: %s", project.getName()));
+			try {
+				// refresh the workspace first
+				project.refreshLocal(IResource.DEPTH_INFINITE, monitor.split(1));
+				
+				// refresh the SVN status cache
+				SVNProviderPlugin.getPlugin().getStatusCacheManager().refreshStatus(project, true);
+			} catch (Throwable ex) {
+				SubcherryUI.getInstance().getLog().log(new Status(IStatus.ERROR, SubcherryUI.id(), String.format("Failed to refresh resource: %s", project.getLocation()), ex));
+			}
 		});
 	}
 

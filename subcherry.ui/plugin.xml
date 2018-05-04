@@ -45,11 +45,6 @@
       </command>
       <command
             categoryId="com.subcherry.ui.category"
-            id="com.subcherry.ui.commands.revert"
-            name="Revert Revision">
-      </command>
-      <command
-            categoryId="com.subcherry.ui.category"
             id="com.subcherry.ui.commands.merge"
             name="Merge Revision">
       </command>
@@ -93,12 +88,6 @@
                id="subcherry.ui.toolbars.skip"
                label="Skip"
                tooltip="Skip the current revision.">
-         </command>
-         <command
-               commandId="com.subcherry.ui.commands.revert"
-               id="subcherry.ui.toolbars.revert"
-               label="Revert"
-               tooltip="Revert the current revision.">
          </command>
          <command
                commandId="com.subcherry.ui.commands.merge"
@@ -147,14 +136,6 @@
       <handler
             class="com.subcherry.ui.handlers.SubcherrySkipHandler"
             commandId="com.subcherry.ui.commands.skip">
-         <activeWhen>
-            <reference
-                  definitionId="com.subcherry.ui.expressions.SubcherryMergeViewActive">
-            </reference></activeWhen>
-      </handler>
-      <handler
-            class="com.subcherry.ui.handlers.SubcherryRevertHandler"
-            commandId="com.subcherry.ui.commands.revert">
          <activeWhen>
             <reference
                   definitionId="com.subcherry.ui.expressions.SubcherryMergeViewActive">

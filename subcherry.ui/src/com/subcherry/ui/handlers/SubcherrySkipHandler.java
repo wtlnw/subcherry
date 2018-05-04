@@ -20,7 +20,6 @@ package com.subcherry.ui.handlers;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 
-import com.subcherry.ui.jobs.SubcherryRevertJob;
 import com.subcherry.ui.jobs.SubcherrySkipJob;
 import com.subcherry.ui.views.SubcherryMergeContext;
 import com.subcherry.ui.views.SubcherryMergeEntry;
@@ -39,14 +38,7 @@ public class SubcherrySkipHandler extends AbstractSubcherryHandler {
 		final SubcherryMergeEntry entry = context.getCurrentEntry();
 		
 		if (entry != null) {
-			final SubcherrySkipJob skip = new SubcherrySkipJob(context);
-			
-			// schedule revert for work-in-progress entries
-			if (entry.getState().isWorking()) {
-				new SubcherryRevertJob(context).next(skip).schedule();
-			} else {
-				skip.schedule();
-			}
+			new SubcherrySkipJob(context).schedule();
 		}
 		
 		return null;

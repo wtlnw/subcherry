@@ -17,7 +17,6 @@
  */
 package com.subcherry.ui.jobs;
 
-import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.core.resources.IProject;
@@ -69,8 +68,8 @@ public class SubcherryRefreshJob extends AbstractSubcherryJob {
 				final MergeOperation operation = entry.getOperation();
 				
 				if(operation != null) {
-					final Map<IProject, Set<IResource>> changes = groupByProject(operation.getTouchedResources(), progress.split(50));
-					refreshIncremental(changes, progress.split(50));
+					final Set<IProject> projects = getProjects(operation.getTouchedResources(), progress.split(50));
+					refreshIncremental(projects, progress.split(50));
 				}
 			} else {
 				refreshGlobal(progress);
@@ -85,17 +84,17 @@ public class SubcherryRefreshJob extends AbstractSubcherryJob {
 	}
 	
 	/**
-	 * Perform incremental refresh of the given resources only.
+	 * Perform incremental refresh of the given projects only.
 	 * 
-	 * @param changes
-	 *            a {@link Map} of changes to refresh
+	 * @param projects
+	 *            a {@link Set} of {@link IProject}s to refresh
 	 * @param monitor
 	 *            the {@link SubMonitor} to report the progress to
 	 */
-	private void refreshIncremental(final Map<IProject, Set<IResource>> changes, final SubMonitor monitor) {
-		monitor.setWorkRemaining(changes.size());
+	private void refreshIncremental(final Set<IProject> projects, final SubMonitor monitor) {
+		monitor.setWorkRemaining(projects.size());
 		
-		changes.keySet().forEach(project -> {
+		projects.forEach(project -> {
 			monitor.subTask(String.format("Refreshing: %s", project.getName()));
 			try {
 				// refresh the workspace first

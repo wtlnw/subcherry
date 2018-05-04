@@ -17,23 +17,18 @@
  */
 package com.subcherry.ui.jobs;
 
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
-import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.SubMonitor;
 import org.eclipse.core.runtime.jobs.IJobChangeEvent;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.core.runtime.jobs.JobChangeAdapter;
 
-import com.subcherry.ui.SubcherryUI;
 import com.subcherry.ui.views.SubcherryMergeContext;
 
 /**
@@ -97,38 +92,29 @@ public abstract class AbstractSubcherryJob extends Job {
 	/**
 	 * @param paths
 	 *            a (possibly empty) {@link Set} of workspace relative paths to be
-	 *            resolved to {@link IResource}s and grouped by their
-	 *            {@link IProject}
+	 *            resolved to {@link IProject}s
 	 * @param monitor
 	 *            the {@link SubMonitor} to report the progress to
-	 * @return a (possibly empty) {@link Map} of {@link IResource}s by the
-	 *         {@link IProject} they belong to
+	 * @return a (possibly empty) {@link Set} of {@link IProject}s referenced in the
+	 *         given paths
 	 */
-	public Map<IProject, Set<IResource>> groupByProject(final Set<String> paths, final SubMonitor monitor) {
-		monitor.subTask("Resolve modules to revert");
+	public Set<IProject> getProjects(final Set<String> paths, final SubMonitor monitor) {
+		monitor.subTask("Resolve projects");
 		monitor.setWorkRemaining(paths.size());
 		
-		final Map<IProject, Set<IResource>> resourcesByProject = new LinkedHashMap<>();
+		final Set<IProject> projects = new LinkedHashSet<>();
 		final IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
 		
 		for (final String path : paths) {
 			final IResource resource = root.findMember(path, true);
-			if (resource != null) {
-				final IProject project = resource.getProject();
 
-				Set<IResource> resources = resourcesByProject.get(project);
-				if (resources == null) {
-					resources = new LinkedHashSet<>();
-					resourcesByProject.put(project, resources);
-				}
-				resources.add(resource);
-			} else {
-				SubcherryUI.getInstance().getLog().log(new Status(IStatus.ERROR, SubcherryUI.id(), String.format("Resource not found: %s", path)));
+			if (resource != null) {
+				projects.add(resource.getProject());
 			}
 
 			monitor.worked(1);
 		}
 		
-		return resourcesByProject;
+		return projects;
 	}
 }

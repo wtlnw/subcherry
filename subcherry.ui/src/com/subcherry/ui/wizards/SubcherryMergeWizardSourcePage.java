@@ -18,15 +18,15 @@
 package com.subcherry.ui.wizards;
 
 import java.net.MalformedURLException;
-import java.util.ResourceBundle.Control;
 
 import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
+import org.eclipse.swt.events.FocusAdapter;
+import org.eclipse.swt.events.FocusEvent;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.VerifyEvent;
@@ -39,19 +39,20 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.tigris.subversion.subclipse.core.ISVNRemoteResource;
 import org.tigris.subversion.subclipse.core.ISVNRepositoryLocation;
-import org.tigris.subversion.subclipse.core.SVNException;
+import org.tigris.subversion.subclipse.core.SVNClientManager;
 import org.tigris.subversion.subclipse.core.SVNProviderPlugin;
 import org.tigris.subversion.subclipse.core.history.ILogEntry;
+import org.tigris.subversion.subclipse.core.repo.SVNRepositories;
 import org.tigris.subversion.subclipse.core.resources.RemoteFolder;
 import org.tigris.subversion.subclipse.ui.dialogs.ChooseUrlDialog;
 import org.tigris.subversion.subclipse.ui.dialogs.HistoryDialog;
+import org.tigris.subversion.svnclientadapter.ISVNClientAdapter;
 import org.tigris.subversion.svnclientadapter.ISVNInfo;
 import org.tigris.subversion.svnclientadapter.SVNRevision;
 import org.tigris.subversion.svnclientadapter.SVNRevision.Number;
 import org.tigris.subversion.svnclientadapter.SVNUrl;
 
 import com.subcherry.Configuration;
-import com.subcherry.ui.DelayedModifyListener;
 import com.subcherry.ui.SubcherryUI;
 
 /**
@@ -67,12 +68,17 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 	/**
 	 * @see #createBranchSelector(Composite)
 	 */
-	private Text _branch;
+	private Text _branchInput;
 	
 	/**
 	 * @see #createRevisionSelector(Composite)
 	 */
-	private Text _revision;
+	private Text _revisionInput;
+	
+	/**
+	 * @see #createRevisionButton(Composite)
+	 */
+	private Button _revisionButton;
 	
 	/**
 	 * Create a {@link SubcherryMergeWizardSourcePage}.
@@ -99,19 +105,19 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 		final Composite contents = new Composite(parent, SWT.NONE);
 		contents.setLayout(new GridLayout(3, false));
 	
-		_branch = createBranchSelector(contents);
-		_revision = createRevisionSelector(contents);
+		_branchInput = createBranchSelector(contents);
+		createBranchButton(contents);
+		_revisionInput = createRevisionSelector(contents);
+		_revisionButton = createRevisionButton(contents);
 		
 		setControl(contents);
 		setPageComplete(false);
 	}
 
 	/**
-	 * Create {@link Control}s allowing users to select the source branch.
-	 * 
 	 * @param parent
 	 *            the {@link Composite} to create the controls in
-	 * @return the {@link Text} control displaying the user input
+	 * @return the {@link Text} control allowing users to enter the source branch
 	 */
 	private Text createBranchSelector(final Composite parent) {
 		final Label label = new Label(parent, SWT.NONE);
@@ -120,29 +126,26 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 		final Text input = new Text(parent, SWT.BORDER);
 		input.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 		input.setMessage("<Enter branch name>");
-		input.addModifyListener(new DelayedModifyListener(new ModifyListener() {
+		input.addFocusListener(new FocusAdapter() {
 			@Override
-			public void modifyText(final ModifyEvent e) {
-				final Text widget = (Text)e.widget;
-				final String text = widget.getText();
-				try {
-					final Configuration configuration = getWizard().getConfiguration();
-					final String repository = SVNProviderPlugin.getPlugin().getRepository(text).getLocation();
-					final String source = text.replace(repository, "");
-					
-					configuration.setSvnURL(repository);
-					configuration.setSourceBranch(source);
-				} catch (final SVNException ex) {
-					// ignore this one since we will validate input anyway
-				} finally {
-					validate();
-				}
+			public void focusLost(final FocusEvent e) {
+				validate();
 			}
-		}));
+		});
 		
-		final Button select = new Button(parent, SWT.NONE);
-		select.setText("Select...");
-		select.addSelectionListener(new SelectionAdapter() {
+		return input;
+	}
+
+	/**
+	 * @param parent
+	 *            the {@link Composite} to create the controls in
+	 * @return the {@link Button} control opening the dialog for source branch
+	 *         selection
+	 */
+	private Button createBranchButton(final Composite parent) {
+		final Button button = new Button(parent, SWT.NONE);
+		button.setText("Select...");
+		button.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(final SelectionEvent e) {
 				final ChooseUrlDialog dialog = new ChooseUrlDialog(e.display.getActiveShell(), null);
@@ -152,21 +155,28 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 					final String url = dialog.getUrl();
 					
 					if(url != null) {
-						input.setText(url);
+						_branchInput.setText(url);
 					}
+					
+					// update text selection for use convenience
+					_branchInput.setSelection(0, _branchInput.getText().length());
+					
+					// set the focus to the text field for convenient changes
+					_branchInput.setFocus();
+					
+					// force input validation
+					validate();
 				}
 			}
 		});
 		
-		return input;
+		return button;
 	}
 	
 	/**
-	 * Create {@link Control}s allowing users to select the starting revision.
-	 * 
 	 * @param parent
 	 *            the {@link Composite} to create the controls in
-	 * @return the {@link Text} control displaying the user input
+	 * @return the {@link Text} control allowing users to enter the start revision
 	 */
 	private Text createRevisionSelector(final Composite parent) {
 		final Label label = new Label(parent, SWT.NONE);
@@ -201,26 +211,27 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 				}
 			}
 		});
-		input.addModifyListener(new DelayedModifyListener(new ModifyListener() {
+		input.addFocusListener(new FocusAdapter() {
 			@Override
-			public void modifyText(final ModifyEvent e) {
-				final Text widget = (Text) e.widget;
-				final String text = widget.getText();
-				final Configuration config = getWizard().getConfiguration();
-				
-				if(text.isEmpty()) {
-					config.setStartRevision(0);
-				} else {
-					config.setStartRevision(Long.parseLong(text));
-				}
-				
+			public void focusLost(final FocusEvent e) {
 				validate();
 			}
-		}));
+		});
 		
-		final Button select = new Button(parent, SWT.NONE);
-		select.setText("Select...");
-		select.addSelectionListener(new SelectionAdapter() {
+		return input;
+	}
+
+	/**
+	 * @param parent
+	 *            the {@link Composite} to create the controls in
+	 * @return the {@link Button} control opening the dialog for start revision
+	 *         selection
+	 */
+	private Button createRevisionButton(final Composite parent) {
+		final Button button = new Button(parent, SWT.NONE);
+		button.setEnabled(!_branchInput.getText().isEmpty());
+		button.setText("Select...");
+		button.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(final SelectionEvent e) {
 				final Configuration config = getWizard().getConfiguration();
@@ -239,10 +250,20 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 					
 					if(dialog.open() == HistoryDialog.OK) {
 						final ILogEntry[] entries = dialog.getSelectedLogEntries();
+						
 						if(entries != null && entries.length > 0) {
 							final Number revision = entries[0].getRevision();
-							input.setText(String.valueOf(revision.getNumber()));
+							_revisionInput.setText(String.valueOf(revision.getNumber()));
 						}
+						
+						// update text selection for use convenience
+						_revisionInput.setSelection(0, _revisionInput.getText().length());
+						
+						// set the focus to the text field for convenient changes
+						_revisionInput.setFocus();
+						
+						// force input validation
+						validate();
 					}
 				} catch (final Exception ex) {
 					final Status status = new Status(IStatus.ERROR, SubcherryUI.id(), "Failed to access remote location.", ex);
@@ -251,7 +272,7 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 			}
 		});
 		
-		return input;
+		return button;
 	}
 	
 	/**
@@ -262,6 +283,9 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 		
 		// validate the branch first
 		msg = validateBranch();
+		
+		// update revision selector availability
+		_revisionButton.setEnabled(msg == null);
 		
 		// validate the revision (if it's still valid for the selected branch)
 		if(msg == null) {
@@ -278,15 +302,39 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 	 *         selected branch is valid
 	 */
 	private String validateBranch() {
-		final String url = _branch.getText();
+		final String url = _branchInput.getText();
 		
 		if(url.isEmpty()) {
 			return "The source branch is mandatory.";
 		} else {
 			try {
-				SVNProviderPlugin.getPlugin().getSVNClient().getInfo(new SVNUrl(url));
-				return null;
-			} catch (final Exception ex) {
+				final SVNProviderPlugin svn = SVNProviderPlugin.getPlugin();
+				final SVNRepositories repos = svn.getRepositories();
+
+				for (final ISVNRepositoryLocation repo : repos.getKnownRepositories(new NullProgressMonitor())) {
+					final String location = repo.getLocation();
+					
+					if (url.startsWith(location)) {
+						final ISVNClientAdapter client = repo.getSVNClient();
+
+						try {
+							client.getInfo(new SVNUrl(url));
+						} catch (Throwable ex) {
+							return "The given branch does not exist.";
+						} finally {
+							repo.returnSVNClient(client);
+						}
+
+						final Configuration configuration = getWizard().getConfiguration();
+						configuration.setSvnURL(location);
+						configuration.setSourceBranch(url.replace(location, ""));
+
+						return null;
+					}
+				}
+				
+				return "The given repository is unkown.";
+			} catch (final Throwable ex) {
 				return "The given URL is not accessible.";
 			}
 		}
@@ -297,24 +345,39 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 	 *         selected revision is valid
 	 */
 	private String validateRevision() {
-		final String text = _revision.getText();
-		
-		if(text.isEmpty()) {
+		final Configuration config = getWizard().getConfiguration();
+		final String text = _revisionInput.getText();
+
+		if (text.isEmpty()) {
+			config.setStartRevision(0);
+
 			return null;
 		} else {
 			try {
 				final long rev = Long.valueOf(text).longValue();
-				final SVNUrl url = getSourceUrl(getWizard().getConfiguration());
-				final ISVNInfo info = SVNProviderPlugin.getPlugin().getSVNClient().getInfo(url);
+				final SVNUrl url = getSourceUrl(config);
+				final SVNProviderPlugin svn = SVNProviderPlugin.getPlugin();
+				final SVNClientManager mgr = svn.getSVNClientManager();
+				final ISVNClientAdapter client = svn.getSVNClient();
+				final ISVNInfo info;
+				
+				try {
+					info = client.getInfo(url);
+				} finally {
+					mgr.returnSVNClient(client);
+				}
+				
 				final long startRev = 0;
 				final long endRev = info.getRevision().getNumber();
-				
-				if(startRev <= rev && rev <= endRev) {
+
+				if (startRev <= rev && rev <= endRev) {
+					config.setStartRevision(rev);
+
 					return null;
 				} else {
 					return String.format("The given revision must be %d <= revision <= %d", startRev, endRev);
 				}
-			} catch(final Exception ex) {
+			} catch (final Throwable ex) {
 				return "The given start revision is invalid.";
 			}
 		}
@@ -322,8 +385,9 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 	
 	@Override
 	public void dispose() {
-		_branch = null;
-		_revision = null;
+		_branchInput = null;
+		_revisionInput = null;
+		_revisionButton = null;
 		
 		// call super implementation
 		super.dispose();

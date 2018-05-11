@@ -63,6 +63,14 @@ public class Commit {
 		_touchedResources = new HashSet<>();
 	}
 
+	/**
+	 * Reset {@link #getTouchedResources()} and {@link #getCommitMessage()}.
+	 */
+	public void clear() {
+		_touchedResources.clear();
+		commitMessage = null;
+	}
+
 	public LogEntry getLogEntry() {
 		return _logEntry;
 	}

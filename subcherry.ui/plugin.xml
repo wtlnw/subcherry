@@ -45,13 +45,8 @@
       </command>
       <command
             categoryId="com.subcherry.ui.category"
-            id="com.subcherry.ui.commands.merge"
-            name="Merge Revision">
-      </command>
-      <command
-            categoryId="com.subcherry.ui.category"
-            id="com.subcherry.ui.commands.commit"
-            name="Commit Revision">
+            id="com.subcherry.ui.commands.reset"
+            name="Reset Revision">
       </command>
    </extension>
    <extension
@@ -90,16 +85,10 @@
                tooltip="Skip the current revision.">
          </command>
          <command
-               commandId="com.subcherry.ui.commands.merge"
-               id="subcherry.ui.toolbars.merge"
-               label="Merge"
-               tooltip="Merge the current revision.">
-         </command>
-         <command
-               commandId="com.subcherry.ui.commands.commit"
-               id="subcherry.ui.toolbars.commit"
-               label="Commit"
-               tooltip="Commit the current revision.">
+               commandId="com.subcherry.ui.commands.reset"
+               id="subcherry.ui.toolbars.reset"
+               label="Reset"
+               tooltip="Reset the current revision.">
          </command>
       </menuContribution>
    </extension>
@@ -142,16 +131,8 @@
             </reference></activeWhen>
       </handler>
       <handler
-            class="com.subcherry.ui.handlers.SubcherryMergeHandler"
-            commandId="com.subcherry.ui.commands.merge">
-         <activeWhen>
-            <reference
-                  definitionId="com.subcherry.ui.expressions.SubcherryMergeViewActive">
-            </reference></activeWhen>
-      </handler>
-      <handler
-            class="com.subcherry.ui.handlers.SubcherryCommitHandler"
-            commandId="com.subcherry.ui.commands.commit">
+            class="com.subcherry.ui.handlers.SubcherryResetHandler"
+            commandId="com.subcherry.ui.commands.reset">
          <activeWhen>
             <reference
                   definitionId="com.subcherry.ui.expressions.SubcherryMergeViewActive">

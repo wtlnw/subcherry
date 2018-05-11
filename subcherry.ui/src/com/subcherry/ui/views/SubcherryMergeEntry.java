@@ -193,7 +193,7 @@ public class SubcherryMergeEntry {
 		commit.addTouchedResources(getOperation().getTouchedResources());
 		
 		try {
-//			commit.run(context.getCommitContext());
+			commit.run(context.getCommitContext());
 			
 			setState(SubcherryMergeState.COMMITTED);
 		} catch (Throwable e) {

@@ -33,6 +33,18 @@ import com.subcherry.ui.views.SubcherryMergeView;
  * @version $Revision: $ $Author: $ $Date: $
  */
 public abstract class AbstractSubcherryHandler extends AbstractHandler {
+	
+	/**
+	 * @param event
+	 *            the {@link ExecutionEvent} for this
+	 *            {@link AbstractSubcherryHandler}
+	 * @return the {@link SubcherryMergeView} resolved from the given event
+	 * @throws ExecutionException
+	 *             if an error occurred when resolving the context
+	 */
+	protected SubcherryMergeView getView(final ExecutionEvent event) throws ExecutionException {
+		return (SubcherryMergeView) HandlerUtil.getActivePartChecked(event);
+	}
 
 	/**
 	 * @param event
@@ -43,7 +55,7 @@ public abstract class AbstractSubcherryHandler extends AbstractHandler {
 	 *             if an error occurred when resolving the context
 	 */
 	protected SubcherryMergeContext getContext(final ExecutionEvent event) throws ExecutionException {
-		final SubcherryMergeView view = (SubcherryMergeView) HandlerUtil.getActivePartChecked(event);
+		final SubcherryMergeView view = getView(event);
 		final SubcherryMergeContext context = (SubcherryMergeContext) view.getViewer().getInput();
 		
 		return context;

@@ -18,6 +18,7 @@
 package com.subcherry.ui.views;
 
 import java.io.File;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -41,29 +42,19 @@ public class SubcherryMergeEntry {
 	private final SubcherryMergeContext _context;
 	
 	/**
-	 * @see #getChange()
+	 * @see getChangeset()
 	 */
-	private final LogEntry _change;
+	private final Commit _changeset;
 	
 	/**
 	 * @see #getState()
 	 */
 	private SubcherryMergeState _state = SubcherryMergeState.NEW;
-	
-	/**
-	 * @see #getMessage()
-	 */
-	private String _message = null;
-
-	/**
-	 * @see #getOperation()
-	 */
-	private MergeOperation _merge;
 
 	/**
 	 * @see #getConflicts()
 	 */
-	private Map<File, List<ConflictDescription>> _conflicts;
+	private final Map<File, List<ConflictDescription>> _conflicts = new LinkedHashMap<>();
 
 	/**
 	 * @see #getError()
@@ -80,7 +71,7 @@ public class SubcherryMergeEntry {
 	 */
 	public SubcherryMergeEntry(final SubcherryMergeContext context, final LogEntry revision) {
 		_context = context;
-		_change = revision;
+		_changeset = new Commit(context.getConfiguration(), revision, new TicketMessage(revision.getRevision(), revision.getMessage(), context.getMessageRewriter()));
 	}
 	
 	/**
@@ -91,10 +82,18 @@ public class SubcherryMergeEntry {
 	}
 	
 	/**
+	 * @return the {@link Commit} defining the changes for this
+	 *         {@link SubcherryMergeEntry}
+	 */
+	public Commit getChangeset() {
+		return _changeset;
+	}
+	
+	/**
 	 * @return the {@link LogEntry} to merge
 	 */
 	public LogEntry getChange() {
-		return _change;
+		return getChangeset().getLogEntry();
 	}
 	
 	/**
@@ -102,11 +101,19 @@ public class SubcherryMergeEntry {
 	 *         {@link #getChange()}
 	 */
 	public String getMessage() {
-		if(_message != null) {
-			return _message;
-		}
+		return getChangeset().getCommitMessage();
+	}
+	
+	/**
+	 * Setter for {@link #getMessage()}.
+	 * 
+	 * @param message
+	 *            see {@link #getMessage()}
+	 */
+	public void setMessage(final String message) {
+		getChangeset().setCommitMessage(message);
 		
-		return getChange().getMessage();
+		getContext().notifyEntryChanged(this);
 	}
 	
 	/**
@@ -127,20 +134,11 @@ public class SubcherryMergeEntry {
 		
 		_state = newState;
 		
-		getContext().notifyMergeChanged(this, oldState, newState);
-	}
-
-	/**
-	 * @return the performed {@link MergeOperation} or {@code null} if
-	 *         {@link #merge(SubcherryMergeContext)} has not been called yet
-	 */
-	public MergeOperation getOperation() {
-		return _merge;
+		getContext().notifyStateChanged(this, oldState, newState);
 	}
 	
 	/**
-	 * @return a (possibly empty) {@link Map} conflicts per file or {@code null} if
-	 *         {@link #merge(SubcherryMergeContext)} has not been called yet
+	 * @return a (possibly empty) {@link Map} conflicts per file
 	 */
 	public Map<File, List<ConflictDescription>> getConflicts() {
 		return _conflicts;
@@ -163,8 +161,9 @@ public class SubcherryMergeEntry {
 		final SubcherryMergeContext context = getContext();
 		
 		try {
-			_merge = context.getMergeHandler().parseMerge(getChange());
-			_conflicts = context.getCommandExecutor().execute(_merge.getCommands());
+			final MergeOperation merge = context.getMergeHandler().parseMerge(getChange());
+			_changeset.addTouchedResources(merge.getTouchedResources());
+			_conflicts.putAll(context.getCommandExecutor().execute(merge.getCommands()));
 			
 			if(_conflicts.isEmpty()) {
 				setState(SubcherryMergeState.MERGED);
@@ -186,15 +185,15 @@ public class SubcherryMergeEntry {
 	 * @return {@link #getState()} for convenience
 	 */
 	public SubcherryMergeState commit() {
-		final SubcherryMergeContext context = getContext();
-		final TicketMessage msg = new TicketMessage(getChange().getRevision(), getMessage(), context.getMessageRewriter());
-		final Commit commit = new Commit(context.getConfiguration(), getChange(), msg);
-		
-		commit.addTouchedResources(getOperation().getTouchedResources());
-		
 		try {
-			commit.run(context.getCommitContext());
+			// commit the changes
+			getChangeset().run(getContext().getCommitContext());
 			
+			// reset conflicts and error
+			_conflicts.clear();
+			_error = null;
+			
+			// finally, update the state
 			setState(SubcherryMergeState.COMMITTED);
 		} catch (Throwable e) {
 			_error = e;
@@ -222,11 +221,12 @@ public class SubcherryMergeEntry {
 	 * @return {@link #getState()} for convenience
 	 */
 	public SubcherryMergeState reset() {
+		// clear the changeset
+		_changeset.clear();
+		
 		// reset merge and conflict cache
-		_merge = null;
-		_conflicts = null;
+		_conflicts.clear();
 		_error = null;
-		_message = null;
 
 		// update the entry state
 		setState(SubcherryMergeState.NEW);

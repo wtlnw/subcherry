@@ -23,7 +23,10 @@ import java.util.Map.Entry;
 
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.ColumnViewerToolTipSupport;
+import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
+import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.StructuredViewer;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
@@ -38,6 +41,7 @@ import org.eclipse.ui.part.ViewPart;
 
 import com.subcherry.repository.command.merge.ConflictDescription;
 import com.subcherry.ui.SubcherryUI;
+import com.subcherry.ui.dialogs.SubcherryEditDialog;
 
 /**
  * An {@link ViewPart} implementation for {@link SubcherryUI} which allows
@@ -69,11 +73,21 @@ public class SubcherryMergeView extends ViewPart {
 	 * @return the new {@link TableViewer}
 	 */
 	protected TableViewer createViewer(final Composite parent) {
-		final TableViewer viewer = new TableViewer(parent, SWT.BORDER | SWT.FULL_SELECTION);
+		final TableViewer viewer = new TableViewer(parent, SWT.BORDER | SWT.SINGLE | SWT.FULL_SELECTION);
 		final Table table = viewer.getTable();
 		table.setLinesVisible(true);
 		table.setHeaderVisible(true);
 		ColumnViewerToolTipSupport.enableFor(viewer, ToolTip.NO_RECREATE);
+		
+		viewer.addDoubleClickListener(event -> {
+			final ISelection selection = event.getSelection();
+			if (selection instanceof IStructuredSelection) {
+				final Object entry = ((IStructuredSelection) selection).getFirstElement();
+				if (entry instanceof SubcherryMergeEntry) {
+					new SubcherryEditDialog(event.getViewer().getControl().getShell(), (SubcherryMergeEntry) entry).open();
+				}
+			}
+		});
 		
 		final TableViewerColumn stateCol = new TableViewerColumn(viewer, SWT.CENTER);
 		stateCol.getColumn().setText("State");
@@ -112,7 +126,7 @@ public class SubcherryMergeView extends ViewPart {
 				case MERGED: {
 					final StringBuilder text = new StringBuilder("Touched resources:\n");
 					
-					for (final String resource : entry.getOperation().getTouchedResources()) {
+					for (final String resource : entry.getChangeset().getTouchedResources()) {
 						text.append("\n");
 						text.append(resource);
 					}
@@ -217,6 +231,21 @@ public class SubcherryMergeView extends ViewPart {
 				_listener = new SubcherryMergeListener() {
 					@Override
 					public void onStateChanged(final SubcherryMergeEntry entry, final SubcherryMergeState oldState, final SubcherryMergeState newState) {
+						update(entry);
+					}
+					
+					@Override
+					public void onEntryChanged(final SubcherryMergeEntry entry) {
+						update(entry);
+					}
+
+					/**
+					 * Update the given {@link SubcherryMergeEntry} display.
+					 * 
+					 * @param entry
+					 *            the {@link SubcherryMergeEntry} to update the display for
+					 */
+					private void update(final SubcherryMergeEntry entry) {
 						PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
 							@Override
 							public void run() {
@@ -224,13 +253,14 @@ public class SubcherryMergeView extends ViewPart {
 									final StructuredViewer structuredViewer = (StructuredViewer) viewer;
 									
 									structuredViewer.update(entry, null);
-									structuredViewer.reveal(entry);
+									structuredViewer.setSelection(new StructuredSelection(entry), true);
 								} else {
 									viewer.refresh();
 								}
 							}
 						});
 					}
+					
 				};
 
 				((SubcherryMergeContext) newInput).addMergeListener(_listener);

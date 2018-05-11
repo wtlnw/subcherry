@@ -29,7 +29,7 @@ import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.SubMonitor;
 import org.tigris.subversion.subclipse.core.SVNProviderPlugin;
 
-import com.subcherry.repository.command.merge.MergeOperation;
+import com.subcherry.commit.Commit;
 import com.subcherry.ui.SubcherryUI;
 import com.subcherry.ui.views.SubcherryMergeContext;
 import com.subcherry.ui.views.SubcherryMergeEntry;
@@ -65,12 +65,10 @@ public class SubcherryRefreshJob extends AbstractSubcherryJob {
 			if(isIncremental()) {
 				final SubcherryMergeContext context = getContext();
 				final SubcherryMergeEntry entry = context.getCurrentEntry();
-				final MergeOperation operation = entry.getOperation();
+				final Commit changeset = entry.getChangeset();
+				final Set<IProject> projects = getProjects(changeset.getTouchedResources(), progress.split(50));
 				
-				if(operation != null) {
-					final Set<IProject> projects = getProjects(operation.getTouchedResources(), progress.split(50));
-					refreshIncremental(projects, progress.split(50));
-				}
+				refreshIncremental(projects, progress.split(50));
 			} else {
 				refreshGlobal(progress);
 			}

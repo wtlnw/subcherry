@@ -162,9 +162,31 @@ public class SubcherryMergeContext {
 	public void removeMergeListener(final SubcherryMergeListener listener) {
 		_listeners.remove(listener);
 	}
-	
-	/* package private */ void notifyMergeChanged(final SubcherryMergeEntry entry, final SubcherryMergeState oldState, final SubcherryMergeState newState) {
+
+	/**
+	 * Notify all currently registered {@link SubcherryMergeListener}s that the
+	 * given {@link SubcherryMergeEntry} state has changed.
+	 * 
+	 * @param entry
+	 *            the {@link SubcherryMergeEntry} whose state changed
+	 * @param oldState
+	 *            the previous {@link SubcherryMergeState}
+	 * @param newState
+	 *            the new {@link SubcherryMergeState}
+	 */
+	/* package private */ void notifyStateChanged(final SubcherryMergeEntry entry, final SubcherryMergeState oldState, final SubcherryMergeState newState) {
 		_listeners.forEach(listener -> listener.onStateChanged(entry, oldState, newState));
+	}
+	
+	/**
+	 * Notify all currently registered {@link SubcherryMergeListener}s that the
+	 * given {@link SubcherryMergeEntry} property has changed.
+	 * 
+	 * @param entry
+	 *            the {@link SubcherryMergeEntry} whose property changed
+	 */
+	/* package private */ void notifyEntryChanged(final SubcherryMergeEntry entry) {
+		_listeners.forEach(listener -> listener.onEntryChanged(entry));
 	}
 	
 	/**

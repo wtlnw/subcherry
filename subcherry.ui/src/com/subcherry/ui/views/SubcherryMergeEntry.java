@@ -26,16 +26,19 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.dialogs.ErrorDialog;
-import org.eclipse.team.core.TeamException;
 import org.eclipse.team.core.subscribers.ISubscriberChangeEvent;
 import org.eclipse.team.core.subscribers.ISubscriberChangeListener;
-import org.eclipse.team.core.synchronize.SyncInfo;
 import org.eclipse.ui.PlatformUI;
+import org.tigris.subversion.subclipse.core.SVNException;
+import org.tigris.subversion.subclipse.core.SVNProviderPlugin;
+import org.tigris.subversion.subclipse.core.resources.LocalResourceStatus;
 import org.tigris.subversion.subclipse.core.sync.SVNWorkspaceSubscriber;
+import org.tigris.subversion.svnclientadapter.SVNStatusKind;
 
 import com.subcherry.commit.Commit;
 import com.subcherry.repository.command.merge.ConflictDescription;
 import com.subcherry.repository.command.merge.MergeOperation;
+import com.subcherry.repository.core.CommitInfo;
 import com.subcherry.repository.core.LogEntry;
 import com.subcherry.ui.SubcherryUI;
 import com.subcherry.utils.Utils.TicketMessage;
@@ -142,15 +145,15 @@ public class SubcherryMergeEntry implements ISubscriberChangeListener {
 	 *            see {@link #getState()}
 	 */
 	public void setState(final SubcherryMergeState newState) {
-		// stop listening for resolved conflicts
-		if(SubcherryMergeState.CONFLICT != newState) {
+		final SubcherryMergeState oldState = _state;
+		_state = newState;
+
+		// detach subscriber listener for conflicting resources
+		if (oldState == SubcherryMergeState.CONFLICT && oldState != newState) {
 			SVNWorkspaceSubscriber.getInstance().removeListener(this);
 		}
-		
-		final SubcherryMergeState oldState = _state;
-		
-		_state = newState;
-		
+
+		// notify registered listeners after detaching subscriber listener
 		getContext().notifyStateChanged(this, oldState, newState);
 	}
 	
@@ -207,14 +210,18 @@ public class SubcherryMergeEntry implements ISubscriberChangeListener {
 	public SubcherryMergeState commit() {
 		try {
 			// commit the changes
-			getChangeset().run(getContext().getCommitContext());
+			final CommitInfo info = getChangeset().run(getContext().getCommitContext());
 			
 			// reset conflicts and error
 			_conflicts.clear();
 			_error = null;
 			
 			// finally, update the state
-			setState(SubcherryMergeState.COMMITTED);
+			if (info.getNewRevision() < 0) {
+				setState(SubcherryMergeState.IGNORED);
+			} else {
+				setState(SubcherryMergeState.COMMITTED);
+			}
 		} catch (Throwable e) {
 			_error = e;
 			
@@ -264,16 +271,11 @@ public class SubcherryMergeEntry implements ISubscriberChangeListener {
 			final File file = resource.getLocation().toFile();
 			if (conflicts.containsKey(file)) {
 				try {
-					final SyncInfo info = event.getSubscriber().getSyncInfo(resource);
-					// the resource is properly tracked by SVN
-					if (info != null) {
-						
-						// conflict has been resolved
-						if ((info.getKind() & SyncInfo.CONFLICTING) != SyncInfo.CONFLICTING) {
-							conflicts.remove(file);
-						}
+					final LocalResourceStatus status = SVNProviderPlugin.getPlugin().getStatusCacheManager().getStatus(resource);
+					if(status.getStatusKind() != SVNStatusKind.CONFLICTED) {
+						conflicts.remove(file);
 					}
-				} catch (TeamException ex) {
+				} catch (final SVNException ex) {
 					final Status status = new Status(IStatus.ERROR, SubcherryUI.id(), "Failed to resolve synchronizatio info for " + file, ex);
 					SubcherryUI.getInstance().getLog().log(status);
 					ErrorDialog.openError(PlatformUI.getWorkbench().getDisplay().getActiveShell(), "Subcherry Merge", "Revision information not available.", status);

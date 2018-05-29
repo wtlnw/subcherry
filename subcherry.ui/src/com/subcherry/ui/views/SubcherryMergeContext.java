@@ -276,4 +276,15 @@ public class SubcherryMergeContext {
 
 		return null;
 	}
+	
+	/**
+	 * Dispose this instance and free all allocated system resources.
+	 */
+	public void dispose() {
+		final SubcherryMergeEntry entry = getCurrentEntry();
+
+		if (entry != null) {
+			entry.reset();
+		}
+	}
 }

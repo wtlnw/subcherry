@@ -220,7 +220,9 @@ public class SubcherryMergeView extends ViewPart {
 		public void inputChanged(final Viewer viewer, final Object oldInput, final Object newInput) {
 			// unregister listener from the old context
 			if (oldInput instanceof SubcherryMergeContext) {
-				((SubcherryMergeContext) oldInput).removeMergeListener(_listener);
+				final SubcherryMergeContext context = (SubcherryMergeContext) oldInput;
+				context.removeMergeListener(_listener);
+				context.dispose();
 
 				// reset the old listener
 				_listener = null;

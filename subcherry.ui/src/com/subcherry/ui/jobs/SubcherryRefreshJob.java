@@ -21,6 +21,7 @@ import java.util.Set;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -28,6 +29,7 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.SubMonitor;
 import org.tigris.subversion.subclipse.core.SVNProviderPlugin;
+import org.tigris.subversion.subclipse.core.status.StatusCacheManager;
 
 import com.subcherry.commit.Commit;
 import com.subcherry.ui.SubcherryUI;
@@ -115,7 +117,17 @@ public class SubcherryRefreshJob extends AbstractSubcherryJob {
 	 *             if an error occurred while refreshing the workspace
 	 */
 	private void refreshGlobal(final SubMonitor progress) throws CoreException {
-		ResourcesPlugin.getWorkspace().getRoot().refreshLocal(IResource.DEPTH_INFINITE, progress);
+		final IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+		final StatusCacheManager cache = SVNProviderPlugin.getPlugin().getStatusCacheManager();
+		
+		final String[] modules = getContext().getConfiguration().getModules();
+		for (final String module : modules) {
+			final IProject project = root.getProject(module);
+			if(project != null) {
+				project.refreshLocal(IResource.DEPTH_INFINITE, progress);
+				cache.refreshStatus(project, true);
+			}
+		}
 	}
 	
 	/**

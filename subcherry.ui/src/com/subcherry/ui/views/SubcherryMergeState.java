@@ -30,7 +30,8 @@ public enum SubcherryMergeState {
 	CONFLICT(true),
 	ERROR(true),
 	COMMITTED(false),
-	SKIPPED(false);
+	SKIPPED(false),
+	IGNORED(false);
 	
 	/**
 	 * @see #isPending()
@@ -49,7 +50,8 @@ public enum SubcherryMergeState {
 	/**
 	 * @return {@code true} if a {@link SubcherryMergeEntry} needs further
 	 *         processing, {@code false} indicates that it has been successfully
-	 *         merged and committed or skipped completely.
+	 *         merged and committed, skipped by the user or ignored since it has
+	 *         already been merged.
 	 */
 	public boolean isPending() {
 		return _pending;

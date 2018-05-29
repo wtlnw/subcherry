@@ -91,8 +91,8 @@ public class SubcherryRunJob extends AbstractSubcherryJob {
 
 			processEntry(entry, monitor.split(1));
 
-			// terminate processing upon errors or conflicts
-			if (SubcherryMergeState.COMMITTED != entry.getState()) {
+			// terminate processing if the entry needs further processing
+			if (entry.getState().isPending()) {
 				break;
 			}
 		}

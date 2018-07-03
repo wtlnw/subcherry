@@ -272,7 +272,7 @@ public class SubcherryMergeEntry implements ISubscriberChangeListener {
 			if (conflicts.containsKey(file)) {
 				try {
 					final LocalResourceStatus status = SVNProviderPlugin.getPlugin().getStatusCacheManager().getStatus(resource);
-					if(status.getStatusKind() != SVNStatusKind.CONFLICTED) {
+					if(status != null && status.getStatusKind() != SVNStatusKind.CONFLICTED) {
 						conflicts.remove(file);
 					}
 				} catch (final SVNException ex) {

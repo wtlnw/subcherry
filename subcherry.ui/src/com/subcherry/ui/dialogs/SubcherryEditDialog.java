@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -51,6 +52,7 @@ import com.subcherry.repository.command.merge.ConflictDescription;
 import com.subcherry.repository.core.LogEntryPath;
 import com.subcherry.ui.views.SubcherryMergeEntry;
 import com.subcherry.ui.views.SubcherryMergeState;
+import com.subcherry.utils.PathParser;
 
 /**
  * A {@link TrayDialog} implementation which allows users to edit contents of a
@@ -93,7 +95,15 @@ public class SubcherryEditDialog extends TrayDialog {
 		super(shell);
 
 		_entry = entry;
-		_paths = new TreeSet<String>(entry.getChangeset().getTouchedResources());
+
+		if(entry.getState() == SubcherryMergeState.NEW) {
+			final PathParser parser = entry.getContext().getPathParser();
+			_paths = entry.getChange().getChangedPaths().keySet().stream()
+				.map(path -> parser.parsePath(path).getResource())
+				.collect(Collectors.toCollection(TreeSet::new));
+		} else {
+			_paths = new TreeSet<String>(entry.getChangeset().getTouchedResources());
+		}
 		
 		// change shell style
 		setShellStyle(SWT.DIALOG_TRIM | SWT.RESIZE | SWT.APPLICATION_MODAL);
@@ -265,6 +275,7 @@ public class SubcherryEditDialog extends TrayDialog {
 		
 		final Button add = new Button(content, SWT.PUSH);
 		add.setText("Add Resources...");
+		add.setEnabled(getEntry().getState().isPending());
 		add.addSelectionListener(SelectionListener.widgetSelectedAdapter(event -> {
 			final ResourceListSelectionDialog dialog = new ResourceListSelectionDialog(
 					event.display.getActiveShell(), 
@@ -292,14 +303,17 @@ public class SubcherryEditDialog extends TrayDialog {
 		}));
 		
 		final Button remove = new Button(content, SWT.PUSH);
-		remove.setEnabled(false);
 		remove.setText("Remove Resources");
+		remove.setEnabled(false);
 		remove.addSelectionListener(SelectionListener.widgetSelectedAdapter(event -> {
 			final IStructuredSelection selection = _resources.getStructuredSelection();
 			_paths.removeAll(selection.toList());
 			_resources.refresh();
 		}));
-		_resources.addSelectionChangedListener(event -> remove.setEnabled(!event.getSelection().isEmpty()));
+		if(getEntry().getState().isPending()) {
+			// enable the remove button upon valid selection in the resources view
+			_resources.addSelectionChangedListener(event -> remove.setEnabled(!event.getSelection().isEmpty()));
+		}
 	}
 	
 	@Override

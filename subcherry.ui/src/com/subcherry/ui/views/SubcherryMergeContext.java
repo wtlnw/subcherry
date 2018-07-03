@@ -78,6 +78,11 @@ public class SubcherryMergeContext {
 	private final CommitContext _commitContext;
 	
 	/**
+	 * @see #getPathParser()
+	 */
+	private final PathParser _pathParser;
+	
+	/**
 	 * @see #getMergeHandler()
 	 */
 	private final MergeHandler _mergeHandler;
@@ -88,7 +93,7 @@ public class SubcherryMergeContext {
 	private final MessageRewriter _messageRewriter;
 	
 	/**
-	 * @see #getEntries();
+	 * @see #getEntries()
 	 */
 	private final List<SubcherryMergeEntry> _entries;
 	
@@ -103,7 +108,8 @@ public class SubcherryMergeContext {
 		_config = tree.getConfiguration();
 		_trac = tree.getTracConnection();
 		_commitContext = new CommitContext(_manager.getClient(), _manager.getClient());
-		_mergeHandler = new MergeHandler(_manager, _config, new PathParser(_config), new HashSet<>(Arrays.asList(_config.getModules())));
+		_pathParser = new PathParser(_config);
+		_mergeHandler = new MergeHandler(_manager, _config, _pathParser, new HashSet<>(Arrays.asList(_config.getModules())));
 		_messageRewriter = MessageRewriter.createMessageRewriter(getConfiguration(), new PortingTickets(_config, _trac), new UpdateableRevisionRewriter());
 		_entries = init(tree);
 	}
@@ -208,6 +214,14 @@ public class SubcherryMergeContext {
 	 */
 	public TracConnection getTracConnection() {
 		return _trac;
+	}
+	
+	/**
+	 * @return the {@link PathParser} to be used for parsing remote URLs to the
+	 *         configured branch/module/resource structure
+	 */
+	public PathParser getPathParser() {
+		return _pathParser;
 	}
 	
 	/**

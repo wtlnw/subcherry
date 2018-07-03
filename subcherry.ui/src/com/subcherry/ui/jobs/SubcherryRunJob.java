@@ -119,8 +119,10 @@ public class SubcherryRunJob extends AbstractSubcherryJob {
 		}
 		monitor.setWorkRemaining(1);
 		
-		// commit merged entries
-		if(SubcherryMergeState.MERGED == entry.getState()) {
+		// commit merged entries (allow commit retry for entries with an ERROR)
+		if(SubcherryMergeState.MERGED == entry.getState() ||
+		   SubcherryMergeState.ERROR == entry.getState()) {
+			
 			entry.commit();
 			monitor.worked(1);
 		}

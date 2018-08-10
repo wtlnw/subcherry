@@ -28,7 +28,10 @@ import org.eclipse.core.runtime.SubMonitor;
 import org.eclipse.core.runtime.jobs.IJobChangeEvent;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.core.runtime.jobs.JobChangeAdapter;
+import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.services.IEvaluationService;
 
+import com.subcherry.ui.expressions.SubcherryStateTester;
 import com.subcherry.ui.views.SubcherryMergeContext;
 
 /**
@@ -57,6 +60,21 @@ public abstract class AbstractSubcherryJob extends Job {
 		super(string);
 		
 		_context = context;
+		
+		// force re-test of the SubcherryStateTester.PROPERTY_RUNNING
+		addJobChangeListener(new JobChangeAdapter() {
+			@Override
+			public void running(final IJobChangeEvent event) {
+				PlatformUI.getWorkbench().getService(IEvaluationService.class).requestEvaluation(
+						SubcherryStateTester.NAMESPACE + SubcherryStateTester.PROPERTY_STATE);
+			}
+			
+			@Override
+			public void done(final IJobChangeEvent event) {
+				PlatformUI.getWorkbench().getService(IEvaluationService.class).requestEvaluation(
+					SubcherryStateTester.NAMESPACE + SubcherryStateTester.PROPERTY_STATE);
+			}
+		});
 	}
 	
 	/**

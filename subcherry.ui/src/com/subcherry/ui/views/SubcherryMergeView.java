@@ -38,10 +38,12 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.ViewPart;
+import org.eclipse.ui.services.IEvaluationService;
 
 import com.subcherry.repository.command.merge.ConflictDescription;
 import com.subcherry.ui.SubcherryUI;
 import com.subcherry.ui.dialogs.SubcherryEditDialog;
+import com.subcherry.ui.expressions.SubcherryEntryTester;
 
 /**
  * An {@link ViewPart} implementation for {@link SubcherryUI} which allows
@@ -233,6 +235,9 @@ public class SubcherryMergeView extends ViewPart {
 				_listener = new SubcherryMergeListener() {
 					@Override
 					public void onStateChanged(final SubcherryMergeEntry entry, final SubcherryMergeState oldState, final SubcherryMergeState newState) {
+						PlatformUI.getWorkbench().getService(IEvaluationService.class).requestEvaluation(
+								SubcherryEntryTester.NAMESPACE + SubcherryEntryTester.PROPERTY_ENTRY);
+						
 						update(entry);
 					}
 					

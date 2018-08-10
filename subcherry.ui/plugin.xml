@@ -109,46 +109,94 @@
       <handler
             class="com.subcherry.ui.handlers.SubcherryRunHandler"
             commandId="com.subcherry.ui.commands.run">
-         <activeWhen>
+         <enabledWhen>
             <reference
-                  definitionId="com.subcherry.ui.expressions.SubcherryMergeViewActive">
-            </reference></activeWhen>
+                  definitionId="com.subcherry.ui.expressions.SubcherryMergeViewPaused">
+            </reference>
+         </enabledWhen>
       </handler>
       <handler
             class="com.subcherry.ui.handlers.SubcherryPauseHandler"
             commandId="com.subcherry.ui.commands.pause">
-         <activeWhen>
+         <enabledWhen>
             <reference
-                  definitionId="com.subcherry.ui.expressions.SubcherryMergeViewActive">
-            </reference></activeWhen>
+                  definitionId="com.subcherry.ui.expressions.SubcherryMergeViewRunning">
+            </reference>
+         </enabledWhen>
       </handler>
       <handler
             class="com.subcherry.ui.handlers.SubcherrySkipHandler"
             commandId="com.subcherry.ui.commands.skip">
-         <activeWhen>
+         <enabledWhen>
             <reference
-                  definitionId="com.subcherry.ui.expressions.SubcherryMergeViewActive">
-            </reference></activeWhen>
+                  definitionId="com.subcherry.ui.expressions.SubcherryMergeViewPaused">
+            </reference>
+         </enabledWhen>
       </handler>
       <handler
             class="com.subcherry.ui.handlers.SubcherryResetHandler"
             commandId="com.subcherry.ui.commands.reset">
-         <activeWhen>
+         <enabledWhen>
             <reference
-                  definitionId="com.subcherry.ui.expressions.SubcherryMergeViewActive">
-            </reference></activeWhen>
+                  definitionId="com.subcherry.ui.expressions.SubcherryMergeViewPaused">
+            </reference>
+         </enabledWhen>
       </handler>
    </extension>
    <extension
          point="org.eclipse.core.expressions.definitions">
       <definition
-            id="com.subcherry.ui.expressions.SubcherryMergeViewActive">
+            id="com.subcherry.ui.expressions.SubcherryMergeViewRunning">
          <with
-               variable="activePartId">
-            <equals
-                  value="com.subcherry.ui.views.SubcherryMergeView">
-            </equals>
+               variable="activePart">
+            <and>
+               <instanceof
+                     value="com.subcherry.ui.views.SubcherryMergeView">
+               </instanceof>
+               <test
+                     property="com.subcherry.ui.merge.state"
+                     value="running">
+               </test>
+            </and>
          </with>
       </definition>
+      <definition
+            id="com.subcherry.ui.expressions.SubcherryMergeViewPaused">
+         <with
+               variable="activePart">
+            <and>
+               <instanceof
+                     value="com.subcherry.ui.views.SubcherryMergeView">
+               </instanceof>
+               <not>
+                  <test
+                        property="com.subcherry.ui.merge.state"
+                        value="running">
+                  </test>
+               </not>
+               <test
+                     property="com.subcherry.ui.merge.entry"
+                     value="*">
+               </test>
+            </and>
+         </with>
+      </definition>
+   </extension>
+   <extension
+         point="org.eclipse.core.expressions.propertyTesters">
+      <propertyTester
+            class="com.subcherry.ui.expressions.SubcherryStateTester"
+            id="com.subcherry.ui.merge.tester.state"
+            namespace="com.subcherry.ui.merge"
+            properties="state"
+            type="org.eclipse.ui.IWorkbenchPart">
+      </propertyTester>
+      <propertyTester
+            class="com.subcherry.ui.expressions.SubcherryEntryTester"
+            id="com.subcherry.ui.merge.tester.entry"
+            namespace="com.subcherry.ui.merge"
+            properties="entry"
+            type="org.eclipse.ui.IWorkbenchPart">
+      </propertyTester>
    </extension>
 </plugin>

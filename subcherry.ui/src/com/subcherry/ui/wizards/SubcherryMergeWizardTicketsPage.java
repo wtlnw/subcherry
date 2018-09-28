@@ -23,7 +23,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import org.eclipse.jface.dialogs.IPageChangingListener;
 import org.eclipse.jface.dialogs.PageChangingEvent;
@@ -37,16 +36,12 @@ import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.TreeViewer;
-import org.eclipse.jface.viewers.TreeViewerColumn;
 import org.eclipse.jface.viewers.Viewer;
-import org.eclipse.jface.viewers.ViewerFilter;
 import org.eclipse.jface.wizard.IWizardPage;
 import org.eclipse.jface.wizard.WizardDialog;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Font;
@@ -59,6 +54,8 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
+import org.eclipse.ui.dialogs.FilteredTree;
+import org.eclipse.ui.dialogs.PatternFilter;
 
 import com.subcherry.Configuration;
 import com.subcherry.repository.command.ClientManager;
@@ -66,7 +63,6 @@ import com.subcherry.repository.core.LogEntry;
 import com.subcherry.repository.core.LogEntryPath;
 import com.subcherry.trac.TracConnection;
 import com.subcherry.trac.TracTicket;
-import com.subcherry.ui.DelayedModifyListener;
 import com.subcherry.ui.SubcherryUI;
 import com.subcherry.ui.model.SubcherryTree;
 import com.subcherry.ui.model.SubcherryTreeNode;
@@ -82,22 +78,11 @@ import com.subcherry.ui.model.SubcherryTreeTicketNode;
  * @version $Revision: $ $Author: $ $Date: $
  */
 public class SubcherryMergeWizardTicketsPage extends WizardPage {
-
-	/**
-	 * The name of the data property to be used for annotating the
-	 * {@link TreeViewer} with the filter {@link Pattern}.
-	 */
-	private static final String FILTER_PATTERN = "FILTER_EXPRESSION";
 	
 	/**
-	 * The regular expression indicating all possible characters.
+	 * @see #createTicketViewer()
 	 */
-	private static final String REGEX_ANY = ".*";
-	
-	/**
-	 * @see #createTicketTable()
-	 */
-	private CheckboxTreeViewer _viewer;
+	private FilteredTree _tree;
 
 	/**
 	 * The {@link Text} control displaying the selected {@link SubcherryTreeRevisionNode}'s
@@ -146,7 +131,7 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 	@Override
 	public void dispose() {
 		// release all handles for finalization
-		_viewer = null;
+		_tree = null;
 		_revision = null;
 		_timestamp = null;
 		_author = null;
@@ -197,7 +182,7 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 	 */
 	private void storePage() {
 		final SubcherryMergeWizard wizard = SubcherryMergeWizardTicketsPage.this.getWizard();
-		wizard.setSubcherryTree((SubcherryTree) _viewer.getInput());
+		wizard.setSubcherryTree((SubcherryTree) _tree.getViewer().getInput());
 	}
 
 	/**
@@ -210,7 +195,7 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 		final Configuration config = wizard.getConfiguration();
 		final SubcherryTree tree = new SubcherryTree(mgr, trac, config);
 
-		_viewer.setInput(tree);
+		_tree.getViewer().setInput(tree);
 	}
 	
 	/**
@@ -300,56 +285,52 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 		final Composite ticketsView = new Composite(parent, SWT.NONE);
 		ticketsView.setLayout(new GridLayout());
 		
-		createTicketFilter(ticketsView);
-		_viewer = createTicketViewer(ticketsView);
+		_tree = createTicketViewer(ticketsView);
 		createTicketTableButtons(ticketsView);
-	}
-
-	/**
-	 * Create the {@link Control}s allowing users to filter the
-	 * {@link #createTicketViewer(Composite) table of tickets}
-	 * 
-	 * @param parent
-	 *            the {@link Composite} to create the controls in
-	 */
-	private void createTicketFilter(final Composite parent) {
-		final Text filter = new Text(parent, SWT.BORDER | SWT.SEARCH | SWT.ICON_SEARCH | SWT.ICON_CANCEL);
-		filter.setLayoutData(new GridData(SWT.FILL, SWT.NONE, true, false));
-		filter.setMessage("Enter ticket filter expression");
-		filter.addModifyListener(new DelayedModifyListener(new TicketFilterModifyListener()));
 	}
 	
 	/**
 	 * @param parent
 	 *            the {@link Composite} to create the controls in
-	 * @return the {@link CheckboxTreeViewer} displaying available tickets
+	 * @return the {@link FilteredTree} displaying available tickets
 	 */
-	private CheckboxTreeViewer createTicketViewer(final Composite parent) {
-		final CheckboxTreeViewer viewer = new CheckboxTreeViewer(parent, SWT.BORDER | SWT.FULL_SELECTION);
-		final Tree table = viewer.getTree();
-		table.setHeaderVisible(true);
-		table.setLinesVisible(true);
-		table.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+	private FilteredTree createTicketViewer(final Composite parent) {
+		final PatternFilter filter = new PatternFilter() {
+			@Override
+			protected boolean isLeafMatch(final Viewer viewer, final Object element) {
+				// the revision node is always visible if the ticket node itself matches
+				if(element instanceof SubcherryTreeRevisionNode) {
+					if(super.isLeafMatch(viewer, ((SubcherryTreeRevisionNode) element).getTicket())) {
+						return true;
+					}
+				}
+				
+				return super.isLeafMatch(viewer, element);
+			}
+		};
+		filter.setIncludeLeadingWildcard(true);
 		
-		// initialize columns
-		final TreeViewerColumn colSummary = new TreeViewerColumn(viewer, SWT.NONE);
-		colSummary.getColumn().setMoveable(false);
-		colSummary.getColumn().setWidth(256);
-		colSummary.setLabelProvider(new SubcherryDescriptionLabelProvider());
+		final FilteredTree tree = new FilteredTree(parent, SWT.BORDER | SWT.CHECK | SWT.FULL_SELECTION, filter, true) {
+			@Override
+			public CheckboxTreeViewer doCreateTreeViewer(final Composite treeParent, final int style) {
+				final CheckboxTreeViewer viewer = new CheckboxTreeViewer(treeParent, style);
+				final Tree table = viewer.getTree();
+				table.setLinesVisible(true);
+				table.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+				
+				viewer.setLabelProvider(new ViewerLabelProvider());
+				viewer.setContentProvider(new ViewerContentProvider());
+				viewer.setCheckStateProvider(new ViewerCheckStateProvider());
+				viewer.addCheckStateListener(new ViewerCheckStateListener());
+				
+				viewer.addSelectionChangedListener(new ViewerSelectionChangedListener());
+				
+				return viewer;
+			}
+		};
+		tree.setInitialText("type ticket or revision filter text");
 		
-		final TreeViewerColumn colTicket = new TreeViewerColumn(viewer, SWT.RIGHT);
-		colTicket.getColumn().setText("Id");
-		colTicket.getColumn().setWidth(64);
-		colTicket.setLabelProvider(new SubcherryIdLabelProvider());
-
-		viewer.addFilter(new SubcherryTicketFilter());
-		viewer.setContentProvider(new ViewerContentProvider());
-		viewer.setCheckStateProvider(new ViewerCheckStateProvider());
-		viewer.addCheckStateListener(new ViewerCheckStateListener());
-		
-		viewer.addSelectionChangedListener(new ViewerSelectionChangedListener());
-		
-		return viewer;
+		return tree;
 	}
 	
 	/**
@@ -370,11 +351,14 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 		
 		final Button all = new Button(buttons, SWT.NONE);
 		all.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false));
-		all.setText("Select All Visible");
+		all.setText("Select All");
+		all.setToolTipText("Select all tickets (including all revisions) accepted by the current filter.");
 		all.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(final SelectionEvent e) {
-				for (final TreeItem item : _viewer.getTree().getItems()) {
+				final TreeViewer viewer = _tree.getViewer();
+				
+				for (final TreeItem item : viewer.getTree().getItems()) {
 					final Object element = item.getData();
 					if(element instanceof SubcherryTreeTicketNode) {
 						final SubcherryTreeTicketNode ticket = (SubcherryTreeTicketNode) element;
@@ -382,17 +366,20 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 					}
 				}
 				
-				_viewer.refresh();
+				viewer.refresh();
 			}
 		});
 		
 		final Button none = new Button(buttons, SWT.NONE);
 		none.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false));
-		none.setText("Deselect All Visible");
+		none.setText("Deselect All");
+		none.setToolTipText("Deselect all tickets (including all revisions) accepted by the current filter.");
 		none.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(final SelectionEvent e) {
-				for (final TreeItem item : _viewer.getTree().getItems()) {
+				final TreeViewer viewer = _tree.getViewer();
+				
+				for (final TreeItem item : viewer.getTree().getItems()) {
 					final Object element = item.getData();
 					if(element instanceof SubcherryTreeTicketNode) {
 						final SubcherryTreeTicketNode ticket = (SubcherryTreeTicketNode) element;
@@ -400,7 +387,7 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 					}
 				}
 				
-				_viewer.refresh();
+				viewer.refresh();
 			}
 		});
 	}
@@ -511,14 +498,14 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 				final SubcherryTreeTicketNode ticket = (SubcherryTreeTicketNode) element;
 				
 				// force the viewer to update both, the parent node AND children
-				_viewer.update(ticket, null);
-				_viewer.update(ticket.getChanges().toArray(), null);
+				_tree.getViewer().update(ticket, null);
+				_tree.getViewer().update(ticket.getChanges().toArray(), null);
 			} else {
 				final SubcherryTreeRevisionNode change = (SubcherryTreeRevisionNode) element;
 				
 				// force the viewer to update both, the child node and parent
-				_viewer.update(change, null);
-				_viewer.update(change.getTicket(), null);
+				_tree.getViewer().update(change, null);
+				_tree.getViewer().update(change.getTicket(), null);
 			}
 		}
 	}
@@ -552,94 +539,11 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 	}
 	
 	/**
-	 * A {@link ModifyListener} implementation which updates the specified
-	 * {@link TreeViewer} upon filter text modification.
+	 * An {@link ColumnLabelProvider} implementation for {@link SubcherryTreeNode}s.
 	 * 
 	 * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
 	 */
-	protected class TicketFilterModifyListener implements ModifyListener {
-		
-		@Override
-		public void modifyText(final ModifyEvent e) {
-			final String expr = ((Text) e.widget).getText();
-			final Pattern pattern;
-			
-			if(expr.isEmpty()) {
-				pattern = null;
-			} else {
-				pattern = Pattern.compile(REGEX_ANY + Pattern.quote(expr) + REGEX_ANY, Pattern.CASE_INSENSITIVE); 
-			}
-			
-			_viewer.setData(FILTER_PATTERN, pattern);
-			_viewer.refresh();
-		}
-	}
-
-	/**
-	 * An {@link ViewerFilter} implementation which accepts only tickets matching
-	 * the filter pattern.
-	 * 
-	 * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
-	 */
-	protected static class SubcherryTicketFilter extends ViewerFilter {
-		
-		@Override
-		public boolean select(final Viewer viewer, final Object parentElement, final Object element) {
-			final Pattern filter = (Pattern) viewer.getData(FILTER_PATTERN);
-			
-			// fast path return upon empty filter input
-			if(filter == null) {
-				return true;
-			}
-			
-			// filter tickets using their ticket summary
-			if(element instanceof SubcherryTreeTicketNode) {
-				final TreeViewer tree = (TreeViewer) viewer;
-				final ColumnLabelProvider labels = (ColumnLabelProvider) tree.getLabelProvider(0);
-				final String label = labels.getText(element);
-				
-				if(label != null) {
-					return filter.matcher(label).matches();
-				}
-			}
-			
-			return true;
-		}
-	}
-	
-	/**
-	 * An {@link ColumnLabelProvider} implementation which displays the ticket or revision number.
-	 * 
-	 * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
-	 */
-	protected static class SubcherryIdLabelProvider extends ColumnLabelProvider {
-		
-		@Override
-		public String getText(final Object element) {
-			if (element instanceof SubcherryTreeTicketNode) {
-				final SubcherryTreeTicketNode node = (SubcherryTreeTicketNode) element;
-				final TracTicket ticket = node.getTicket();
-
-				if (ticket != null) {
-					return "#" + String.valueOf(ticket.getNumber());
-				}
-			} else if (element instanceof SubcherryTreeRevisionNode) {
-				final SubcherryTreeRevisionNode node = (SubcherryTreeRevisionNode) element;
-
-				return "[" + String.valueOf(node.getChange().getRevision()) + "]";
-			}
-
-			return null;
-		}
-	}
-	
-	/**
-	 * An {@link ColumnLabelProvider} implementation which displays the ticket
-	 * summary or the revision message.
-	 * 
-	 * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
-	 */
-	protected static class SubcherryDescriptionLabelProvider extends ColumnLabelProvider {
+	protected static class ViewerLabelProvider extends ColumnLabelProvider {
 		
 		/**
 		 * The label text to be used for {@link SubcherryTreeTicketNode}s without actual
@@ -654,12 +558,13 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 				final TracTicket ticket = node.getTicket();
 				
 				if (ticket != null) {
-					return ticket.getSummary();
+					return String.format("Ticket #%d: %s", ticket.getNumber(), ticket.getSummary());
 				}
 			} else if(element instanceof SubcherryTreeRevisionNode) {
 				final SubcherryTreeRevisionNode node = (SubcherryTreeRevisionNode) element;
+				final LogEntry change = node.getChange();
 				
-				return node.getChange().getMessage();
+				return String.format("Revision [%d]: %s", change.getRevision(), change.getMessage());
 			}
 			
 			return TICKET_NONE;

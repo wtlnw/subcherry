@@ -209,19 +209,22 @@ public class SubcherryMergeEntry implements ISubscriberChangeListener {
 	 */
 	public SubcherryMergeState commit() {
 		try {
-			// commit the changes
-			final CommitInfo info = getChangeset().run(getContext().getCommitContext());
+			final SubcherryMergeState newstate;
+			
+			// on no-commit configuration just switch the state
+			if(getContext().getConfiguration().getNoCommit()) {
+				newstate = SubcherryMergeState.NO_COMMIT;
+			} else {
+				final CommitInfo info = getChangeset().run(getContext().getCommitContext());
+				newstate = info.getNewRevision() < 0 ? SubcherryMergeState.NO_COMMIT : SubcherryMergeState.COMMITTED;
+			}
 			
 			// reset conflicts and error
 			_conflicts.clear();
 			_error = null;
 			
 			// finally, update the state
-			if (info.getNewRevision() < 0) {
-				setState(SubcherryMergeState.IGNORED);
-			} else {
-				setState(SubcherryMergeState.COMMITTED);
-			}
+			setState(newstate);
 		} catch (Throwable e) {
 			_error = e;
 			

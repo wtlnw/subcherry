@@ -31,7 +31,7 @@ public enum SubcherryMergeState {
 	ERROR(true),
 	COMMITTED(false),
 	SKIPPED(false),
-	IGNORED(false);
+	NO_COMMIT(false);
 	
 	/**
 	 * @see #isPending()

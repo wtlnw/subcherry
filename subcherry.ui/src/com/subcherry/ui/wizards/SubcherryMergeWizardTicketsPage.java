@@ -17,13 +17,6 @@
  */
 package com.subcherry.ui.wizards;
 
-import java.text.Collator;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-
 import org.eclipse.jface.dialogs.IPageChangingListener;
 import org.eclipse.jface.dialogs.PageChangingEvent;
 import org.eclipse.jface.viewers.CheckStateChangedEvent;
@@ -50,8 +43,6 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
 import org.eclipse.ui.dialogs.FilteredTree;
@@ -60,7 +51,6 @@ import org.eclipse.ui.dialogs.PatternFilter;
 import com.subcherry.Configuration;
 import com.subcherry.repository.command.ClientManager;
 import com.subcherry.repository.core.LogEntry;
-import com.subcherry.repository.core.LogEntryPath;
 import com.subcherry.trac.TracConnection;
 import com.subcherry.trac.TracTicket;
 import com.subcherry.ui.SubcherryUI;
@@ -69,6 +59,7 @@ import com.subcherry.ui.model.SubcherryTreeNode;
 import com.subcherry.ui.model.SubcherryTreeNode.Check;
 import com.subcherry.ui.model.SubcherryTreeRevisionNode;
 import com.subcherry.ui.model.SubcherryTreeTicketNode;
+import com.subcherry.ui.widgets.LogEntryForm;
 
 /**
  * An {@link WizardPage} implementation for {@link SubcherryMergeWizard} which
@@ -80,38 +71,14 @@ import com.subcherry.ui.model.SubcherryTreeTicketNode;
 public class SubcherryMergeWizardTicketsPage extends WizardPage {
 	
 	/**
-	 * @see #createTicketViewer()
+	 * @see #createTicketViewer(Composite)
 	 */
 	private FilteredTree _tree;
-
-	/**
-	 * The {@link Text} control displaying the selected {@link SubcherryTreeRevisionNode}'s
-	 * revision number.
-	 */
-	private Text _revision;
 	
 	/**
-	 * The {@link Text} control displaying the selected {@link SubcherryTreeRevisionNode}'s
-	 * revision timestamp.
+	 * @see #createDetailsView(Composite)
 	 */
-	private Text _timestamp;
-	
-	/**
-	 * The {@link Text} control displaying the selected {@link SubcherryTreeRevisionNode}'s author.
-	 */
-	private Text _author;
-	
-	/**
-	 * The {@link Text} control displaying the selected {@link SubcherryTreeRevisionNode}'s commit
-	 * message.
-	 */
-	private Text _message;
-	
-	/**
-	 * The {@link Text} control displaying the selected {@link SubcherryTreeRevisionNode}'s changed
-	 * paths.
-	 */
-	private Text _paths;
+	private LogEntryForm _details;
 	
 	/**
 	 * Create a {@link SubcherryMergeWizardTicketsPage}.
@@ -132,11 +99,7 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 	public void dispose() {
 		// release all handles for finalization
 		_tree = null;
-		_revision = null;
-		_timestamp = null;
-		_author = null;
-		_message = null;
-		_paths = null;
+		_details = null;
 		
 		// call super implementation
 		super.dispose();
@@ -206,73 +169,7 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 	 *            the {@link Composite} to create the controls in
 	 */
 	private void createDetailsView(final Composite parent) {
-		final SashForm contents = new SashForm(parent, SWT.VERTICAL);
-		
-		createRevisionDetailsView(contents);
-		createPathDetailsView(contents);
-	}
-
-	/**
-	 * Create {@link Control}s displaying detailed information for
-	 * {@link SubcherryTreeRevisionNode}s.
-	 * 
-	 * @param parent
-	 *            the {@link Composite} to create the controls in
-	 */
-	private Composite createRevisionDetailsView(final SashForm contents) {
-		final Composite ticketsView = new Composite(contents, SWT.NONE);
-		ticketsView.setLayout(new GridLayout(2, false));
-		
-		/* revision information */
-		final Label labelRev = new Label(ticketsView, SWT.NONE);
-		labelRev.setLayoutData(new GridData());
-		labelRev.setText("Revision:");
-		
-		_revision = new Text(ticketsView, SWT.BORDER | SWT.READ_ONLY);
-		_revision.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-		
-		/* date information */
-		final Label labelTimestamp = new Label(ticketsView, SWT.NONE);
-		labelTimestamp.setLayoutData(new GridData());
-		labelTimestamp.setText("Date:");
-		
-		_timestamp = new Text(ticketsView, SWT.BORDER | SWT.READ_ONLY);
-		_timestamp.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-		
-		/* author information */
-		final Label labelAuthor = new Label(ticketsView, SWT.NONE);
-		labelAuthor.setLayoutData(new GridData());
-		labelAuthor.setText("Author:");
-		
-		_author = new Text(ticketsView, SWT.BORDER | SWT.READ_ONLY);
-		_author.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-		
-		/* affected paths information */
-		final Label labelMsg = new Label(ticketsView, SWT.NONE);
-		labelMsg.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false));
-		labelMsg.setText("Message:");
-		
-		_message = new Text(ticketsView, SWT.BORDER | SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.READ_ONLY);
-		_message.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-		return ticketsView;
-	}
-
-	/**
-	 * Create {@link Control}s displaying a {@link SubcherryTreeRevisionNode}'s affected paths.
-	 * 
-	 * @param parent
-	 *            the {@link Composite} to create the controls in
-	 */
-	private void createPathDetailsView(final Composite parent) {
-		final Composite contents = new Composite(parent, SWT.NONE);
-		contents.setLayout(new GridLayout());
-		
-		final Label labelPaths = new Label(contents, SWT.NONE);
-		labelPaths.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-		labelPaths.setText("Affected paths:");
-		
-		_paths = new Text(contents, SWT.BORDER | SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.READ_ONLY);
-		_paths.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+		_details = new LogEntryForm(parent, SWT.VERTICAL);
 	}
 	
 	/**
@@ -393,35 +290,6 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 	}
 	
 	/**
-	 * An {@link Comparator} implementation for {@link LogEntryPath}s which compares
-	 * by the {@link LogEntryPath#getType()} first and then by
-	 * {@link LogEntryPath#getPath()}.
-	 * 
-	 * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
-	 */
-	protected static class LogEntryPathComparator implements Comparator<LogEntryPath> {
-		
-		/**
-		 * The {@link Collator} instance to be used for comparing
-		 * {@link LogEntryPath#getPath()}s.
-		 */
-		private final Collator _collator = Collator.getInstance();
-		
-		@Override
-		public int compare(final LogEntryPath o1, final LogEntryPath o2) {
-			// sort by change type first
-			int result = o1.getType().compareTo(o2.getType());
-			
-			// sort by change path after that
-			if(result == 0) {
-				result = _collator.compare(o1.getPath(), o2.getPath());
-			}
-			
-			return result;
-		}
-	}
-	
-	/**
 	 * An {@link ISelectionChangedListener} implementation which updates {@link Control}s
 	 * displaying detail information on the selected {@link SubcherryTreeRevisionNode}.
 	 * 
@@ -432,12 +300,7 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 		@Override
 		public void selectionChanged(final SelectionChangedEvent event) {
 			final IStructuredSelection selection = event.getStructuredSelection();
-
-			final StringBuilder revisionText = new StringBuilder();
-			final StringBuilder timestampText = new StringBuilder();
-			final StringBuilder authorText = new StringBuilder();
-			final StringBuilder messageText = new StringBuilder();
-			final StringBuilder pathText = new StringBuilder();
+			final LogEntry change;
 			
 			// append changed paths to the text field
 			if(!selection.isEmpty()) {
@@ -445,31 +308,15 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 				
 				if(element instanceof SubcherryTreeRevisionNode) {
 					final SubcherryTreeRevisionNode node = (SubcherryTreeRevisionNode) element;
-					final LogEntry change = node.getChange();
-					
-					revisionText.append(change.getRevision());
-					timestampText.append(change.getDate());
-					authorText.append(change.getAuthor());
-					messageText.append(change.getMessage());
-					
-					final List<LogEntryPath> entries = new ArrayList<>(change.getChangedPaths().values());
-					Collections.sort(entries, new LogEntryPathComparator());
-					
-					final Iterator<LogEntryPath> iterator = entries.iterator();
-					while(iterator.hasNext()) {
-						pathText.append(iterator.next().toString());
-						if(iterator.hasNext()) {
-							pathText.append("\n");
-						}
-					}
+					change = node.getChange();
+				} else {
+					change = null;
 				}
+			} else {
+				change = null;
 			}
 			
-			_revision.setText(revisionText.toString());
-			_timestamp.setText(timestampText.toString());
-			_author.setText(authorText.toString());
-			_message.setText(messageText.toString());
-			_paths.setText(pathText.toString());
+			_details.setLogEntry(change);
 		}
 	}
 

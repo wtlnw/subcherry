@@ -96,11 +96,6 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 	}
 	
 	@Override
-	public void setErrorMessage(final String newMessage) {
-		super.setErrorMessage(newMessage);
-	}
-	
-	@Override
 	public void createControl(final Composite parent) {
 		final Composite contents = new Composite(parent, SWT.NONE);
 		contents.setLayout(new GridLayout(3, false));

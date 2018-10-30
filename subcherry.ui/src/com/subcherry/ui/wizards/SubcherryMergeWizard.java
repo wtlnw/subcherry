@@ -133,6 +133,7 @@ public class SubcherryMergeWizard extends Wizard {
 			final IPreferenceStore prefs = SubcherryUI.getInstance().getPreferenceStore();
 			_config.setSemanticMoves(prefs.getBoolean(SubcherryPreferenceConstants.SEMANTIC_MOVES));
 			_config.setBranchPattern(prefs.getString(SubcherryPreferenceConstants.BRANCH_PATTERN));
+			_config.setSkipWaitForTimestamp(prefs.getBoolean(SubcherryPreferenceConstants.SKIP_WAIT_FOR_TIMESTAMP));
 			_config.setTrunkPattern(prefs.getString(SubcherryPreferenceConstants.TRUNK_PATTERN));
 			
 			final IWorkspace workspace = ResourcesPlugin.getWorkspace();
@@ -191,6 +192,7 @@ public class SubcherryMergeWizard extends Wizard {
 	public void addPages() {
 		addPage(new SubcherryMergeWizardSourcePage());
 		addPage(new SubcherryMergeWizardTicketsPage());
+		addPage(new SubcherryMergeWizardAdvancedPage());
 		addPage(new SubcherryMergeWizardSummaryPage());
 	}
 	

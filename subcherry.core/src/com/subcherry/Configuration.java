@@ -252,6 +252,14 @@ public interface Configuration extends MergeConfig, CommitConfig, BranchConfig {
 	boolean getSkipWaitForTimestamp();
 
 	/**
+	 * Setter for {@link #getSkipWaitForTimestamp()}.
+	 * 
+	 * @param value
+	 *        see {@link #getSkipWaitForTimestamp()}
+	 */
+	void setSkipWaitForTimestamp(boolean value);
+
+	/**
 	 * Name of the repository binding provider.
 	 */
 	String getRepositoryProvider();

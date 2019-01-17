@@ -17,12 +17,19 @@
  */
 package com.subcherry.ui.wizards;
 
-import java.util.Date;
 import java.util.Calendar;
+import java.util.Date;
 
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
+import org.eclipse.swt.events.ControlAdapter;
+import org.eclipse.swt.events.ControlEvent;
+import org.eclipse.swt.events.ModifyEvent;
+import org.eclipse.swt.events.ModifyListener;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -60,16 +67,23 @@ public class SubcherryMergeWizardAdvancedPage extends WizardPage {
 	
 	@Override
 	public void createControl(final Composite parent) {
-		final ScrolledComposite composite = new ScrolledComposite(parent, SWT.H_SCROLL | SWT.V_SCROLL);
-		
+		final ScrolledComposite composite = new ScrolledComposite(parent, SWT.V_SCROLL);
+		composite.setExpandHorizontal(true);
+		composite.setExpandVertical(true);
+
 		final Composite contents = new Composite(composite, SWT.NONE);
 		contents.setLayout(new GridLayout(2, false));
 		
 		final Value config = getWizard().getConfiguration();
 		createControls(config.descriptor(), config, contents);
 		
-		contents.setSize(contents.computeSize(SWT.DEFAULT, SWT.DEFAULT));
 		composite.setContent(contents);
+		composite.addControlListener(new ControlAdapter() {
+			public void controlResized(ControlEvent e) {
+				Rectangle r = composite.getClientArea();
+				composite.setMinSize(parent.computeSize(r.width, SWT.DEFAULT));
+			}
+		});
 		
 		setControl(composite);
 		setPageComplete(true);
@@ -98,7 +112,7 @@ public class SubcherryMergeWizardAdvancedPage extends WizardPage {
 					case PRIMITIVE:
 					case REFERENCE: {
 						final Label label = new Label(parent, SWT.NONE);
-						label.setLayoutData(new GridData(SWT.DEFAULT, SWT.DEFAULT));
+						label.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false));
 						label.setText(property.getName() + ":");
 						
 						final Control field;
@@ -111,6 +125,7 @@ public class SubcherryMergeWizardAdvancedPage extends WizardPage {
 							field = newTextField(property, config, parent);
 						}
 						field.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+						
 						break;
 					}
 					case VALUE: {
@@ -159,6 +174,14 @@ public class SubcherryMergeWizardAdvancedPage extends WizardPage {
 			}
 		}
 		
+		// add modification listener
+		field.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(final SelectionEvent e) {
+				config.putValue(property, field.getSelection());
+			}
+		});
+		
 		return field;
 	}
 
@@ -185,6 +208,23 @@ public class SubcherryMergeWizardAdvancedPage extends WizardPage {
 			}
 		}
 		
+		// add modification listener
+		field.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(final SelectionEvent e) {
+				final Calendar cal = Calendar.getInstance();
+				
+				cal.set(field.getYear(),
+						field.getMonth(),
+						field.getDay(),
+						field.getHours(),
+						field.getMinutes(),
+						field.getSeconds());
+				
+				config.putValue(property, cal.getTime());
+			}
+		});
+		
 		return field;
 	}
 
@@ -197,7 +237,7 @@ public class SubcherryMergeWizardAdvancedPage extends WizardPage {
 	 *         {@link Property}
 	 */
 	private Text newTextField(final Property property, final Value config, final Composite parent) {
-		final Text field = new Text(parent, SWT.BORDER);
+		final Text field = new Text(parent, SWT.BORDER | SWT.WRAP | SWT.MULTI);
 		
 		if(config != null) {
 			final Object value = config.value(property);
@@ -205,6 +245,14 @@ public class SubcherryMergeWizardAdvancedPage extends WizardPage {
 				field.setText(property.getParser().unparse(value));
 			}
 		}
+		
+		// add modification listener
+		field.addModifyListener(new ModifyListener() {
+			@Override
+			public void modifyText(final ModifyEvent e) {
+				config.putValue(property, field.getText());
+			}
+		});
 		
 		return field;
 	}

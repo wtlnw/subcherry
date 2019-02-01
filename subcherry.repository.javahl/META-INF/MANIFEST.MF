@@ -6,7 +6,7 @@ Bundle-Version: 1.0.0.qualifier
 Export-Package: com.subcherry.repository.javahl,
  com.subcherry.repository.javahl.internal
 Require-Bundle: subcherry.repository,
- org.tigris.subversion.clientadapter.javahl
+ org.tigris.subversion.clientadapter.javahl;bundle-version="1.10.4"
 Automatic-Module-Name: subcherry.repository.javahl
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7

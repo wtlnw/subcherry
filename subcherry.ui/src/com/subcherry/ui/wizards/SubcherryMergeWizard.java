@@ -17,11 +17,6 @@
  */
 package com.subcherry.ui.wizards;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
@@ -29,16 +24,11 @@ import org.eclipse.equinox.security.storage.ISecurePreferences;
 import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.wizard.Wizard;
-import org.eclipse.team.core.RepositoryProvider;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.WorkbenchException;
-import org.tigris.subversion.subclipse.core.SVNException;
-import org.tigris.subversion.subclipse.core.SVNProviderPlugin;
-import org.tigris.subversion.subclipse.core.SVNTeamProvider;
-import org.tigris.subversion.svnclientadapter.SVNUrl;
 
 import com.subcherry.Configuration;
 import com.subcherry.repository.command.ClientManager;
@@ -135,36 +125,6 @@ public class SubcherryMergeWizard extends Wizard {
 			_config.setBranchPattern(prefs.getString(SubcherryPreferenceConstants.BRANCH_PATTERN));
 			_config.setSkipWaitForTimestamp(prefs.getBoolean(SubcherryPreferenceConstants.SKIP_WAIT_FOR_TIMESTAMP));
 			_config.setTrunkPattern(prefs.getString(SubcherryPreferenceConstants.TRUNK_PATTERN));
-			
-			final IWorkspace workspace = ResourcesPlugin.getWorkspace();
-			final SVNProviderPlugin svn = SVNProviderPlugin.getPlugin();
-			final List<String> paths = new ArrayList<>();
-			
-			for (final IProject module : workspace.getRoot().getProjects()) {
-				// add only accessible modules which are managed by SVN
-				if(module.isAccessible() && svn.isManagedBySubversion(module)) {
-					paths.add(module.getName());
-					
-					// assume that all projects have been checked out from the same branch
-					// in order to initialize the target branch configuration
-					if(_config.getTargetBranch() == null || _config.getTargetBranch().isEmpty()) {
-						final RepositoryProvider provider = SVNTeamProvider.getProvider(module);
-						if(provider != null) {
-							try {
-								final SVNUrl modulePath = svn.getStatusCacheManager().getStatus(module).getUrl();
-								final SVNUrl branchPath = modulePath.getParent();
-								final SVNUrl repoPath = svn.getRepository(branchPath.toString()).getRepositoryRoot();
-								final String branchName = branchPath.toString().replace(repoPath.toString(), "");
-								
-								_config.setTargetBranch(branchName);
-							} catch (final SVNException e) {
-								// ignore for now and try with the next project
-							}
-						}
-					}
-				}
-			}
-			_config.setModules(paths.toArray(new String[paths.size()]));
 		}
 		
 		return _config;
@@ -191,8 +151,8 @@ public class SubcherryMergeWizard extends Wizard {
 	@Override
 	public void addPages() {
 		addPage(new SubcherryMergeWizardSourcePage());
+		addPage(new SubcherryMergeWizardTargetPage());
 		addPage(new SubcherryMergeWizardTicketsPage());
-		addPage(new SubcherryMergeWizardAdvancedPage());
 		addPage(new SubcherryMergeWizardSummaryPage());
 	}
 	

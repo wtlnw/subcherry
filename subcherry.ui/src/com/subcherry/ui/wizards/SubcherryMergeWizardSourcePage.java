@@ -24,6 +24,7 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.dialogs.ErrorDialog;
+import org.eclipse.jface.layout.GridDataFactory;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.FocusAdapter;
@@ -108,6 +109,7 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 		_revisionInput = createRevisionSelector(contents);
 		_revisionButton = createRevisionButton(contents);
 		createModeSelector(contents);
+		createMergeInfoToggle(contents);
 		
 		setControl(contents);
 		setPageComplete(false);
@@ -283,7 +285,13 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 	private void createModeSelector(final Composite contents) {
 		final Group group = new Group(contents, SWT.NONE);
 		group.setText("Rewrite commit messages:");
-		group.setLayoutData(new GridData(SWT.FILL, SWT.DEFAULT, true, false, 3, 1));
+		group.setLayoutData(GridDataFactory
+			.swtDefaults()
+			.align(SWT.FILL, SWT.BEGINNING)
+			.grab(true, false)
+			.span(3, 1)
+			.indent(0, 5)
+			.create());
 		group.setLayout(new RowLayout(SWT.VERTICAL));
 		
 		// default behavior is porting (which is not reflected in the configuration)
@@ -319,6 +327,30 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 			@Override
 			public void widgetSelected(final SelectionEvent event) {
 				getWizard().getConfiguration().setReintegrate(((Button) event.widget).getSelection());
+			}
+		});
+	}
+	
+	/**
+	 * Create {@link Control}s allowing users to configure whether merge information
+	 * should be ignored or not.
+	 * 
+	 * @param contents the {@link Composite} to create the {@link Control}s in
+	 */
+	private void createMergeInfoToggle(final Composite contents) {
+		final Button button = new Button(contents, SWT.CHECK);
+		button.setText("Include merged revisions");
+		button.setLayoutData(GridDataFactory
+			.swtDefaults()
+			.align(SWT.FILL, SWT.BEGINNING)
+			.grab(true, false)
+			.span(3, 1)
+			.indent(0, 5)
+			.create());
+		button.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(final SelectionEvent e) {
+				getWizard().getConfiguration().setIgnoreMergeInfo(((Button) e.widget).getSelection());
 			}
 		});
 	}

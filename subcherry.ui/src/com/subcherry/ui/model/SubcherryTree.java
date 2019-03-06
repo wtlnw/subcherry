@@ -17,13 +17,19 @@
  */
 package com.subcherry.ui.model;
 
+import java.io.File;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
@@ -32,16 +38,22 @@ import org.eclipse.swt.widgets.Display;
 
 import com.subcherry.Configuration;
 import com.subcherry.LogReader;
+import com.subcherry.MergeInfoTester;
 import com.subcherry.repository.command.Client;
 import com.subcherry.repository.command.ClientManager;
 import com.subcherry.repository.command.log.LogEntryHandler;
 import com.subcherry.repository.core.LogEntry;
+import com.subcherry.repository.core.MergeInfo;
 import com.subcherry.repository.core.RepositoryException;
 import com.subcherry.repository.core.RepositoryURL;
 import com.subcherry.repository.core.Revision;
+import com.subcherry.repository.core.RevisionRange;
+import com.subcherry.repository.core.RevisionRanges;
 import com.subcherry.trac.TracConnection;
 import com.subcherry.trac.TracTicket;
 import com.subcherry.ui.SubcherryUI;
+import com.subcherry.utils.Path;
+import com.subcherry.utils.PathParser;
 import com.subcherry.utils.Utils;
 
 /**
@@ -215,21 +227,24 @@ public class SubcherryTree {
 	 *         paths
 	 */
 	private List<LogEntry> readHistory(final LogReader log, final List<String> paths) {
-		final List<LogEntry> entries = new ArrayList<>();
+		final Configuration config = getConfiguration();
+		final MergeInfoPredicate filter;
+		if (config.getIgnoreMergeInfo()) {
+			filter = null;
+		} else {
+			filter = new MergeInfoPredicate(getClientManager(), config);
+		}
 		
+		final FilteredLogEntryHandler handler = new FilteredLogEntryHandler(filter);
 		try {
-			log.readLog(paths.toArray(new String[paths.size()]), new LogEntryHandler() {
-				@Override
-				public void handleLogEntry(final LogEntry logEntry) throws RepositoryException {
-					entries.add(logEntry);
-				}
-			});
+			log.readLog(paths.toArray(new String[paths.size()]), handler);
 		} catch (RepositoryException e) {
 			final Status status = new Status(IStatus.ERROR, SubcherryUI.id(), "Failed to access remote location.", e);
 			ErrorDialog.openError(Display.getCurrent().getActiveShell(), "Subcherry Merge", "No revision logs available.", status);
 		}
 		
 		// convert from descending to ascending order
+		final List<LogEntry> entries = handler.entries();
 		Collections.reverse(entries);
 		
 		return entries;
@@ -288,7 +303,7 @@ public class SubcherryTree {
 	 * @return the {@link Revision} matching the given commit number or
 	 *         {@link Revision#HEAD} if the given number is less than 1
 	 */
-	private Revision toRevision(final long commitNumber) {
+	private static Revision toRevision(final long commitNumber) {
 		if(commitNumber < 1) {
 			return Revision.HEAD;
 		} else {
@@ -325,6 +340,163 @@ public class SubcherryTree {
 				} else {
 					return 0;
 				}
+			}
+		}
+	}
+	
+	/**
+	 * A {@link LogEntryHandler} implementation which filters out already merged
+	 * {@link LogEntry}s.
+	 * 
+	 * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
+	 */
+	protected static class FilteredLogEntryHandler implements LogEntryHandler {
+		
+		/**
+		 * @see #filter()
+		 */
+		private final Predicate<LogEntry> _filter;
+		
+		/**
+		 * @see #entries()
+		 */
+		private final List<LogEntry> _entries = new ArrayList<LogEntry>();
+		
+		/**
+		 * Create a {@link FilteredLogEntryHandler}.
+		 * 
+		 * @param filter see {@link #filter()}
+		 */
+		public FilteredLogEntryHandler(final Predicate<LogEntry> filter) {
+			_filter = filter;
+		}
+		
+		/**
+		 * @return the {@link Predicate} to be used for {@link LogEntry} filtering or
+		 *         {@code null} to accept all {@link LogEntry}s.
+		 */
+		public Predicate<LogEntry> filter() {
+			return _filter;
+		}
+		
+		/**
+		 * @return a (possibly empty) {@link List} of accumulated {@link LogEntry}s.
+		 */
+		public List<LogEntry> entries() {
+			return _entries;
+		}
+		
+		@Override
+		public void handleLogEntry(final LogEntry entry) throws RepositoryException {
+			if (_filter == null || _filter.test(entry)) {
+				_entries.add(entry);
+			}
+		}
+	}
+	
+	/**
+	 * A {@link Predicate} implementation which accepts only {@link LogEntry}
+	 * instances which have not been merged into the target branch yet.
+	 * 
+	 * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
+	 */
+	protected static class MergeInfoPredicate implements Predicate<LogEntry> {
+
+		/**
+		 * The {@link MergeInfoTester} to be used for checking the merge information of
+		 * {@link LogEntry} instances.
+		 */
+		private final MergeInfoTester _tester;
+		
+		/**
+		 * The {@link RepositoryURL} pointing to the source branch.
+		 */
+		private final RepositoryURL _source;
+
+		/**
+		 * The {@link PathParser} instance for convenient path computation.
+		 */
+		private final PathParser _paths;
+
+		/**
+		 * The {@link Set} of modules to evaluate the merge information for.
+		 */
+		private final Set<String> _modules;
+		
+		/**
+		 * Create a {@link MergeInfoPredicate}.
+		 * 
+		 * @param clients the {@link ClientManager} to be used for merge information
+		 *                access
+		 * @param config  the {@link Configuration} to be used for initialization
+		 */
+		public MergeInfoPredicate(final ClientManager clients, final Configuration config) {
+			final RepositoryURL url = RepositoryURL.parse(config.getSvnURL());
+			final File root = config.getWorkspaceRoot();
+			final Revision peg = SubcherryTree.toRevision(config.getPegRevision());
+			
+			_tester = new MergeInfoTester(clients, url, root, peg);
+			_source = RepositoryURL.parse(config.getSvnURL()).appendPath(config.getSourceBranch());
+			_paths = new PathParser(config);
+			_modules = Stream.of(config.getModules()).collect(Collectors.toSet());
+		}
+		
+		@Override
+		public boolean test(final LogEntry entry) {
+			try {
+				final long mergedRevision = entry.getRevision();
+				final Set<String> touchedModules = new HashSet<>();
+				
+				boolean alreadyMerged = false;
+				for (final String changedPath : entry.getChangedPaths().keySet()) {
+					final Path parsedPath = _paths.parsePath(changedPath);
+					
+					final String changedModuleName = parsedPath.getModule();
+					touchedModules.add(changedModuleName);
+					
+					// Merge info is only recorded at module level. Therefore, checks on all
+					// other paths can be skipped.
+					if (!parsedPath.getResource().equals(parsedPath.getModule())) {
+						continue;
+					}
+					
+					// Skip changes to ignored modules.
+					if (!_modules.contains(changedModuleName)) {
+						continue;
+					}
+					
+					alreadyMerged = _tester.isAlreadyMerged(mergedRevision, changedPath, changedModuleName);
+					if (alreadyMerged) {
+						break;
+					}
+				}
+				
+				if (!alreadyMerged) {
+					for (final String touchedModule : touchedModules) {
+						// Skip changes to ignored modules.
+						if (!_modules.contains(touchedModule)) {
+							continue;
+						}
+						
+						final MergeInfo moduleMergeInfo = _tester.lookupMergeInfo(touchedModule);
+						final RepositoryURL mergeSrcUrl = _source.appendPath(touchedModule);
+						final List<RevisionRange> mergedRevisions = moduleMergeInfo.getRevisions(mergeSrcUrl);
+						if (mergedRevisions == null) {
+							continue;
+						}
+						
+						if (RevisionRanges.contains(mergedRevisions, mergedRevision)) {
+							alreadyMerged = true;
+							break;
+						}
+					}
+				}
+				
+				// accept only log entries which have not been merged yet
+				return !alreadyMerged;
+				
+			} catch (RepositoryException e) {
+				throw new IllegalStateException(e);
 			}
 		}
 	}

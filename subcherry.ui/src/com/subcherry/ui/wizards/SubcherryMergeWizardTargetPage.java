@@ -129,9 +129,10 @@ public class SubcherryMergeWizardTargetPage extends WizardPage {
 		final Composite contents = new Composite(parent, SWT.NONE);
 		contents.setLayout(new FormLayout());
 		
+		final IProject[] options = getOptions();
 		final Composite top = createBranchView(contents);
-		final Composite left = createOptionsView(contents);
-		final Composite center = createButtonsView(contents);
+		final Composite left = createOptionsView(contents, options);
+		final Composite center = createButtonsView(contents, options);
 		final Composite right = createSelectionView(contents);
 		
 		final FormData topData = new FormData();
@@ -214,10 +215,11 @@ public class SubcherryMergeWizardTargetPage extends WizardPage {
 	 * Create a view displaying selectable {@link IProject}s using a
 	 * {@link TableView}.
 	 * 
-	 * @param parent the {@link Composite} to create the view in
+	 * @param parent  the {@link Composite} to create the view in
+	 * @param options a (possibly empty) array of available {@link IProject}s
 	 * @return the created {@link Composite} view
 	 */
-	private Composite createOptionsView(final Composite parent) {
+	private Composite createOptionsView(final Composite parent, final IProject[] options) {
 		final Composite contents = new Composite(parent, SWT.NONE);
 		contents.setLayout(new GridLayout());
 		
@@ -263,7 +265,7 @@ public class SubcherryMergeWizardTargetPage extends WizardPage {
 		_options.setLabelProvider(WorkbenchLabelProvider.getDecoratingWorkbenchLabelProvider());
 		_options.setContentProvider(ArrayContentProvider.getInstance());
 		_options.setComparator(new WorkbenchViewerComparator());
-		_options.setInput(getOptions());
+		_options.setInput(options);
 		_options.addSelectionChangedListener(event -> _add.setEnabled(!event.getSelection().isEmpty()));
 		_options.addDoubleClickListener(event -> select(getContents(event.getSelection())));
 		_options.addFilter(new ProjectPatternViewerFilter());
@@ -287,10 +289,11 @@ public class SubcherryMergeWizardTargetPage extends WizardPage {
 	/**
 	 * Create a view displaying {@link Button}s for selection/unselection.
 	 * 
-	 * @param parent the {@link Composite} to create the view in
+	 * @param parent  the {@link Composite} to create the view in
+	 * @param options a (possibly empty) array of available {@link IProject}s
 	 * @return the created {@link Composite} view
 	 */
-	private Composite createButtonsView(final Composite parent) {
+	private Composite createButtonsView(final Composite parent, final IProject[] options) {
 		final Composite contents = new Composite(parent, SWT.NONE);
 		contents.setLayout(new GridLayout());
 		
@@ -308,6 +311,7 @@ public class SubcherryMergeWizardTargetPage extends WizardPage {
 		
 		_addAll = new Button(contents, SWT.PUSH);
 		_addAll.setText("Add All ->");
+		_addAll.setEnabled(options.length > 0);
 		_addAll.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
 		_addAll.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -330,6 +334,7 @@ public class SubcherryMergeWizardTargetPage extends WizardPage {
 		
 		_removeAll = new Button(contents, SWT.PUSH);
 		_removeAll.setText("<- Remove All");
+		_removeAll.setEnabled(false);
 		_removeAll.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
 		_removeAll.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -411,6 +416,9 @@ public class SubcherryMergeWizardTargetPage extends WizardPage {
 		options.removeAll(projects);
 		_options.setInput(options.toArray(new IProject[options.size()]));
 		
+		// update "Add All ->" and "<- Remove All" buttons
+		updateButtons(options, selection);
+		
 		// update the target branch selection
 		updateBranch(selection);
 		
@@ -435,11 +443,26 @@ public class SubcherryMergeWizardTargetPage extends WizardPage {
 		options.addAll(projects);
 		_options.setInput(options.toArray(new IProject[options.size()]));
 		
+		// update "Add All ->" and "<- Remove All" buttons
+		updateButtons(options, selection);
+		
 		// update the target branch selection
 		updateBranch(selection);
 		
 		// validate page input
 		validate();
+	}
+	
+	/**
+	 * Update the buttons according to the available options and selection items.
+	 * 
+	 * @param options   a (possibly empty) {@link Set} of available
+	 *                  {@link IProject}s
+	 * @param selection a (possibly empty) {@link Set} of selected {@link IProject}s
+	 */
+	private void updateButtons(final Set<IProject> options, final Set<IProject> selection) {
+		_addAll.setEnabled(!options.isEmpty());
+		_removeAll.setEnabled(!selection.isEmpty());
 	}
 	
 	/**

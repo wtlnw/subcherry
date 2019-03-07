@@ -27,9 +27,8 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import com.subcherry.repository.core.LogEntry;
-import com.subcherry.trac.Ticket;
-import com.subcherry.trac.TicketStub;
 import com.subcherry.trac.TracConnection;
+import com.subcherry.trac.TracTicket;
 import com.subcherry.utils.Log;
 
 /**
@@ -117,17 +116,21 @@ public class DefaultLogEntryMatcher extends SVNLogEntryMatcher {
 			return false;
 		}
 
-		Ticket ticket = TicketStub.getTicket(_trac, message);
+		TracTicket ticket = _trac.getTicket(message);
 
 		boolean accept = portByTicket(ticket);
 		if (accept) {
-			Log.info("Using [" + revision + "] from #" + ticket.id());
+			Log.info("Using [" + revision + "] from #" + ticket.getNumber());
 		}
 		return accept;
 	}
 
-	private boolean portByTicket(Ticket ticket) {
-		if (_ignoreTickets.contains(ticket.id())) {
+	private boolean portByTicket(TracTicket ticket) {
+		if (ticket == null) {
+			return false;
+		}
+
+		if (_ignoreTickets.contains(ticket.getNumber())) {
 			return false;
 		}
 		if (_portingTickets.shouldPort(ticket)) {
@@ -135,13 +138,14 @@ public class DefaultLogEntryMatcher extends SVNLogEntryMatcher {
 		}
 		
 		if (!_milestones.isEmpty()) {
-			if ("closed".equals(ticket.status())) {
-				String milestone = ticket.milestone();
+			if ("closed".equals(ticket.getStatus())) {
+				String milestone = ticket.getMilestone();
 				if (milestone != null && _milestones.contains(milestone)) {
 					return true;
 				}
 			}
 		}
+
 		return false;
 	}
 

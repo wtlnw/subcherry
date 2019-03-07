@@ -27,8 +27,8 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.subcherry.trac.Ticket;
 import com.subcherry.trac.TracConnection;
+import com.subcherry.trac.TracTicket;
 
 public class PortingTickets {
 
@@ -81,7 +81,7 @@ public class PortingTickets {
 			return Collections.emptyList();
 		}
 
-		Vector<Integer> ticketIds = trac.getTicket().query(ticketQuery);
+		Vector<Integer> ticketIds = trac.getTicketAccessor().query(ticketQuery);
 		ArrayList<String> result = DefaultLogEntryMatcher.toStringIds(ticketIds);
 
 		LOG.info("Using tickets from query: " + result);
@@ -102,11 +102,11 @@ public class PortingTickets {
 		return PortType.PORT;
 	}
 
-	public boolean shouldPort(Ticket ticket) {
+	public boolean shouldPort(TracTicket ticket) {
 		if (_config.getAllChanges()) {
 			return true;
 		}
-		return _additionalTickets.containsKey(ticket.id());
+		return _additionalTickets.containsKey(ticket.getNumber().toString());
 	}
 
 	public PortType getPortType(String ticketNumber) {

@@ -194,7 +194,7 @@ public class SubcherryTree {
 				
 				ticket = tickets.get(number);
 				if(ticket == null) {
-					ticket = new SubcherryTreeTicketNode(TracTicket.getTicket(_trac, number));
+					ticket = new SubcherryTreeTicketNode(_trac.getTicket(number));
 					tickets.put(number, ticket);
 				}
 			} else {

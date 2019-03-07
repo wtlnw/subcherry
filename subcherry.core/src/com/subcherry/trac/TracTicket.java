@@ -19,212 +19,276 @@ package com.subcherry.trac;
 
 import java.util.Date;
 import java.util.Map;
-import java.util.Vector;
-
-import org.lustin.trac.xmlprc.Ticket;
 
 /**
- * @version   $Revision$  $Author$  $Date$
+ * Instances of this class represent trac tickets and provide access to the field values.
  */
 public class TracTicket {
-    
-	private static final int FETCH_TICKET_RETRY = 20;
-    
-    public static final String TICKET_ATT_SUMMARY     = "summary";
-    public static final String TICKET_ATT_COMPONENT   = "component";
-    public static final String TICKET_ATT_TYPE        = "type";
-    public static final String TICKET_ATT_CC          = "cc";
-    public static final String TICKET_ATT_OWNER       = "owner";
-    public static final String TICKET_ATT_KEYWORD     = "keywords";
-    public static final String TICKET_ATT_STATUS      = "status";
-    public static final String TICKET_ATT_RESOLUTION  = "resolution";
-    public static final String TICKET_ATT_VERSION     = "version";
-    public static final String TICKET_ATT_MILESTONE   = "milestone";
-    public static final String TICKET_ATT_DESCRIPTION = "description";
-    public static final String TICKET_ATT_REPORTER    = "reporter";
-    public static final String TICKET_ATT_PRIORITY    = "priority";
-    public static final String TICKET_ATT_IMPLEMENTED_IN = "implementedon";
 
-    public static final String TICKET_ATT__NUMBER        = "_number";
-    public static final String TICKET_ATT__DATE_CREATED  = "_dateCreated";
-    public static final String TICKET_ATT__DATE_MODIFIED = "_dateModified";
-    
-    private static final String[] TICKET_ATTS = new String[] {
-        TICKET_ATT_SUMMARY,
-        TICKET_ATT_COMPONENT,
-        TICKET_ATT_TYPE,
-        TICKET_ATT_CC,
-        TICKET_ATT_OWNER,
-        TICKET_ATT_KEYWORD,
-        TICKET_ATT_STATUS,
-        TICKET_ATT_RESOLUTION,
-        TICKET_ATT_VERSION,
-        TICKET_ATT_MILESTONE,
-        TICKET_ATT_DESCRIPTION,
-        TICKET_ATT_REPORTER,
-        TICKET_ATT_PRIORITY,
-        TICKET_ATT__NUMBER,
-        TICKET_ATT__DATE_CREATED,
-        TICKET_ATT__DATE_MODIFIED,
-        TICKET_ATT_IMPLEMENTED_IN
-    };
+	/**
+	 * @see #getSummary()
+	 */
+	public static final String TICKET_ATT_SUMMARY = "summary";
 
-    private Map     attributes;
-    private Date    created;
-    private Date    modified;
-    private Integer number;
+	/**
+	 * @see #getComponent()
+	 */
+	public static final String TICKET_ATT_COMPONENT = "component";
 
-    // Constructors
+	/**
+	 * @see #getType()
+	 */
+	public static final String TICKET_ATT_TYPE = "type";
 
-    /** 
-     * This constructor creates a new TracTicket.
-     * 
-     */
-    public TracTicket(Integer aNumber, Date aCreated, Date aMod, Map someAttr) {
-        this.number = aNumber;
-        this.created = aCreated;
-        this.modified = aMod;
-        this.attributes = someAttr;
-    }
-    
+	/**
+	 * @see #getCc()
+	 */
+	public static final String TICKET_ATT_CC = "cc";
+
+	/**
+	 * @see #getOwner()
+	 */
+	public static final String TICKET_ATT_OWNER = "owner";
+
+	/**
+	 * @see #getKeyword()
+	 */
+	public static final String TICKET_ATT_KEYWORD = "keywords";
+
+	/**
+	 * @see #getStatus()
+	 */
+	public static final String TICKET_ATT_STATUS = "status";
+
+	/**
+	 * @see #getResolution()
+	 */
+	public static final String TICKET_ATT_RESOLUTION = "resolution";
+
+	/**
+	 * @see #getVersion()
+	 */
+	public static final String TICKET_ATT_VERSION = "version";
+
+	/**
+	 * @see #getMilestone()
+	 */
+	public static final String TICKET_ATT_MILESTONE = "milestone";
+
+	/**
+	 * @see #getDescription()
+	 */
+	public static final String TICKET_ATT_DESCRIPTION = "description";
+
+	/**
+	 * @see #getReporter()
+	 */
+	public static final String TICKET_ATT_REPORTER = "reporter";
+
+	/**
+	 * @see #getPriority()
+	 */
+	public static final String TICKET_ATT_PRIORITY = "priority";
+
+	/**
+	 * @see #getImplementedIn()
+	 */
+	public static final String TICKET_ATT_IMPLEMENTED_IN = "implementedon";
+
+	/**
+	 * @see #getDependsOn()
+	 */
+	public static final String TICKET_ATT_DEPENDS_ON = "dependson";
+
+	/**
+	 * @see #getFollowUp()
+	 */
+	public static final String TICKET_ATT_FOLLOW_UP = "followup";
+
+	/**
+	 * @see #getNumber()
+	 */
+	public static final String TICKET_ATT__NUMBER = "_number";
+
+	/**
+	 * @see #getCreated()
+	 */
+	public static final String TICKET_ATT__DATE_CREATED = "_dateCreated";
+
+	/**
+	 * @see #getModified()
+	 */
+	public static final String TICKET_ATT__DATE_MODIFIED = "_dateModified";
+
+	/**
+	 * A {@link Map} of field values mapped by their respective field name.
+	 */
+	private final Map<?, ?> _attributes;
+
+	/**
+	 * @see #getCreated()
+	 */
+	private final Date _created;
+
+	/**
+	 * @see #getModified()
+	 */
+	private final Date _modified;
+
+	/**
+	 * @see #getNumber()
+	 */
+	private final Integer _number;
+
+	/**
+	 * Creates a {@link TracTicket}.
+	 *
+	 * @param number
+	 *        see {@link #getNumber()}
+	 * @param created
+	 *        see {@link #getCreated()}
+	 * @param modified
+	 *        see {@link #getModified()}
+	 * @param attributes
+	 *        a {@link Map} of field values mapped by their respective field name
+	 */
+	public TracTicket(final Integer number, final Date created, final Date modified, final Map<?, ?> attributes) {
+		_number = number;
+		_created = created;
+		_modified = modified;
+		_attributes = attributes;
+	}
+
+	/**
+	 * @return the ticket number
+	 */
 	public Integer getNumber() {
-		return number;
+		return _number;
 	}
 
+	/**
+	 * @return the {@link Date} of ticket creation
+	 */
 	public Date getCreated() {
-		return created;
+		return _created;
 	}
 
+	/**
+	 * @return the {@link Date} of last ticket modification
+	 */
 	public Date getModified() {
-		return modified;
+		return _modified;
 	}
 
+	/**
+	 * @return the value of the {@value #TICKET_ATT_CC} field
+	 */
 	public String getCc() {
-		return (String) attributes.get(TICKET_ATT_CC);
+		return (String) _attributes.get(TICKET_ATT_CC);
 	}
 
+	/**
+	 * @return the value of the {@value #TICKET_ATT_COMPONENT} field
+	 */
 	public String getComponent() {
-		return (String) attributes.get(TICKET_ATT_COMPONENT);
+		return (String) _attributes.get(TICKET_ATT_COMPONENT);
 	}
 
+	/**
+	 * @return the value of the {@value #TICKET_ATT_DEPENDS_ON} field
+	 */
+	public String getDependsOn() {
+		return (String) _attributes.get(TICKET_ATT_DEPENDS_ON);
+	}
+
+	/**
+	 * @return the value of the {@value #TICKET_ATT_DESCRIPTION} field
+	 */
 	public String getDescription() {
-		return (String) attributes.get(TICKET_ATT_DESCRIPTION);
+		return (String) _attributes.get(TICKET_ATT_DESCRIPTION);
 	}
 
+	/**
+	 * @return the value of the {@value #TICKET_ATT_FOLLOW_UP} field
+	 */
+	public String getFollowUp() {
+		return (String) _attributes.get(TICKET_ATT_FOLLOW_UP);
+	}
+
+	/**
+	 * @return the value of the {@value #TICKET_ATT_IMPLEMENTED_IN} field
+	 */
 	public String getImplementedIn() {
-		return (String) attributes.get(TICKET_ATT_IMPLEMENTED_IN);
+		return (String) _attributes.get(TICKET_ATT_IMPLEMENTED_IN);
 	}
 
+	/**
+	 * @return the value of the {@value #TICKET_ATT_KEYWORD} field
+	 */
 	public String getKeyword() {
-		return (String) attributes.get(TICKET_ATT_KEYWORD);
+		return (String) _attributes.get(TICKET_ATT_KEYWORD);
 	}
 
+	/**
+	 * @return the value of the {@value #TICKET_ATT_MILESTONE} field
+	 */
 	public String getMilestone() {
-		return (String) attributes.get(TICKET_ATT_MILESTONE);
+		return (String) _attributes.get(TICKET_ATT_MILESTONE);
 	}
 
+	/**
+	 * @return the value of the {@value #TICKET_ATT_OWNER} field
+	 */
 	public String getOwner() {
-		return (String) attributes.get(TICKET_ATT_OWNER);
+		return (String) _attributes.get(TICKET_ATT_OWNER);
 	}
 
+	/**
+	 * @return the value of the {@value #TICKET_ATT_PRIORITY} field
+	 */
 	public String getPriority() {
-		return (String) attributes.get(TICKET_ATT_PRIORITY);
+		return (String) _attributes.get(TICKET_ATT_PRIORITY);
 	}
 
+	/**
+	 * @return the value of the {@value #TICKET_ATT_REPORTER} field
+	 */
 	public String getReporter() {
-		return (String) attributes.get(TICKET_ATT_REPORTER);
+		return (String) _attributes.get(TICKET_ATT_REPORTER);
 	}
 
+	/**
+	 * @return the value of the {@value #TICKET_ATT_RESOLUTION} field
+	 */
 	public String getResolution() {
-		return (String) attributes.get(TICKET_ATT_RESOLUTION);
+		return (String) _attributes.get(TICKET_ATT_RESOLUTION);
 	}
 
+	/**
+	 * @return the value of the {@value #TICKET_ATT_STATUS} field
+	 */
 	public String getStatus() {
-		return (String) attributes.get(TICKET_ATT_STATUS);
+		return (String) _attributes.get(TICKET_ATT_STATUS);
 	}
 
+	/**
+	 * @return the value of the {@value #TICKET_ATT_SUMMARY} field
+	 */
 	public String getSummary() {
-		return (String) attributes.get(TICKET_ATT_SUMMARY);
+		return (String) _attributes.get(TICKET_ATT_SUMMARY);
 	}
 
+	/**
+	 * @return the value of the {@value #TICKET_ATT_TYPE} field
+	 */
 	public String getType() {
-		return (String) attributes.get(TICKET_ATT_TYPE);
+		return (String) _attributes.get(TICKET_ATT_TYPE);
 	}
 
+	/**
+	 * @return the value of the {@value #TICKET_ATT_VERSION} field
+	 */
 	public String getVersion() {
-		return (String) attributes.get(TICKET_ATT_VERSION);
+		return (String) _attributes.get(TICKET_ATT_VERSION);
 	}
-
-    public String[] getAttributeNames() {
-        return TICKET_ATTS;
-    }
-
-    public Object getAttributeValue(String aAttrName) {
-        if (TICKET_ATT__NUMBER.equals(aAttrName)) {
-            return this.number;
-        }
-        if (TICKET_ATT__DATE_CREATED.equals(aAttrName)) {
-            return this.created;
-        }
-        if (TICKET_ATT__DATE_MODIFIED.equals(aAttrName)) {
-            return this.modified;
-        }
-        return this.attributes.get(aAttrName);
-    }
-
-    public Object setAttributeValue(String aAttrName, Object aValue) {
-        if (TICKET_ATT__NUMBER.equals(aAttrName)) {
-            Integer theNumber = this.number;
-            this.number = (Integer) aValue;
-            return theNumber;
-        }
-        if (TICKET_ATT__DATE_CREATED.equals(aAttrName)) {
-            Date theDate = this.created;
-            this.created = (Date) aValue;
-            return theDate;
-        }
-        if (TICKET_ATT__DATE_MODIFIED.equals(aAttrName)) {
-            Date theDate = this.modified;
-            this.modified = (Date) aValue;
-            return theDate;
-        }
-        return this.attributes.put(aAttrName, aValue);
-    }
-    
-    public static TracTicket getTicket(TracConnection trac, Integer aTicketNumber) {
-        Ticket ticket = trac.getTicket();
-		int i = 0;
-		while (i < FETCH_TICKET_RETRY) {
-			try {
-				Vector theVector = ticket.get(aTicketNumber);
-				if (theVector == null) {
-					return null;
-				}
-				return new TracTicket(
-						(Integer) theVector.get(0), 
-						(Date)    theVector.get(1), 
-						(Date)    theVector.get(2), 
-						(Map)     theVector.get(3));
-			} catch (RuntimeException ex) {
-				/*
-				 * Under unclear circumstances, sometimes contacting XmlRPC fails. So we just try again.
-				 */
-				i++;
-				if (i < FETCH_TICKET_RETRY) {
-					System.err.println("Unable to fetch Ticket for number " + aTicketNumber + ". Retry " + (FETCH_TICKET_RETRY - i) + " times.");
-					try {
-						Thread.sleep(2000);
-					} catch (InterruptedException ex1) {
-						// ignore
-					}
-				} else {
-					throw ex;
-				}
-			}
-		}
-		throw new RuntimeException("Unable to fetch Ticket " + aTicketNumber);
-
-    }
-    
 }
-

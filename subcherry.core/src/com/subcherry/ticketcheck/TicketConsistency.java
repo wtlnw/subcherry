@@ -33,7 +33,6 @@ import org.lustin.trac.xmlprc.Ticket;
 import com.subcherry.Configuration;
 import com.subcherry.LoginCredentialsValue;
 import com.subcherry.repository.LoginCredential;
-import com.subcherry.trac.TicketStub;
 import com.subcherry.trac.TracConnection;
 import com.subcherry.trac.TracTicket;
 import com.subcherry.utils.Utils;
@@ -70,7 +69,7 @@ public class TicketConsistency {
 		
 		options = PropertiesUtil.load("conf/ticketConsistency.properties", Options.class);
 
-		Ticket ticketQuery = tracConnection.getTicket();
+		Ticket ticketQuery = tracConnection.getTicketAccessor();
 		Vector<Integer> tickets = ticketQuery.query(options.getTicketQuery());
 		Collections.sort(tickets);
 		
@@ -86,9 +85,9 @@ public class TicketConsistency {
 		
 		Set<Integer> allTickets = new HashSet<Integer>(tickets);
 		for (Integer id : tickets) {
-			TracTicket ticket = TicketStub.getTicket(tracConnection, id);
-			Set<Integer> localDependson = parseIds(ticket.getAttributeValue("dependson"));
-			Set<Integer> localFollowup = parseIds(ticket.getAttributeValue("followup"));
+			TracTicket ticket = tracConnection.getTicket(id);
+			Set<Integer> localDependson = parseIds(ticket.getDependsOn());
+			Set<Integer> localFollowup = parseIds(ticket.getFollowUp());
 
 			localDependson.removeAll(allTickets);
 			localDependson.removeAll(ignored);
@@ -99,7 +98,7 @@ public class TicketConsistency {
 			dropIgnored(localFollowup);
 
 			if (!localDependson.isEmpty() || !localFollowup.isEmpty()) {
-				System.out.println(" * #" + id + ": " + ticket.getAttributeValue("summary"));
+				System.out.println(" * #" + id + ": " + ticket.getSummary());
 				
 				printDependencies(id, ticket, localDependson, "depends on");
 				printDependencies(id, ticket, localFollowup, "causes");
@@ -114,8 +113,8 @@ public class TicketConsistency {
 		if (!dependencies.isEmpty()) {
 			System.out.println("    * " + dependencyType);
 			for (Integer dependencyId : dependencies) {
-				TracTicket dependency = TicketStub.getTicket(tracConnection, dependencyId);
-				System.out.println("       * #" + dependencyId + ": " + dependency.getAttributeValue("summary") + " (" + dependency.getAttributeValue("status") + " " + dependency.getAttributeValue("type") + ")");
+				TracTicket dependency = tracConnection.getTicket(dependencyId);
+				System.out.println("       * #"+ dependencyId + ": " + dependency.getSummary() + " (" + dependency.getStatus() + " " + dependency.getType() + ")");
 			}
 		}
 	}
@@ -136,8 +135,8 @@ public class TicketConsistency {
 		for (Iterator<Integer> it = ids.iterator(); it.hasNext(); ) {
 			int id = it.next();
 			
-			TracTicket ticket = TicketStub.getTicket(tracConnection, id);
-			String milestone = (String) ticket.getAttributeValue("milestone");
+			TracTicket ticket = tracConnection.getTicket(id);
+			String milestone = ticket.getMilestone();
 			
 			if (Pattern.matches(options.getIgnoredMilestonePattern(), milestone)) {
 				it.remove();

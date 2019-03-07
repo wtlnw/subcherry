@@ -347,7 +347,7 @@ public class Main {
 				if (ticketId.equals(NO_TICKET_ID)) {
 					ticket = null;
 				} else {
-					ticket = TracTicket.getTicket(trac, Integer.parseInt(ticketId));
+					ticket = trac.getTicket(Integer.parseInt(ticketId));
 
 					if (matches(config().getDependencyReport().getExcludeTicketMilestone(), ticket.getMilestone())) {
 						continue;

@@ -34,6 +34,7 @@ import org.eclipse.jface.wizard.IWizardPage;
 import org.eclipse.jface.wizard.WizardDialog;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.BusyIndicator;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -149,16 +150,32 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 	}
 
 	/**
-	 * Update this page with current data from {@link #getWizard()}.
+	 * Asynchronously update this page with current data from {@link #getWizard()}.
 	 */
 	private void updatePage() {
-		final SubcherryMergeWizard wizard = getWizard();
-		final ClientManager mgr = wizard.getClientManager();
-		final TracConnection trac = wizard.getTracConnection();
-		final Configuration config = wizard.getConfiguration();
-		final SubcherryTree tree = new SubcherryTree(mgr, trac, config);
-
-		_tree.getViewer().setInput(tree);
+		final TreeViewer viewer = _tree.getViewer();
+		final Control control = viewer.getControl();
+		
+		// reset the input to prevent old data from being displayed
+		viewer.setInput(null);
+		
+		// compute the tree model asynchronously
+		control.getDisplay().asyncExec(() -> {
+			// give feedback to users that something is being computed
+			BusyIndicator.showWhile(control.getDisplay(), () -> {
+				final SubcherryMergeWizard wizard = getWizard();
+				final ClientManager mgr = wizard.getClientManager();
+				final TracConnection trac = wizard.getTracConnection();
+				final Configuration config = wizard.getConfiguration();
+				final SubcherryTree tree = new SubcherryTree(mgr, trac, config);
+				
+				// cause the tree model to compute the changes
+				tree.getTickets();
+				
+				// now update the viewer's input
+				viewer.setInput(tree);
+			});
+		});
 	}
 	
 	/**

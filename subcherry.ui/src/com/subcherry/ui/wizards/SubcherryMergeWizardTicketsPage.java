@@ -17,8 +17,13 @@
  */
 package com.subcherry.ui.wizards;
 
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.jface.dialogs.IPageChangingListener;
 import org.eclipse.jface.dialogs.PageChangingEvent;
+import org.eclipse.jface.dialogs.ProgressMonitorDialog;
 import org.eclipse.jface.viewers.CheckStateChangedEvent;
 import org.eclipse.jface.viewers.CheckboxTreeViewer;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
@@ -34,7 +39,6 @@ import org.eclipse.jface.wizard.IWizardPage;
 import org.eclipse.jface.wizard.WizardDialog;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.BusyIndicator;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -159,23 +163,27 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 		// reset the input to prevent old data from being displayed
 		viewer.setInput(null);
 		
-		// compute the tree model asynchronously
-		control.getDisplay().asyncExec(() -> {
-			// give feedback to users that something is being computed
-			BusyIndicator.showWhile(control.getDisplay(), () -> {
+		// compute the log entries while reporting the progress to users
+		try {
+			final boolean fork = true;
+			final boolean cancelable = false;
+			new ProgressMonitorDialog(control.getShell()).run(fork, cancelable, progress -> {
 				final SubcherryMergeWizard wizard = getWizard();
 				final ClientManager mgr = wizard.getClientManager();
 				final TracConnection trac = wizard.getTracConnection();
 				final Configuration config = wizard.getConfiguration();
 				final SubcherryTree tree = new SubcherryTree(mgr, trac, config);
-				
+
 				// cause the tree model to compute the changes
-				tree.getTickets();
-				
+				tree.getTickets(progress);
+
 				// now update the viewer's input
-				viewer.setInput(tree);
+				control.getDisplay().asyncExec(() -> viewer.setInput(tree));
 			});
-		});
+		} catch (Throwable ex) {
+			final Status status = new Status(IStatus.ERROR, SubcherryUI.id(), "Failed to load log entries.", ex);
+			ErrorDialog.openError(control.getShell(), "Subcherry Merge", "An error occured while reading history.", status);
+		}
 	}
 	
 	/**
@@ -455,7 +463,7 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 		@Override
 		public Object[] getElements(final Object model) {
 			if(model instanceof SubcherryTree) {
-				return ((SubcherryTree) model).getTickets().toArray();
+				return ((SubcherryTree) model).getTickets(new NullProgressMonitor()).toArray();
 			}
 			
 			return new Object[0];

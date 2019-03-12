@@ -31,7 +31,9 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.swt.widgets.Display;
@@ -123,17 +125,21 @@ public class SubcherryTree {
 	}
 	
 	/**
+	 * @param progress the {@link IProgressMonitor} instance to report the progress
+	 *                to
 	 * @return a (possibly empty) {@link List} of top-level
 	 *         {@link SubcherryTreeTicketNode}s
 	 */
-	public List<SubcherryTreeTicketNode> getTickets() {
+	public List<SubcherryTreeTicketNode> getTickets(final IProgressMonitor progress) {
 		if(_nodes == null) {
 			try {
-				final LogReader log = newLogReader();
-				final List<String> paths = computePaths();
-				final List<LogEntry> entries = readHistory(log, paths);
+				progress.beginTask("Computing merge revisions.", IProgressMonitor.UNKNOWN);
+				
+				final LogReader log = newLogReader(progress);
+				final List<String> paths = computePaths(progress);
+				final List<LogEntry> entries = readHistory(log, paths, progress);
 			
-				_nodes = groupByTicket(entries);
+				_nodes = groupByTicket(entries, progress);
 			} catch(Exception e) {
 				final Throwable cause;
 				if(e instanceof UndeclaredThrowableException) {
@@ -146,6 +152,8 @@ public class SubcherryTree {
 				
 				// no data upon failure
 				_nodes = Collections.emptyList();
+			} finally {
+				progress.done();
 			}
 		}
 		
@@ -159,7 +167,7 @@ public class SubcherryTree {
 	public List<SubcherryTreeTicketNode> getSelectedTickets() {
 		final List<SubcherryTreeTicketNode> tickets = new ArrayList<>();
 		
-		for (final SubcherryTreeTicketNode ticket : getTickets()) {
+		for (final SubcherryTreeTicketNode ticket : getTickets(new NullProgressMonitor())) {
 			switch(ticket.getState()) {
 			case CHECKED: // fall through
 			case GRAYED:
@@ -179,10 +187,12 @@ public class SubcherryTree {
 	 * 
 	 * @param entries
 	 *            a (possibly empty) {@link List} of {@link LogEntry}s to group
+	 * @param progress 
+	 *            the {@link IProgressMonitor} to report the progress to
 	 * @return a (possibly empty) {@link List} of {@link SubcherryTreeTicketNode}s representing
 	 *         {@link TracTicket}s
 	 */
-	private List<SubcherryTreeTicketNode> groupByTicket(final List<LogEntry> entries) {
+	private List<SubcherryTreeTicketNode> groupByTicket(final List<LogEntry> entries, final IProgressMonitor progress) {
 		final Map<Integer, SubcherryTreeTicketNode> tickets = new HashMap<>();
 		for (final LogEntry entry : entries) {
 			final String msg = entry.getMessage();
@@ -223,19 +233,23 @@ public class SubcherryTree {
 	 * @param paths
 	 *            the {@link List} of paths in the remote repository to read the
 	 *            history for
+	 * @param progress
+	 *            the {@link IProgressMonitor} to report the progress to
 	 * @return a (possibly empty) {@link List} of {@link LogEntry}s for the given
 	 *         paths
 	 */
-	private List<LogEntry> readHistory(final LogReader log, final List<String> paths) {
+	private List<LogEntry> readHistory(final LogReader log, final List<String> paths, final IProgressMonitor progress) {
+		progress.subTask("Reading log.");
+		
 		final Configuration config = getConfiguration();
 		final MergeInfoPredicate filter;
 		if (config.getIgnoreMergeInfo()) {
 			filter = null;
 		} else {
-			filter = new MergeInfoPredicate(getClientManager(), config);
+			filter = new MergeInfoPredicate(getClientManager(), config, progress);
 		}
 		
-		final FilteredLogEntryHandler handler = new FilteredLogEntryHandler(filter);
+		final FilteredLogEntryHandler handler = new FilteredLogEntryHandler(filter, progress);
 		try {
 			log.readLog(paths.toArray(new String[paths.size()]), handler);
 		} catch (RepositoryException e) {
@@ -254,10 +268,14 @@ public class SubcherryTree {
 	 * Compute the remove SVN paths to read the history for based on the current
 	 * workspace modules.
 	 * 
+	 * @param progress the {@link IProgressMonitor} instance to report the progress
+	 *                 to
 	 * @return a (possibly empty) {@link List} of repository local SVN paths to read
 	 *         the history for
 	 */
-	private List<String> computePaths() {
+	private List<String> computePaths(final IProgressMonitor progress) {
+		progress.subTask("Computing merge paths.");
+		
 		// list all paths in the client workspace
 		final String source = getConfiguration().getSourceBranch();
 		final List<String> paths = new ArrayList<>();
@@ -279,9 +297,12 @@ public class SubcherryTree {
 	}
 	
 	/**
+	 * @param progress the {@link IProgressMonitor} instance to report progress to
 	 * @return a new {@link LogReader} instance
 	 */
-	private LogReader newLogReader() {
+	private LogReader newLogReader(final IProgressMonitor progress) {
+		progress.subTask("Initializing log reader.");
+		
 		final Configuration config = getConfiguration();
 		final Client client = getClientManager().getClient();
 		final RepositoryURL url = RepositoryURL.parse(config.getSvnURL());
@@ -358,6 +379,11 @@ public class SubcherryTree {
 		private final Predicate<LogEntry> _filter;
 		
 		/**
+		 * @see #progress()
+		 */
+		private final IProgressMonitor _progress;
+		
+		/**
 		 * @see #entries()
 		 */
 		private final List<LogEntry> _entries = new ArrayList<LogEntry>();
@@ -365,10 +391,12 @@ public class SubcherryTree {
 		/**
 		 * Create a {@link FilteredLogEntryHandler}.
 		 * 
-		 * @param filter see {@link #filter()}
+		 * @param filter   see {@link #filter()}
+		 * @param progress see {@link #progress()}
 		 */
-		public FilteredLogEntryHandler(final Predicate<LogEntry> filter) {
+		public FilteredLogEntryHandler(final Predicate<LogEntry> filter, final IProgressMonitor progress) {
 			_filter = filter;
+			_progress = progress;
 		}
 		
 		/**
@@ -380,6 +408,13 @@ public class SubcherryTree {
 		}
 		
 		/**
+		 * @return the {@link IProgressMonitor} to report the progress to
+		 */
+		public IProgressMonitor progress() {
+			return _progress;
+		}
+		
+		/**
 		 * @return a (possibly empty) {@link List} of accumulated {@link LogEntry}s.
 		 */
 		public List<LogEntry> entries() {
@@ -388,6 +423,8 @@ public class SubcherryTree {
 		
 		@Override
 		public void handleLogEntry(final LogEntry entry) throws RepositoryException {
+			_progress.subTask(String.format("[%d]: Parsing log entry.", entry.getRevision()));
+			
 			if (_filter == null || _filter.test(entry)) {
 				_entries.add(entry);
 			}
@@ -422,15 +459,21 @@ public class SubcherryTree {
 		 * The {@link Set} of modules to evaluate the merge information for.
 		 */
 		private final Set<String> _modules;
+
+		/**
+		 * @see #progress()
+		 */
+		private final IProgressMonitor _progress;
 		
 		/**
 		 * Create a {@link MergeInfoPredicate}.
 		 * 
-		 * @param clients the {@link ClientManager} to be used for merge information
-		 *                access
-		 * @param config  the {@link Configuration} to be used for initialization
+		 * @param clients  the {@link ClientManager} to be used for merge information
+		 *                 access
+		 * @param config   the {@link Configuration} to be used for initialization
+		 * @param progress see {@link #progress()}
 		 */
-		public MergeInfoPredicate(final ClientManager clients, final Configuration config) {
+		public MergeInfoPredicate(final ClientManager clients, final Configuration config, final IProgressMonitor progress) {
 			final RepositoryURL url = RepositoryURL.parse(config.getSvnURL());
 			final File root = config.getWorkspaceRoot();
 			final Revision peg = SubcherryTree.toRevision(config.getPegRevision());
@@ -439,10 +482,20 @@ public class SubcherryTree {
 			_source = RepositoryURL.parse(config.getSvnURL()).appendPath(config.getSourceBranch());
 			_paths = new PathParser(config);
 			_modules = Stream.of(config.getModules()).collect(Collectors.toSet());
+			_progress = progress;
+		}
+		
+		/**
+		 * @return the {@link IProgressMonitor} to report the progress to
+		 */
+		public IProgressMonitor progress() {
+			return _progress;
 		}
 		
 		@Override
 		public boolean test(final LogEntry entry) {
+			_progress.subTask(String.format("[%d]: Analyzing merge info.", entry.getRevision()));
+
 			try {
 				final long mergedRevision = entry.getRevision();
 				final Set<String> touchedModules = new HashSet<>();

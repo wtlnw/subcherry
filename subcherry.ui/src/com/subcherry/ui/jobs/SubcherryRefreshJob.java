@@ -18,45 +18,51 @@
 package com.subcherry.ui.jobs;
 
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IResource;
-import org.eclipse.core.resources.IWorkspaceRoot;
-import org.eclipse.core.resources.ResourcesPlugin;
-import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.SubMonitor;
-import org.tigris.subversion.subclipse.core.SVNProviderPlugin;
-import org.tigris.subversion.subclipse.core.status.StatusCacheManager;
+import org.tigris.subversion.subclipse.ui.operations.CleanupOperation;
 
-import com.subcherry.commit.Commit;
 import com.subcherry.ui.SubcherryUI;
 import com.subcherry.ui.views.SubcherryMergeContext;
 import com.subcherry.ui.views.SubcherryMergeEntry;
+import com.subcherry.ui.views.SubcherryMergeView;
 
 /**
  * An {@link AbstractSubcherryJob} which refreshes the workspace in order to reflect changes.
  * 
  * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
- * @version $Revision: $ $Author: $ $Date: $
  */
 public class SubcherryRefreshJob extends AbstractSubcherryJob {
-
-	/**
-	 * @see isIncremental()
-	 */
-	private boolean _incremental = true;
 	
+	/**
+	 * @see #view()
+	 */
+	private final SubcherryMergeView _view;
+
 	/**
 	 * Create a {@link SubcherryRefreshJob}.
 	 * 
 	 * @param context
 	 *            see {@link #getContext()}
+	 * @param view 
 	 */
-	public SubcherryRefreshJob(final SubcherryMergeContext context) {
+	public SubcherryRefreshJob(final SubcherryMergeContext context, final SubcherryMergeView view) {
 		super("Refresh Workspace", context);
+		
+		_view = view;
+	}
+	
+	/**
+	 * @return the {@link SubcherryMergeView} to execute this job in
+	 */
+	public SubcherryMergeView view() {
+		return _view;
 	}
 	
 	@Override
@@ -64,16 +70,17 @@ public class SubcherryRefreshJob extends AbstractSubcherryJob {
 		try {
 			final SubMonitor progress = SubMonitor.convert(monitor, 100);
 			
-			if(isIncremental()) {
-				final SubcherryMergeContext context = getContext();
-				final SubcherryMergeEntry entry = context.getCurrentEntry();
-				final Commit changeset = entry.getChangeset();
-				final Set<IProject> projects = getProjects(changeset.getTouchedResources(), progress.split(50));
-				
-				refreshIncremental(projects, progress.split(50));
+			final SubcherryMergeContext context = getContext();
+			final SubcherryMergeEntry entry = context.getCurrentEntry();
+			final Set<String> paths;
+			if(entry != null) {
+				paths = entry.getChangeset().getTouchedResources();
 			} else {
-				refreshGlobal(progress);
+				paths = Stream.of(context.getConfiguration().getModules())
+					.collect(Collectors.toSet());
 			}
+			final Set<IProject> projects = getProjects(paths, progress.split(50));
+			refresh(projects, progress.split(50));
 		} catch (Throwable ex) {
 			return new Status(IStatus.ERROR, SubcherryUI.id(), "Failed to refresh workspace.", ex);
 		} finally {
@@ -84,71 +91,21 @@ public class SubcherryRefreshJob extends AbstractSubcherryJob {
 	}
 	
 	/**
-	 * Perform incremental refresh of the given projects only.
+	 * Perform refresh of the given projects only.
 	 * 
 	 * @param projects
 	 *            a {@link Set} of {@link IProject}s to refresh
 	 * @param monitor
 	 *            the {@link SubMonitor} to report the progress to
+	 * @throws Exception
+	 *             if an error occurred while refreshing the given resources
 	 */
-	private void refreshIncremental(final Set<IProject> projects, final SubMonitor monitor) {
+	private void refresh(final Set<IProject> projects, final SubMonitor monitor) throws Exception {
 		monitor.setWorkRemaining(projects.size());
 		
-		projects.forEach(project -> {
-			monitor.subTask(String.format("Refreshing: %s", project.getName()));
-			try {
-				// refresh the workspace first
-				project.refreshLocal(IResource.DEPTH_INFINITE, monitor.split(1));
-				
-				// refresh the SVN status cache
-				SVNProviderPlugin.getPlugin().getStatusCacheManager().refreshStatus(project, true);
-			} catch (Throwable ex) {
-				SubcherryUI.getInstance().getLog().log(new Status(IStatus.ERROR, SubcherryUI.id(), String.format("Failed to refresh resource: %s", project.getLocation()), ex));
-			}
-		});
-	}
+		final IProject[] resources = projects.toArray(new IProject[projects.size()]);
+		final CleanupOperation operation = new CleanupOperation(view(), resources);
 
-	/**
-	 * Refresh the entire workspace.
-	 * 
-	 * @param progress
-	 *            the {@link SubMonitor} to report the progress to
-	 * @throws CoreException
-	 *             if an error occurred while refreshing the workspace
-	 */
-	private void refreshGlobal(final SubMonitor progress) throws CoreException {
-		final IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
-		final StatusCacheManager cache = SVNProviderPlugin.getPlugin().getStatusCacheManager();
-		
-		final String[] modules = getContext().getConfiguration().getModules();
-		for (final String module : modules) {
-			final IProject project = root.getProject(module);
-			if(project != null) {
-				project.refreshLocal(IResource.DEPTH_INFINITE, progress);
-				cache.refreshStatus(project, true);
-			}
-		}
-	}
-	
-	/**
-	 * @return {@code true} to refresh only resources touched by the
-	 *         {@link SubcherryMergeContext#getCurrentEntry()}, {@code false}
-	 *         indicates that the entire workspace is refreshed
-	 */
-	public boolean isIncremental() {
-		return _incremental;
-	}
-	
-	/**
-	 * Setter for {@link #isIncremental()}.
-	 * 
-	 * @param incremental
-	 *            see {@link #isIncremental()}
-	 * @return {@link SubcherryRefreshJob} for convenient call chaining
-	 */
-	public SubcherryRefreshJob setIncremental(final boolean incremental) {
-		_incremental = incremental;
-		
-		return this;
+		operation.run(monitor);
 	}
 }

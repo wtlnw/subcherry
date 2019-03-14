@@ -24,6 +24,7 @@ import com.subcherry.ui.SubcherryUI;
 import com.subcherry.ui.jobs.SubcherryRefreshJob;
 import com.subcherry.ui.jobs.SubcherryRunJob;
 import com.subcherry.ui.views.SubcherryMergeContext;
+import com.subcherry.ui.views.SubcherryMergeView;
 
 /**
  * An {@link AbstractSubcherryHandler} implementation for {@link SubcherryUI} which
@@ -38,8 +39,9 @@ public class SubcherryRunHandler extends AbstractSubcherryHandler {
 	@Override
 	public Object execute(final ExecutionEvent event) throws ExecutionException {
 		final SubcherryMergeContext context = getContext(event);
+		final SubcherryMergeView view = getView(event);
 
-		new SubcherryRunJob(context).next(new SubcherryRefreshJob(context).setIncremental(false)).schedule();
+		new SubcherryRunJob(context).next(new SubcherryRefreshJob(context, view)).schedule();
 		
 		return null;
 	}

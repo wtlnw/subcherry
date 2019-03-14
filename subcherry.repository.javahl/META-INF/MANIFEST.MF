@@ -9,4 +9,4 @@ Require-Bundle: subcherry.repository,
  org.tigris.subversion.clientadapter.javahl;bundle-version="1.10.4"
 Automatic-Module-Name: subcherry.repository.javahl
 Bundle-ActivationPolicy: lazy
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8

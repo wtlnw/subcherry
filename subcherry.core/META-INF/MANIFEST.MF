@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Subcherry Core
 Bundle-SymbolicName: subcherry.core;singleton:=true
-Bundle-Version: 1.0.0.qualifier
+Bundle-Version: 1.0.1.qualifier
 Export-Package: base64,
  com.subcherry;
   uses:="com.subcherry.commit,

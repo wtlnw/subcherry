@@ -17,4 +17,4 @@ Export-Package: com.subcherry.repository,
  com.subcherry.repository.merge.properties
 Automatic-Module-Name: subcherry.repository
 Bundle-ActivationPolicy: lazy
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8

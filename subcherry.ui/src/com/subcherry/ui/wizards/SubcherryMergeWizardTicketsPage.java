@@ -64,7 +64,7 @@ import com.subcherry.ui.model.SubcherryTreeNode;
 import com.subcherry.ui.model.SubcherryTreeNode.Check;
 import com.subcherry.ui.model.SubcherryTreeRevisionNode;
 import com.subcherry.ui.model.SubcherryTreeTicketNode;
-import com.subcherry.ui.widgets.LogEntryForm;
+import com.subcherry.ui.widgets.LogEntryView;
 
 /**
  * An {@link WizardPage} implementation for {@link SubcherryMergeWizard} which
@@ -83,7 +83,7 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 	/**
 	 * @see #createDetailsView(Composite)
 	 */
-	private LogEntryForm _details;
+	private LogEntryView _details;
 	
 	/**
 	 * Create a {@link SubcherryMergeWizardTicketsPage}.
@@ -194,7 +194,9 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 	 *            the {@link Composite} to create the controls in
 	 */
 	private void createDetailsView(final Composite parent) {
-		_details = new LogEntryForm(parent, SWT.VERTICAL);
+		_details = new LogEntryView(parent, SWT.VERTICAL);
+		_details.message().setEditable(false);
+		_details.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 	}
 	
 	/**

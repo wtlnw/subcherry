@@ -44,55 +44,92 @@ import org.tigris.subversion.subclipse.ui.SVNUIPlugin;
 import com.subcherry.repository.core.LogEntry;
 import com.subcherry.repository.core.LogEntryPath;
 import com.subcherry.repository.core.NodeKind;
-import com.subcherry.ui.model.SubcherryTreeRevisionNode;
 
 /**
  * A {@link SashForm} displaying detailed information for {@link LogEntry} instances.
  * 
  * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
  */
-public class LogEntryForm extends SashForm {
+public class LogEntryView extends SashForm {
 
 	/**
-	 * The {@link Text} control displaying the selected {@link SubcherryTreeRevisionNode}'s
-	 * revision number.
+	 * @see #revision()
 	 */
 	private Text _revision;
 	
 	/**
-	 * The {@link Text} control displaying the selected {@link SubcherryTreeRevisionNode}'s
-	 * revision timestamp.
+	 * @see #timestamp()
 	 */
 	private Text _timestamp;
 	
 	/**
-	 * The {@link Text} control displaying the selected {@link SubcherryTreeRevisionNode}'s author.
+	 * @see #author()
 	 */
 	private Text _author;
 	
 	/**
-	 * The {@link Text} control displaying the selected {@link SubcherryTreeRevisionNode}'s commit
-	 * message.
+	 * @see #message()
 	 */
 	private Text _message;
 	
 	/**
-	 * The {@link Text} control displaying the selected {@link SubcherryTreeRevisionNode}'s changed
-	 * paths.
+	 * @see #resources()
 	 */
-	private TreeViewer _paths;
+	private TreeViewer _resources;
 
 	/**
-	 * Create a {@link LogEntryForm}.
+	 * Create a {@link LogEntryView}.
 	 * 
-	 * @param parent see {@link #getParent()}
-	 * @param style  see {@link #getStyle()}
+	 * @param parent
+	 *            see {@link #getParent()}
+	 * @param style
+	 *            see {@link #getStyle()}
 	 */
-	public LogEntryForm(final Composite parent, final int style) {
+	public LogEntryView(final Composite parent, final int style) {
 		super(parent, style);
 		
 		createFields();
 		createPaths();
+	}
+	
+	/**
+	 * @return the {@link Text} control displaying the {@link #getLogEntry()}'s
+	 *         author
+	 */
+	public Text author() {
+		return _author;
+	}
+	
+	/**
+	 * @return the {@link Text} control displaying the {@link #getLogEntry()}'s
+	 *         commit message
+	 */
+	public Text message() {
+		return _message;
+	}
+	
+	/**
+	 * @return the {@link TreeViewer} control displaying the
+	 *         {@link #getLogEntry()}'s changed paths
+	 */
+	public TreeViewer resources() {
+		return _resources;
+	}
+	
+	/**
+	 * @return the {@link Text} control displaying the {@link #getLogEntry()}'s
+	 *         revision number
+	 */
+	public Text revision() {
+		return _revision;
+	}
+	
+	/**
+	 * @return the {@link Text} control displaying the {@link #getLogEntry()}'s
+	 *         revision timestamp
+	 */
+	public Text timestamp() {
+		return _timestamp;
 	}
 	
 	/**
@@ -132,7 +169,7 @@ public class LogEntryForm extends SashForm {
 		labelMsg.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false));
 		labelMsg.setText("Message:");
 		
-		_message = new Text(container, SWT.BORDER | SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.READ_ONLY);
+		_message = new Text(container, SWT.BORDER | SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
 		_message.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 	}
 
@@ -140,14 +177,18 @@ public class LogEntryForm extends SashForm {
 	 * Create a {@link TreeViewer} displaying the changed resources.
 	 */
 	private void createPaths() {
-		_paths = new TreeViewer(this);
-		_paths.setContentProvider(new LogEntryPathsContentProvider());
-		_paths.setLabelProvider(new LogEntryPathsLabelProvider());
-		_paths.setAutoExpandLevel(AbstractTreeViewer.ALL_LEVELS);
+		final Composite container = new Composite(this, SWT.NONE);
+		container.setLayout(new GridLayout());
+		
+		_resources = new TreeViewer(container);
+		_resources.setContentProvider(new LogEntryPathsContentProvider());
+		_resources.setLabelProvider(new LogEntryPathsLabelProvider());
+		_resources.setAutoExpandLevel(AbstractTreeViewer.ALL_LEVELS);
+		_resources.getTree().setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 	}
 
 	/**
-	 * @return the {@link LogEntry} displayed by this {@link LogEntryForm} instance
+	 * @return the {@link LogEntry} displayed by this {@link LogEntryView} instance
 	 *         or {@code null} if it is empty
 	 */
 	public LogEntry getLogEntry() {
@@ -195,7 +236,7 @@ public class LogEntryForm extends SashForm {
 	 * {@link #getLogEntry()}.
 	 */
 	protected void updatePaths() {
-		_paths.setInput(getLogEntry());
+		_resources.setInput(getLogEntry());
 	}
 	
 	/**

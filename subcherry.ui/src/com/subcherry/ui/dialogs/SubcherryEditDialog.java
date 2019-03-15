@@ -99,6 +99,7 @@ public class SubcherryEditDialog extends TrayDialog {
 		
 		// make sure to use the rewritten message (if available)
 		_editor.message().setText(entry().getMessage());
+		_editor.message().setEditable(entry().getState().isPending());
 		
 		return content;
 	}

@@ -249,24 +249,47 @@ public class LogEntryView extends SashForm {
 		
 		@Override
 		public Image getImage(final Object element) {
-			final TreeNode node = (TreeNode) element;
-			if(node.value() instanceof IPath) {
-				return SVNUIPlugin.getImage(ISVNUIConstants.IMG_FOLDER);
+			final String imageId = getImageId(element);
+			
+			// resolve the image for the calculated image identifier
+			if(imageId != null) {
+				return SVNUIPlugin.getImage(imageId);
+			} else {
+				return null;
 			}
-			
-			final LogEntryPath path = (LogEntryPath) node.value();
-			final boolean isFolder = path.getKind() == NodeKind.DIR;
-			
-			switch(path.getType()) {
-			case ADDED:
-				return SVNUIPlugin.getImage(isFolder ? ISVNUIConstants.IMG_FOLDERADD_PENDING : ISVNUIConstants.IMG_FILEADD_PENDING);
-			case DELETED:
-				return SVNUIPlugin.getImage(isFolder ? ISVNUIConstants.IMG_FOLDERDELETE_PENDING : ISVNUIConstants.IMG_FILEDELETE_PENDING);
-			case MODIFIED:
-			case REPLACED:
-				return SVNUIPlugin.getImage(isFolder ? ISVNUIConstants.IMG_FOLDERMODIFIED_PENDING : ISVNUIConstants.IMG_FILEMODIFIED_PENDING);
-			default:
-				return super.getImage(element);
+		}
+
+		/**
+		 * @param element
+		 *            the {@link Object} to compute the image identifier for or
+		 *            {@code null}
+		 * @return the identifier {@link String} to be used for resolving the
+		 *         {@link Image} for the given element or {@code null} indicating that
+		 *         no {@link Image} is to be displayed
+		 */
+		protected String getImageId(final Object element) {
+			final TreeNode node = (TreeNode) element;
+
+			if (node.value() instanceof IPath) {
+				return ISVNUIConstants.IMG_FOLDER;
+			} else {
+				final LogEntryPath path = (LogEntryPath) node.value();
+				final boolean isFolder = path.getKind() == NodeKind.DIR;
+
+				switch (path.getType()) {
+				case ADDED:
+					return isFolder ? ISVNUIConstants.IMG_FOLDERADD_PENDING
+							: ISVNUIConstants.IMG_FILEADD_PENDING;
+				case DELETED:
+					return isFolder ? ISVNUIConstants.IMG_FOLDERDELETE_PENDING
+							: ISVNUIConstants.IMG_FILEDELETE_PENDING;
+				case MODIFIED:
+				case REPLACED:
+					return isFolder ? ISVNUIConstants.IMG_FOLDERMODIFIED_PENDING
+							: ISVNUIConstants.IMG_FILEMODIFIED_PENDING;
+				default:
+					return null;
+				}
 			}
 		}
 		

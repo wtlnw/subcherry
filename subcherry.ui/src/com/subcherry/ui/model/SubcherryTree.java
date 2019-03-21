@@ -290,8 +290,9 @@ public class SubcherryTree {
 			paths.add(path.toString());
 		}
 		
-		// append the branch itself to handle adding/removing modules
-		paths.add(source);
+		// do not append the branch itself since adding/removing modules
+		// is not supported when working with subclipse.
+		// paths.add(source);
 		
 		return paths;
 	}

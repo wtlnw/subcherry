@@ -15,49 +15,45 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.subcherry.ui.jobs;
+package com.subcherry.ui.operations;
 
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.Status;
+import org.eclipse.ui.IWorkbenchPart;
+import org.tigris.subversion.subclipse.core.SVNException;
 
-import com.subcherry.ui.SubcherryUI;
 import com.subcherry.ui.views.SubcherryMergeContext;
 import com.subcherry.ui.views.SubcherryMergeEntry;
+import com.subcherry.ui.views.SubcherryMergeState;
 
 /**
- * An {@link AbstractSubcherryJob} implementation which skips the current
- * {@link SubcherryMergeEntry}.
+ * An {@link AbstractSubcherryOperation} resetting the current merge entry.
  * 
  * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
- * @version $Revision: $ $Author: $ $Date: $
  */
-public final class SubcherrySkipJob extends AbstractSubcherryJob {
+public class SubcherryResetOperation extends AbstractSubcherryOperation {
 
 	/**
-	 * Create a {@link SubcherrySkipJob}.
+	 * Create a {@link SubcherryResetOperation}.
 	 * 
-	 * @param context
-	 *            see {@link #getContext()}
+	 * @param part
+	 *            see {@link #getPart()}
 	 */
-	public SubcherrySkipJob(final SubcherryMergeContext context) {
-		super("Skip Revision", context);
+	public SubcherryResetOperation(final IWorkbenchPart part) {
+		super(part);
 	}
 
 	@Override
-	protected IStatus run(final IProgressMonitor monitor) {
+	protected void execute(final IProgressMonitor monitor) throws SVNException, InterruptedException {
 		final SubcherryMergeContext context = getContext();
 		final SubcherryMergeEntry entry = context.getCurrentEntry();
 		
-		try {
-			// update the entry state and refresh the view
-			entry.skip();
-		} catch(Throwable ex) {
-			return new Status(IStatus.ERROR, SubcherryUI.id(), String.format("Failed skipping revision: %d", entry.getChange().getRevision()), ex);
-		} finally {
-			monitor.done();
+		if(entry != null) {
+			entry.setState(SubcherryMergeState.NEW);
 		}
-		
-		return Status.OK_STATUS;
+	}
+
+	@Override
+	protected String getTaskName() {
+		return "Reset Revision";
 	}
 }

@@ -48,11 +48,6 @@
             id="com.subcherry.ui.commands.reset"
             name="Reset Revision">
       </command>
-      <command
-            categoryId="com.subcherry.ui.category"
-            id="com.subcherry.ui.commands.nocommit"
-            name="No Commit">
-      </command>
    </extension>
    <extension
          point="org.eclipse.ui.menus">
@@ -94,13 +89,6 @@
                id="subcherry.ui.toolbars.reset"
                label="Reset"
                tooltip="Reset the current revision.">
-         </command>
-         <command
-               commandId="com.subcherry.ui.commands.nocommit"
-               id="subcherry.ui.toolbars.nocommit"
-               label="No Commit"
-               style="toggle"
-               tooltip="Toggle changeset commit on/off.">
          </command>
       </menuContribution>
    </extension>
@@ -148,15 +136,6 @@
       <handler
             class="com.subcherry.ui.handlers.SubcherryResetHandler"
             commandId="com.subcherry.ui.commands.reset">
-         <enabledWhen>
-            <reference
-                  definitionId="com.subcherry.ui.expressions.SubcherryMergeViewPaused">
-            </reference>
-         </enabledWhen>
-      </handler>
-      <handler
-            class="com.subcherry.ui.handlers.SubcherryNocommitHandler"
-            commandId="com.subcherry.ui.commands.nocommit">
          <enabledWhen>
             <reference
                   definitionId="com.subcherry.ui.expressions.SubcherryMergeViewPaused">

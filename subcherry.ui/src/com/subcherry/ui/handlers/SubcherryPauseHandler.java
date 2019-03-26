@@ -22,7 +22,7 @@ import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.runtime.jobs.Job;
 
 import com.subcherry.ui.SubcherryUI;
-import com.subcherry.ui.jobs.AbstractSubcherryJob;
+import com.subcherry.ui.operations.AbstractSubcherryOperation;
 
 /**
  * An {@link AbstractSubcherryHandler} implementation for {@link SubcherryUI} which
@@ -36,7 +36,7 @@ public class SubcherryPauseHandler extends AbstractSubcherryHandler {
 	@Override
 	public Object execute(final ExecutionEvent event) throws ExecutionException {
 		// terminate all currently scheduled SubcherryMergeJobs
-		for (final Job job : Job.getJobManager().find(AbstractSubcherryJob.class)) {
+		for (final Job job : Job.getJobManager().find(AbstractSubcherryOperation.class)) {
 			job.cancel();
 		}
 		

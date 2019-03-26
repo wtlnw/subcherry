@@ -20,7 +20,7 @@ package com.subcherry.ui.expressions;
 import org.eclipse.core.expressions.PropertyTester;
 import org.eclipse.core.runtime.jobs.Job;
 
-import com.subcherry.ui.jobs.AbstractSubcherryJob;
+import com.subcherry.ui.operations.AbstractSubcherryOperation;
 import com.subcherry.ui.views.SubcherryMergeView;
 
 /**
@@ -53,7 +53,7 @@ public class SubcherryStateTester extends PropertyTester {
 	public boolean test(final Object receiver, final String property, final Object[] args, final Object expected) {
 		switch(property) {
 		case PROPERTY_STATE: {
-			return STATE_RUNNING.equals(expected) && Job.getJobManager().find(AbstractSubcherryJob.class).length > 0;
+			return STATE_RUNNING.equals(expected) && Job.getJobManager().find(AbstractSubcherryOperation.class).length > 0;
 		} default:
 			return false;
 		}

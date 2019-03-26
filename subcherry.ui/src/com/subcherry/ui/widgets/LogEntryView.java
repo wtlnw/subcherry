@@ -169,7 +169,7 @@ public class LogEntryView extends SashForm {
 		labelMsg.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false));
 		labelMsg.setText("Message:");
 		
-		_message = new Text(container, SWT.BORDER | SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
+		_message = new Text(container, SWT.BORDER | SWT.READ_ONLY | SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
 		_message.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 	}
 

@@ -96,19 +96,8 @@ public class SubcherryEditDialog extends TrayDialog {
 		_editor = new LogEntryView(content, SWT.VERTICAL);
 		_editor.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 		_editor.setLogEntry(entry().getChange());
-		
-		// make sure to use the rewritten message (if available)
-		_editor.message().setText(entry().getMessage());
-		_editor.message().setEditable(entry().getState().isPending());
+		_editor.message().setText(entry().getMessage().getMergeMessage());
 		
 		return content;
-	}
-	
-	@Override
-	protected void okPressed() {
-		final String message = editor().message().getText();
-		entry().setMessage(message.isEmpty() ? null : message);
-		
-		super.okPressed();
 	}
 }

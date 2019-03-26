@@ -17,49 +17,37 @@
  */
 package com.subcherry.ui.views;
 
-import java.io.File;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import org.eclipse.team.internal.core.subscribers.ActiveChangeSet;
 
-import org.eclipse.core.resources.IResource;
-import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.Status;
-import org.eclipse.jface.dialogs.ErrorDialog;
-import org.eclipse.team.core.subscribers.ISubscriberChangeEvent;
-import org.eclipse.team.core.subscribers.ISubscriberChangeListener;
-import org.eclipse.ui.PlatformUI;
-import org.tigris.subversion.subclipse.core.SVNException;
-import org.tigris.subversion.subclipse.core.SVNProviderPlugin;
-import org.tigris.subversion.subclipse.core.resources.LocalResourceStatus;
-import org.tigris.subversion.subclipse.core.sync.SVNWorkspaceSubscriber;
-import org.tigris.subversion.svnclientadapter.SVNStatusKind;
-
-import com.subcherry.commit.Commit;
-import com.subcherry.repository.command.merge.ConflictDescription;
-import com.subcherry.repository.command.merge.MergeOperation;
-import com.subcherry.repository.core.CommitInfo;
 import com.subcherry.repository.core.LogEntry;
-import com.subcherry.ui.SubcherryUI;
 import com.subcherry.utils.Utils.TicketMessage;
 
 /**
  * Instances of this class represent a single entry to be merged.
  * 
  * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
- * @version $Revision: $ $Author: $ $Date: $
  */
-public class SubcherryMergeEntry implements ISubscriberChangeListener {
+public class SubcherryMergeEntry {
 	
 	/**
 	 * @see #getContext()
 	 */
 	private final SubcherryMergeContext _context;
+
+	/**
+	 * @see #getChange()
+	 */
+	private final LogEntry _change;
 	
 	/**
-	 * @see getChangeset()
+	 * @see #getMessage()
 	 */
-	private final Commit _changeset;
+	private final TicketMessage _message;
+	
+	/**
+	 * @see #getChangeSet()
+	 */
+	private ActiveChangeSet _changeset;
 	
 	/**
 	 * @see #getState()
@@ -67,14 +55,10 @@ public class SubcherryMergeEntry implements ISubscriberChangeListener {
 	private SubcherryMergeState _state = SubcherryMergeState.NEW;
 
 	/**
-	 * @see #getConflicts()
-	 */
-	private final Map<File, List<ConflictDescription>> _conflicts = new LinkedHashMap<>();
-
-	/**
 	 * @see #getError()
 	 */
 	private Throwable _error;
+
 	
 	/**
 	 * Create a {@link SubcherryMergeEntry}.
@@ -86,7 +70,8 @@ public class SubcherryMergeEntry implements ISubscriberChangeListener {
 	 */
 	public SubcherryMergeEntry(final SubcherryMergeContext context, final LogEntry revision) {
 		_context = context;
-		_changeset = new Commit(context.getConfiguration(), revision, new TicketMessage(revision.getRevision(), revision.getMessage(), context.getMessageRewriter()));
+		_change = revision;
+		_message = new TicketMessage(revision.getRevision(), revision.getMessage(), context.getMessageRewriter());
 	}
 	
 	/**
@@ -97,38 +82,18 @@ public class SubcherryMergeEntry implements ISubscriberChangeListener {
 	}
 	
 	/**
-	 * @return the {@link Commit} defining the changes for this
-	 *         {@link SubcherryMergeEntry}
-	 */
-	public Commit getChangeset() {
-		return _changeset;
-	}
-	
-	/**
 	 * @return the {@link LogEntry} to merge
 	 */
 	public LogEntry getChange() {
-		return getChangeset().getLogEntry();
+		return _change;
 	}
 	
 	/**
-	 * @return the message to be used when committing changes made in this
+	 * @return the {@link TicketMessage} to be used when committing changes made in this
 	 *         {@link #getChange()}
 	 */
-	public String getMessage() {
-		return getChangeset().getCommitMessage();
-	}
-	
-	/**
-	 * Setter for {@link #getMessage()}.
-	 * 
-	 * @param message
-	 *            see {@link #getMessage()}
-	 */
-	public void setMessage(final String message) {
-		getChangeset().setCommitMessage(message);
-		
-		getContext().notifyEntryChanged(this);
+	public TicketMessage getMessage() {
+		return _message;
 	}
 	
 	/**
@@ -136,6 +101,24 @@ public class SubcherryMergeEntry implements ISubscriberChangeListener {
 	 */
 	public SubcherryMergeState getState() {
 		return _state;
+	}
+	
+	/**
+	 * @return the {@link ActiveChangeSet} describing changed resources or {@code null}
+	 *         if this entry is not being merged
+	 */
+	public ActiveChangeSet getChangeSet() {
+		return _changeset;
+	}
+	
+	/**
+	 * Setter for {@link #getChangeSet()}.
+	 * 
+	 * @param set
+	 *            see {@link #getChangeSet()}
+	 */
+	public void setChangeSet(final ActiveChangeSet set) {
+		_changeset = set;
 	}
 	
 	/**
@@ -148,20 +131,15 @@ public class SubcherryMergeEntry implements ISubscriberChangeListener {
 		final SubcherryMergeState oldState = _state;
 		_state = newState;
 
-		// detach subscriber listener for conflicting resources
-		if (oldState == SubcherryMergeState.CONFLICT && oldState != newState) {
-			SVNWorkspaceSubscriber.getInstance().removeListener(this);
+		// cleanup after switching to non-working state
+		if (!newState.isWorking()) {
+			// reset the error message
+			_error = null;
+			_changeset = null;
 		}
-
-		// notify registered listeners after detaching subscriber listener
+		
+		// notify registered listeners
 		getContext().notifyStateChanged(this, oldState, newState);
-	}
-	
-	/**
-	 * @return a (possibly empty) {@link Map} conflicts per file
-	 */
-	public Map<File, List<ConflictDescription>> getConflicts() {
-		return _conflicts;
 	}
 	
 	/**
@@ -171,124 +149,14 @@ public class SubcherryMergeEntry implements ISubscriberChangeListener {
 	public Throwable getError() {
 		return _error;
 	}
-	
-	/**
-	 * Merge {@link #getChange()}.
-	 * 
-	 * @return {@link #getState()} for convenience
-	 */
-	public SubcherryMergeState merge() {
-		final SubcherryMergeContext context = getContext();
-		
-		try {
-			final MergeOperation merge = context.getMergeHandler().parseMerge(getChange());
-			_changeset.addTouchedResources(merge.getTouchedResources());
-			_conflicts.putAll(context.getCommandExecutor().execute(merge.getCommands()));
-			
-			if(_conflicts.isEmpty()) {
-				setState(SubcherryMergeState.MERGED);
-			} else {
-				setState(SubcherryMergeState.CONFLICT);
-				
-				// listen for resolved conflicts
-				SVNWorkspaceSubscriber.getInstance().addListener(this);
-			}
-		} catch (final Throwable e) {
-			_error = e;
-			
-			setState(SubcherryMergeState.ERROR);
-		}
-		
-		return getState();
-	}
-	
-	/**
-	 * Commit {@link #getChange()}.
-	 * 
-	 * @return {@link #getState()} for convenience
-	 */
-	public SubcherryMergeState commit() {
-		try {
-			final SubcherryMergeState newstate;
-			
-			// on no-commit configuration just switch the state
-			if(getContext().getConfiguration().getNoCommit()) {
-				newstate = SubcherryMergeState.NO_COMMIT;
-			} else {
-				final CommitInfo info = getChangeset().run(getContext().getCommitContext());
-				newstate = info.getNewRevision() < 0 ? SubcherryMergeState.NO_COMMIT : SubcherryMergeState.COMMITTED;
-			}
-			
-			// reset conflicts and error
-			_conflicts.clear();
-			_error = null;
-			
-			// finally, update the state
-			setState(newstate);
-		} catch (Throwable e) {
-			_error = e;
-			
-			setState(SubcherryMergeState.ERROR);
-		}
-		
-		return getState();
-	}
 
 	/**
-	 * Skip {@link #getChange()}.
+	 * Setter for {@link #getError()}.
 	 * 
-	 * @return {@link #getState()} for convenience
+	 * @param error
+	 *            see {@link #getError()}
 	 */
-	public SubcherryMergeState skip() {
-		setState(SubcherryMergeState.SKIPPED);
-		
-		return getState();
-	}
-	
-	/**
-	 * Reset the state to {@link SubcherryMergeState#NEW} and clear cached data.
-	 * 
-	 * @return {@link #getState()} for convenience
-	 */
-	public SubcherryMergeState reset() {
-		// clear the changeset
-		_changeset.clear();
-		
-		// reset merge and conflict cache
-		_conflicts.clear();
-		_error = null;
-
-		// update the entry state
-		setState(SubcherryMergeState.NEW);
-		
-		return getState();
-	}
-	
-	@Override
-	public void subscriberResourceChanged(final ISubscriberChangeEvent[] events) {
-		final Map<File, List<ConflictDescription>> conflicts = getConflicts();
-		
-		for (final ISubscriberChangeEvent event : events) {
-			final IResource resource = event.getResource();
-
-			final File file = resource.getLocation().toFile();
-			if (conflicts.containsKey(file)) {
-				try {
-					final LocalResourceStatus status = SVNProviderPlugin.getPlugin().getStatusCacheManager().getStatus(resource);
-					if(status != null && status.getStatusKind() != SVNStatusKind.CONFLICTED) {
-						conflicts.remove(file);
-					}
-				} catch (final SVNException ex) {
-					final Status status = new Status(IStatus.ERROR, SubcherryUI.id(), "Failed to resolve synchronizatio info for " + file, ex);
-					SubcherryUI.getInstance().getLog().log(status);
-					ErrorDialog.openError(PlatformUI.getWorkbench().getDisplay().getActiveShell(), "Subcherry Merge", "Revision information not available.", status);
-				}
-			}
-		}
-		
-		// all conflicts have been resolved, mark the entry as merged
-		if(conflicts.isEmpty()) {
-			setState(SubcherryMergeState.MERGED);
-		}
+	public void setError(final Throwable error) {
+		_error = error;
 	}
 }

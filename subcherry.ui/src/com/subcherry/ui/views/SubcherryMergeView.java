@@ -17,9 +17,7 @@
  */
 package com.subcherry.ui.views;
 
-import java.io.File;
 import java.util.List;
-import java.util.Map.Entry;
 
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.ColumnViewerToolTipSupport;
@@ -40,7 +38,6 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.ViewPart;
 import org.eclipse.ui.services.IEvaluationService;
 
-import com.subcherry.repository.command.merge.ConflictDescription;
 import com.subcherry.ui.SubcherryUI;
 import com.subcherry.ui.dialogs.SubcherryEditDialog;
 import com.subcherry.ui.expressions.SubcherryEntryTester;
@@ -107,33 +104,8 @@ public class SubcherryMergeView extends ViewPart {
 				final SubcherryMergeEntry entry = (SubcherryMergeEntry) element;
 				
 				switch(entry.getState()) {
-				case CONFLICT: {
-					final StringBuilder text = new StringBuilder("Conflicts detected:\n");
-					
-					for (final Entry<File, List<ConflictDescription>> conflict : entry.getConflicts().entrySet()) {
-						text.append("\n");
-						text.append(conflict.getKey().getAbsolutePath()).append(":");
-
-						for (final ConflictDescription description : conflict.getValue()) {
-							text.append("\n\t- ");
-							text.append(description.toString());
-						}
-					}
-					
-					return text.toString();
-				}
 				case ERROR: {
 					return entry.getError().getLocalizedMessage();
-				}
-				case MERGED: {
-					final StringBuilder text = new StringBuilder("Touched resources:\n");
-					
-					for (final String resource : entry.getChangeset().getTouchedResources()) {
-						text.append("\n");
-						text.append(resource);
-					}
-					
-					return text.toString();
 				}
 				default:
 					return null;
@@ -173,7 +145,7 @@ public class SubcherryMergeView extends ViewPart {
 			public String getText(final Object element) {
 				final SubcherryMergeEntry entry = (SubcherryMergeEntry) element;
 				
-				return entry.getMessage();
+				return entry.getMessage().getMergeMessage();
 			}
 		});
 		

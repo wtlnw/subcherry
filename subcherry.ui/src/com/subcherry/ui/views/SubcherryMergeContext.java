@@ -259,7 +259,7 @@ public class SubcherryMergeContext {
 	public List<SubcherryMergeEntry> getAllEntries() {
 		return _entries;
 	}
-
+	
 	/**
 	 * @return a (possibly empty) {@link List} of pending
 	 *         {@link SubcherryMergeEntry}s
@@ -298,7 +298,9 @@ public class SubcherryMergeContext {
 		final SubcherryMergeEntry entry = getCurrentEntry();
 
 		if (entry != null) {
-			entry.reset();
+			entry.setState(SubcherryMergeState.NEW);
 		}
+		
+		_entries.clear();
 	}
 }

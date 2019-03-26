@@ -20,11 +20,11 @@ package com.subcherry.ui.handlers;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 
+import com.subcherry.ui.operations.SubcherryResetOperation;
 import com.subcherry.ui.views.SubcherryMergeContext;
-import com.subcherry.ui.views.SubcherryMergeEntry;
 
 /**
- * An {@link AbstractSubcherryHandler} which reset the
+ * An {@link AbstractSubcherryHandler} which resets the
  * {@link SubcherryMergeContext#getCurrentEntry()}.
  * 
  * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
@@ -34,11 +34,10 @@ public class SubcherryResetHandler extends AbstractSubcherryHandler {
 
 	@Override
 	public Object execute(final ExecutionEvent event) throws ExecutionException {
-		final SubcherryMergeContext context = getContext(event);
-		final SubcherryMergeEntry entry = context.getCurrentEntry();
-		
-		if(entry != null) {
-			entry.reset();
+		try {
+			new SubcherryResetOperation(getView(event)).run();
+		} catch (Throwable e) {
+			throw new ExecutionException(null, e);
 		}
 		
 		return null;

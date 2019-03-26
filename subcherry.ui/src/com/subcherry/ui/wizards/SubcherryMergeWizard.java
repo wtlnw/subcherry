@@ -153,13 +153,13 @@ public class SubcherryMergeWizard extends Wizard {
 		addPage(new SubcherryMergeWizardSourcePage());
 		addPage(new SubcherryMergeWizardTargetPage());
 		addPage(new SubcherryMergeWizardTicketsPage());
-		addPage(new SubcherryMergeWizardSummaryPage());
+		addPage(new SubcherryMergeWizardModePage());
 	}
 	
 	@Override
 	public boolean canFinish() {
 		// Finish button is only enabled for the last page
-		return getContainer().getCurrentPage() instanceof SubcherryMergeWizardSummaryPage;
+		return getContainer().getCurrentPage() instanceof SubcherryMergeWizardModePage;
 	}
 	
 	@Override

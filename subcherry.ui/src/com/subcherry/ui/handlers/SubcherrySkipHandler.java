@@ -20,8 +20,7 @@ package com.subcherry.ui.handlers;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 
-import com.subcherry.ui.jobs.SubcherrySkipJob;
-import com.subcherry.ui.views.SubcherryMergeContext;
+import com.subcherry.ui.operations.SubcherrySkipOperation;
 import com.subcherry.ui.views.SubcherryMergeEntry;
 
 /**
@@ -34,11 +33,10 @@ public class SubcherrySkipHandler extends AbstractSubcherryHandler {
 
 	@Override
 	public Object execute(final ExecutionEvent event) throws ExecutionException {
-		final SubcherryMergeContext context = getContext(event);
-		final SubcherryMergeEntry entry = context.getCurrentEntry();
-		
-		if (entry != null) {
-			new SubcherrySkipJob(context).schedule();
+		try {
+			new SubcherrySkipOperation(getView(event)).run();
+		} catch (Throwable e) {
+			throw new ExecutionException(null, e);
 		}
 		
 		return null;

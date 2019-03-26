@@ -21,10 +21,7 @@ import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 
 import com.subcherry.ui.SubcherryUI;
-import com.subcherry.ui.jobs.SubcherryRefreshJob;
-import com.subcherry.ui.jobs.SubcherryRunJob;
-import com.subcherry.ui.views.SubcherryMergeContext;
-import com.subcherry.ui.views.SubcherryMergeView;
+import com.subcherry.ui.operations.SubcherryMergeOperation;
 
 /**
  * An {@link AbstractSubcherryHandler} implementation for {@link SubcherryUI} which
@@ -38,10 +35,11 @@ public class SubcherryRunHandler extends AbstractSubcherryHandler {
 
 	@Override
 	public Object execute(final ExecutionEvent event) throws ExecutionException {
-		final SubcherryMergeContext context = getContext(event);
-		final SubcherryMergeView view = getView(event);
-
-		new SubcherryRunJob(context).next(new SubcherryRefreshJob(context, view)).schedule();
+		try {
+			new SubcherryMergeOperation(getView(event)).run();
+		} catch (Throwable e) {
+			throw new ExecutionException(null, e);
+		}
 		
 		return null;
 	}

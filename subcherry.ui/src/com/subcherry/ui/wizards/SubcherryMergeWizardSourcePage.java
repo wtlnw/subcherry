@@ -35,10 +35,8 @@ import org.eclipse.swt.events.VerifyEvent;
 import org.eclipse.swt.events.VerifyListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.tigris.subversion.subclipse.core.ISVNRemoteResource;
@@ -108,7 +106,6 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 		createBranchButton(contents);
 		_revisionInput = createRevisionSelector(contents);
 		_revisionButton = createRevisionButton(contents);
-		createModeSelector(contents);
 		createMergeInfoToggle(contents);
 		
 		setControl(contents);
@@ -274,61 +271,6 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 		});
 		
 		return button;
-	}
-	
-	/**
-	 * Create {@link Control}s allowing users to select the commit message rewriting
-	 * mode.
-	 * 
-	 * @param contents the {@link Composite} to create the {@link Control}s in
-	 */
-	private void createModeSelector(final Composite contents) {
-		final Group group = new Group(contents, SWT.NONE);
-		group.setText("Rewrite commit messages:");
-		group.setLayoutData(GridDataFactory
-			.swtDefaults()
-			.align(SWT.FILL, SWT.BEGINNING)
-			.grab(true, false)
-			.span(3, 1)
-			.indent(0, 5)
-			.create());
-		group.setLayout(new RowLayout(SWT.VERTICAL));
-		
-		// default behavior is porting (which is not reflected in the configuration)
-		final Button port = new Button(group, SWT.RADIO);
-		port.setText("Port");
-		port.setToolTipText("Rewrite all commit messages using 'Ported to <target> from <source>' commit type.");
-		port.setSelection(true);
-		
-		final Button rebase = new Button(group, SWT.RADIO);
-		rebase.setText("Rebase");
-		rebase.setToolTipText("Rewrite branch name only, retaining the original commit type.");
-		rebase.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(final SelectionEvent event) {
-				getWizard().getConfiguration().setRebase(((Button) event.widget).getSelection());
-			}
-		});
-		
-		final Button preview = new Button(group, SWT.RADIO);
-		preview.setText("Preview");
-		preview.setToolTipText("Rewrite all commit messages using 'Preview on <target>' commit type.");
-		preview.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(final SelectionEvent event) {
-				getWizard().getConfiguration().setPreview(((Button) event.widget).getSelection());
-			}
-		});
-		
-		final Button reintegrate = new Button(group, SWT.RADIO);
-		reintegrate.setText("Reintegrate");
-		reintegrate.setToolTipText("Rewrite all commit messages using 'On <target>' commit type.");
-		reintegrate.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(final SelectionEvent event) {
-				getWizard().getConfiguration().setReintegrate(((Button) event.widget).getSelection());
-			}
-		});
 	}
 	
 	/**

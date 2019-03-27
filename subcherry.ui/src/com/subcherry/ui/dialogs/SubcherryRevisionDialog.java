@@ -108,9 +108,10 @@ public class SubcherryRevisionDialog extends TitleAreaDialog {
 			errorContents.setLabelText("Error details");
 			errorContents.setLabelFont(SubcherryUI.getBoldDefault());
 			errorContents.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-			errorContents.setLayout(GridLayoutFactory.swtDefaults().create());
+			errorContents.setLayout(GridLayoutFactory.fillDefaults().margins(0, 5).create());
 			
 			final StyledText errorText = new StyledText(errorContents, SWT.BORDER | SWT.READ_ONLY | SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
+			errorText.setForeground(errorText.getDisplay().getSystemColor(SWT.COLOR_RED));
 			errorText.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 			if(error instanceof InvocationTargetException) {
 				errorText.setText(((InvocationTargetException) error).getTargetException().getLocalizedMessage());

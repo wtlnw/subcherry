@@ -18,12 +18,12 @@
 package com.subcherry.ui.operations;
 
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.ui.IWorkbenchPart;
 import org.tigris.subversion.subclipse.core.SVNException;
 
 import com.subcherry.ui.views.SubcherryMergeContext;
 import com.subcherry.ui.views.SubcherryMergeEntry;
 import com.subcherry.ui.views.SubcherryMergeState;
+import com.subcherry.ui.views.SubcherryMergeView;
 
 /**
  * An {@link AbstractSubcherryOperation} resetting the current merge entry.
@@ -38,17 +38,18 @@ public class SubcherryResetOperation extends AbstractSubcherryOperation {
 	 * @param part
 	 *            see {@link #getPart()}
 	 */
-	public SubcherryResetOperation(final IWorkbenchPart part) {
+	public SubcherryResetOperation(final SubcherryMergeView part) {
 		super(part);
 	}
 
 	@Override
-	protected void execute(final IProgressMonitor monitor) throws SVNException, InterruptedException {
+	protected void executeOperation(final IProgressMonitor monitor) throws SVNException, InterruptedException {
 		final SubcherryMergeContext context = getContext();
 		final SubcherryMergeEntry entry = context.getCurrentEntry();
 		
 		if(entry != null) {
 			entry.setState(SubcherryMergeState.NEW);
+			updateViewer(entry);
 		}
 	}
 

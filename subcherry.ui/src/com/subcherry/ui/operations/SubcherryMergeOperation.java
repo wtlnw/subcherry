@@ -58,6 +58,7 @@ import com.subcherry.ui.views.SubcherryMergeContext;
 import com.subcherry.ui.views.SubcherryMergeEntry;
 import com.subcherry.ui.views.SubcherryMergeListener;
 import com.subcherry.ui.views.SubcherryMergeState;
+import com.subcherry.ui.views.SubcherryMergeView;
 import com.subcherry.utils.Utils.TicketMessage;
 
 /**
@@ -73,24 +74,25 @@ public class SubcherryMergeOperation extends AbstractSubcherryOperation {
 	 * @param part
 	 *            see {@link #getPart()}
 	 */
-	public SubcherryMergeOperation(final IWorkbenchPart part) {
+	public SubcherryMergeOperation(final SubcherryMergeView part) {
 		super(part);
 	}
 
 	@Override
-	protected String getTaskName() {
+	public String getTaskName() {
 		return "Run Merge";
 	}
 	
 	@Override
-	protected void execute(final IProgressMonitor monitor) throws SVNException, InterruptedException {
+	protected void executeOperation(final IProgressMonitor monitor) throws SVNException, InterruptedException {
 		final SubMonitor progress = SubMonitor.convert(monitor, 100);
 		
 		try {
-			process(progress);
+			final List<SubcherryMergeEntry> processed = process(progress);
+			
+			updateViewer(processed.toArray(new SubcherryMergeEntry[processed.size()]));
 		} finally {
 			monitor.done();
-			updatePart();
 		}
 	}
 
@@ -100,8 +102,10 @@ public class SubcherryMergeOperation extends AbstractSubcherryOperation {
 	 * 
 	 * @param monitor
 	 *            the {@link SubMonitor} to report the progress to
+	 * @return a (possibly empty) {@link List} of processed
+	 *         {@link SubcherryMergeEntry}s
 	 */
-	private void process(final SubMonitor monitor) {
+	private List<SubcherryMergeEntry> process(final SubMonitor monitor) {
 		final SubcherryMergeContext context = getContext();
 		final List<SubcherryMergeEntry> pending = context.getPendingEntries();
 		final int total = context.getAllEntries().size();
@@ -114,9 +118,10 @@ public class SubcherryMergeOperation extends AbstractSubcherryOperation {
 		monitor.worked(progress);
 		
 		// merge pending entries
+		final List<SubcherryMergeEntry> changed = new ArrayList<>();
 		for (final SubcherryMergeEntry entry : pending) {
 			if (monitor.isCanceled()) {
-				return;
+				break;
 			}
 
 			// provide progress feedback to users
@@ -124,12 +129,15 @@ public class SubcherryMergeOperation extends AbstractSubcherryOperation {
 
 			// process the current entry
 			processEntry(entry, monitor.split(1));
+			changed.add(entry);
 
 			// terminate processing if the entry needs further processing
 			if (entry.getState().isPending()) {
 				break;
 			}
 		}
+		
+		return changed;
 	}
 	
 	/**
@@ -472,7 +480,7 @@ public class SubcherryMergeOperation extends AbstractSubcherryOperation {
 			if (entry() == entry && SubcherryMergeState.CONFLICT != newState) {
 				entry().removeMergeListener(this);
 				SVNProviderPlugin.removeResourceStateChangeListener(this);
-				updatePart();
+				updateViewer(entry());
 			}
 		}
 		

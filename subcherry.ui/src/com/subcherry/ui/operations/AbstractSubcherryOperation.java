@@ -30,14 +30,13 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.SubMonitor;
-import org.eclipse.core.runtime.jobs.IJobChangeEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.team.core.RepositoryProvider;
 import org.eclipse.team.core.synchronize.SyncInfoSet;
-import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.services.IEvaluationService;
+import org.tigris.subversion.subclipse.core.SVNException;
 import org.tigris.subversion.subclipse.core.SVNProviderPlugin;
 import org.tigris.subversion.subclipse.core.SVNTeamProvider;
 import org.tigris.subversion.subclipse.ui.operations.SVNOperation;
@@ -61,74 +60,82 @@ public abstract class AbstractSubcherryOperation extends SVNOperation {
 	 * @param part
 	 *            see {@link #getPart()}
 	 */
-	protected AbstractSubcherryOperation(final IWorkbenchPart part) {
+	protected AbstractSubcherryOperation(final SubcherryMergeView part) {
 		super(part);
 	}
 
 	@Override
-	public void running(final IJobChangeEvent event) {
-		super.aboutToRun(event);
-		
-		evaluateVariables();
-	}
-	
-	@Override
-	public void done(final IJobChangeEvent event) {
-		super.done(event);
-		
-		evaluateVariables();
-		
-		updatePart();
+	protected final void execute(final IProgressMonitor monitor) throws SVNException, InterruptedException {
+		try {
+			evaluateVariables();
+			
+			executeOperation(monitor);
+		} finally {
+			evaluateVariables();
+		}
 	}
 	
 	/**
-	 * Update {@link #getPart()} in order to reflect the changes made by this
-	 * operation.
+	 * Execute this {@link AbstractSubcherryOperation}.
+	 * 
+	 * @param monitor
+	 *            the {@link IProgressMonitor} to report the operation progress to
+	 * @throws SVNException
+	 * @throws InterruptedException
 	 */
-	protected void updatePart() {
-		final IWorkbenchPart part = getPart();
-		if (part instanceof SubcherryMergeView) {
-			final SubcherryMergeView view = (SubcherryMergeView) part;
-			
-			view.getSite().getShell().getDisplay().asyncExec(() -> {
-				final TableViewer viewer = view.getViewer();
-				
-				// refresh the viewer first
-				viewer.refresh();
-				
-				// display the current entry (if applicable)
-				final SubcherryMergeEntry current = getContext().getCurrentEntry();
-				if (current != null) {
-					viewer.setSelection(new StructuredSelection(current), true);
-				} else {
-					final List<SubcherryMergeEntry> entries = getContext().getAllEntries();
-					if (!entries.isEmpty()) {
-						viewer.setSelection(new StructuredSelection(entries.get(entries.size() - 1)), true);
-					}
-				}
-			});
-		}
-	}
+	protected abstract void executeOperation(final IProgressMonitor monitor) throws SVNException, InterruptedException;
 
 	@Override
 	public boolean belongsTo(final Object family) {
 		return family == AbstractSubcherryOperation.class;
 	}
 
+	@Override
+	public SubcherryMergeView getPart() {
+		return (SubcherryMergeView) super.getPart();
+	}
+
 	/**
-	 * @return the {@link SubcherryMergeContext} to execute the operation in or
-	 *         {@code null} if no context is available
+	 * @param entry
+	 *            the {@link SubcherryMergeEntry} to update the viewer for
+	 * @see #updateViewer(SubcherryMergeEntry[])
 	 */
-	protected SubcherryMergeContext getContext() {
-		final IWorkbenchPart part = getPart();
-		
-		if(part instanceof SubcherryMergeView) {
-			final SubcherryMergeView view = (SubcherryMergeView) part;
-			
-			return (SubcherryMergeContext) view.getViewer().getInput();
+	protected void updateViewer(final SubcherryMergeEntry entry) {
+		updateViewer(new SubcherryMergeEntry[] { entry });
+	}
+	
+	/**
+	 * Asynchronously update the {@link #getPart()} to reflect changes to the given
+	 * entries.
+	 * 
+	 * @param entries
+	 *            a (possibly empty) {@link List} of {@link SubcherryMergeEntry}s to
+	 *            update the viewer for
+	 */
+	protected void updateViewer(final SubcherryMergeEntry[] entries) {
+		if(entries.length < 1) {
+			return;
 		}
 		
-		return null;
+		final SubcherryMergeView part = getPart();
+		part.getSite().getShell().getDisplay().asyncExec(() -> {
+			final TableViewer viewer = part.getViewer();
+			
+			// update the entries first
+			viewer.update(entries, null);
+			
+			// now select the last entry
+			viewer.setSelection(new StructuredSelection(entries[entries.length - 1]), true);
+		});
+	}
+	
+	/**
+	 * @return the {@link SubcherryMergeContext} to execute the operation in
+	 */
+	protected SubcherryMergeContext getContext() {
+		final SubcherryMergeView view = getPart();
+
+		return (SubcherryMergeContext) view.getViewer().getInput();
 	}
 
 	/**

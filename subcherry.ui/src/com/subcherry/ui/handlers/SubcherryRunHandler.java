@@ -31,7 +31,6 @@ import com.subcherry.ui.views.SubcherryMergeView;
  * commit errors.
  * 
  * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
- * @version $Revision: $ $Author: $ $Date: $
  */
 public class SubcherryRunHandler extends AbstractSubcherryHandler {
 

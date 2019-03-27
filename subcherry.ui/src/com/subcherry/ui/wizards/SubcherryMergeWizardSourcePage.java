@@ -25,6 +25,7 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.jface.layout.GridDataFactory;
+import org.eclipse.jface.layout.GridLayoutFactory;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.FocusAdapter;
@@ -34,7 +35,6 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.VerifyEvent;
 import org.eclipse.swt.events.VerifyListener;
 import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
@@ -100,7 +100,7 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 	@Override
 	public void createControl(final Composite parent) {
 		final Composite contents = new Composite(parent, SWT.NONE);
-		contents.setLayout(new GridLayout(3, false));
+		contents.setLayout(GridLayoutFactory.swtDefaults().numColumns(3).create());
 	
 		_branchInput = createBranchSelector(contents);
 		createBranchButton(contents);
@@ -119,7 +119,8 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 	 */
 	private Text createBranchSelector(final Composite parent) {
 		final Label label = new Label(parent, SWT.NONE);
-		label.setText("Branch:");
+		label.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
+		label.setText("Source branch:");
 		
 		final Text input = new Text(parent, SWT.BORDER);
 		input.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
@@ -142,6 +143,7 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 	 */
 	private Button createBranchButton(final Composite parent) {
 		final Button button = new Button(parent, SWT.NONE);
+		button.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
 		button.setText("Select...");
 		button.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -178,6 +180,7 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 	 */
 	private Text createRevisionSelector(final Composite parent) {
 		final Label label = new Label(parent, SWT.NONE);
+		label.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
 		label.setText("Start revision:");
 		
 		final Text input = new Text(parent, SWT.BORDER);
@@ -227,6 +230,7 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 	 */
 	private Button createRevisionButton(final Composite parent) {
 		final Button button = new Button(parent, SWT.NONE);
+		button.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
 		button.setEnabled(!_branchInput.getText().isEmpty());
 		button.setText("Select...");
 		button.addSelectionListener(new SelectionAdapter() {

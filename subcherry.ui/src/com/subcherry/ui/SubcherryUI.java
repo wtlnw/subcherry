@@ -141,4 +141,11 @@ public class SubcherryUI extends AbstractUIPlugin {
 	public static String id() {
 		return getInstance().getBundle().getSymbolicName();
 	}
+	
+	/**
+	 * @return the {@link SWT#BOLD} styled default {@link Font}
+	 */
+	public static Font getBoldDefault() {
+		return getInstance().getFontRegistry().getBold(SubcherryUI.DEFAULT);
+	}
 }

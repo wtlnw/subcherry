@@ -19,6 +19,7 @@ package com.subcherry.ui.wizards;
 
 import org.eclipse.jface.dialogs.IPageChangingListener;
 import org.eclipse.jface.dialogs.PageChangingEvent;
+import org.eclipse.jface.layout.GridDataFactory;
 import org.eclipse.jface.layout.GridLayoutFactory;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.TreeViewer;
@@ -29,18 +30,18 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
 import com.subcherry.Configuration;
+import com.subcherry.ui.SubcherryUI;
 import com.subcherry.ui.model.SubcherryTree;
 import com.subcherry.ui.model.SubcherryTreeRevisionNode;
 import com.subcherry.ui.model.SubcherryTreeTicketNode;
+import com.subcherry.ui.widgets.LabeledComposite;
 import com.subcherry.ui.wizards.SubcherryMergeWizardTicketsPage.ViewerLabelProvider;
 
 /**
@@ -101,7 +102,7 @@ public class SubcherryMergeWizardModePage extends WizardPage {
 		
 		final Composite container = new Composite(contents, SWT.NONE);
 		container.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-		container.setLayout(GridLayoutFactory.fillDefaults().create());
+		container.setLayout(GridLayoutFactory.fillDefaults().margins(5, 0).create());
 		createModeView(container);
 		createTicketsView(container);
 		
@@ -133,7 +134,7 @@ public class SubcherryMergeWizardModePage extends WizardPage {
 	private void createBranchesView(final Composite parent) {
 		final Composite container = new Composite(parent, SWT.NONE);
 		container.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-		container.setLayout(new GridLayout(2, false));
+		container.setLayout(GridLayoutFactory.swtDefaults().numColumns(2).create());
 		
 		final Label sourceLabel = new Label(container, SWT.NONE);
 		sourceLabel.setText("Source branch:");
@@ -157,7 +158,7 @@ public class SubcherryMergeWizardModePage extends WizardPage {
 	private void createModeView(final Composite parent) {
 		final Composite contents = new Composite(parent, SWT.NONE);
 		contents.setLayoutData(new GridData(SWT.FILL, SWT.BEGINNING, true, false));
-		contents.setLayout(new GridLayout(2, false));
+		contents.setLayout(GridLayoutFactory.fillDefaults().numColumns(2).create());
 		
 		createModeSelector(contents);
 		createMiscView(contents);
@@ -171,10 +172,11 @@ public class SubcherryMergeWizardModePage extends WizardPage {
 	 *            the {@link Composite} to create the {@link Control}s in
 	 */
 	private void createModeSelector(final Composite parent) {
-		final Group group = new Group(parent, SWT.NONE);
-		group.setText("Rewrite commit messages:");
+		final LabeledComposite group = new LabeledComposite(parent, SWT.NONE);
+		group.setLabelText("Rewrite commit messages");
+		group.setLabelFont(SubcherryUI.getBoldDefault());
 		group.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
-		group.setLayout(new GridLayout());
+		group.setLayout(GridLayoutFactory.swtDefaults().create());
 		
 		// default behavior is porting (which is not reflected in the configuration)
 		final Button port = new Button(group, SWT.RADIO);
@@ -220,14 +222,15 @@ public class SubcherryMergeWizardModePage extends WizardPage {
 	 *            the {@link Composite} to create the controls in
 	 */
 	private void createMiscView(final Composite parent) {
-		final Group group = new Group(parent, SWT.NONE);
-		group.setText("Additional settings:");
+		final LabeledComposite group = new LabeledComposite(parent, SWT.NONE);
+		group.setLabelText("Additional settings");
+		group.setLabelFont(SubcherryUI.getBoldDefault());
 		group.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
-		group.setLayout(new GridLayout());
+		group.setLayout(GridLayoutFactory.swtDefaults().create());
 		
 		final Button button = new Button(group, SWT.CHECK);
 		button.setText("No commit");
-		button.setToolTipText("Changes are merged into the workspace but are not committed.");
+		button.setToolTipText("Changes are merged into the workspace but not committed.");
 		button.setLayoutData(new GridData(SWT.FILL, SWT.BEGINNING, true, false));
 		button.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -245,12 +248,14 @@ public class SubcherryMergeWizardModePage extends WizardPage {
 	 *            the {@link Composite} to create the view in
 	 */
 	private void createTicketsView(final Composite parent) {
-		final Composite contents = new Composite(parent, SWT.NONE);
-		contents.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-		contents.setLayout(new GridLayout());
+		final LabeledComposite group = new LabeledComposite(parent, SWT.NONE);
+		group.setLabelText("Selected tickets and revisions");
+		group.setLabelFont(SubcherryUI.getBoldDefault());
+		group.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+		group.setLayout(GridLayoutFactory.fillDefaults().margins(0, 5).create());
 		
-		_tickets = new TreeViewer(contents);
-		_tickets.getTree().setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+		_tickets = new TreeViewer(group);
+		_tickets.getTree().setLayoutData(GridDataFactory.fillDefaults().grab(true, true).create());
 		_tickets.getTree().setLinesVisible(true);
 		_tickets.setLabelProvider(new TicketViewerLabelProvider());
 		_tickets.setContentProvider(new TicketViewerContentProvider());

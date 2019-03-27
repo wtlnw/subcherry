@@ -26,15 +26,16 @@ import java.util.Set;
 
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.jface.layout.GridLayoutFactory;
 import org.eclipse.jface.viewers.AbstractTreeViewer;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
+import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
@@ -44,6 +45,7 @@ import org.tigris.subversion.subclipse.ui.SVNUIPlugin;
 import com.subcherry.repository.core.LogEntry;
 import com.subcherry.repository.core.LogEntryPath;
 import com.subcherry.repository.core.NodeKind;
+import com.subcherry.ui.SubcherryUI;
 
 /**
  * A {@link SashForm} displaying detailed information for {@link LogEntry} instances.
@@ -70,7 +72,7 @@ public class LogEntryView extends SashForm {
 	/**
 	 * @see #message()
 	 */
-	private Text _message;
+	private StyledText _message;
 	
 	/**
 	 * @see #resources()
@@ -101,10 +103,10 @@ public class LogEntryView extends SashForm {
 	}
 	
 	/**
-	 * @return the {@link Text} control displaying the {@link #getLogEntry()}'s
+	 * @return the {@link StyledText} control displaying the {@link #getLogEntry()}'s
 	 *         commit message
 	 */
-	public Text message() {
+	public StyledText message() {
 		return _message;
 	}
 	
@@ -137,8 +139,10 @@ public class LogEntryView extends SashForm {
 	 * revision, author etc.
 	 */
 	private void createFields() {
-		final Composite container = new Composite(this, SWT.NONE);
-		container.setLayout(new GridLayout(2, false));
+		final LabeledComposite container = new LabeledComposite(this, SWT.NONE);
+		container.setLabelText("Revision");
+		container.setLabelFont(SubcherryUI.getBoldDefault());
+		container.setLayout(GridLayoutFactory.fillDefaults().numColumns(2).extendedMargins(0, 0, 5, 0).create());
 		
 		/* revision information */
 		final Label labelRev = new Label(container, SWT.NONE);
@@ -169,7 +173,7 @@ public class LogEntryView extends SashForm {
 		labelMsg.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false));
 		labelMsg.setText("Message:");
 		
-		_message = new Text(container, SWT.BORDER | SWT.READ_ONLY | SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
+		_message = new StyledText(container, SWT.BORDER | SWT.READ_ONLY | SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
 		_message.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 	}
 
@@ -177,8 +181,10 @@ public class LogEntryView extends SashForm {
 	 * Create a {@link TreeViewer} displaying the changed resources.
 	 */
 	private void createPaths() {
-		final Composite container = new Composite(this, SWT.NONE);
-		container.setLayout(new GridLayout());
+		final LabeledComposite container = new LabeledComposite(this, SWT.NONE);
+		container.setLabelText("Resources");
+		container.setLabelFont(SubcherryUI.getBoldDefault());
+		container.setLayout(GridLayoutFactory.fillDefaults().extendedMargins(0, 0, 5, 0).create());
 		
 		_resources = new TreeViewer(container);
 		_resources.setContentProvider(new LogEntryPathsContentProvider());

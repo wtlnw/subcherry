@@ -24,6 +24,7 @@ import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.jface.dialogs.IPageChangingListener;
 import org.eclipse.jface.dialogs.PageChangingEvent;
 import org.eclipse.jface.dialogs.ProgressMonitorDialog;
+import org.eclipse.jface.layout.GridLayoutFactory;
 import org.eclipse.jface.viewers.CheckStateChangedEvent;
 import org.eclipse.jface.viewers.CheckboxTreeViewer;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
@@ -44,7 +45,6 @@ import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
@@ -194,7 +194,10 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 	 *            the {@link Composite} to create the controls in
 	 */
 	private void createDetailsView(final Composite parent) {
-		_details = new LogEntryView(parent, SWT.VERTICAL);
+		final Composite container = new Composite(parent, SWT.NONE);
+		container.setLayout(GridLayoutFactory.swtDefaults().create());
+		
+		_details = new LogEntryView(container, SWT.VERTICAL);
 		_details.message().setEditable(false);
 		_details.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 	}
@@ -207,7 +210,7 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 	 */
 	private void createTicketsView(final Composite parent) {
 		final Composite ticketsView = new Composite(parent, SWT.NONE);
-		ticketsView.setLayout(new GridLayout());
+		ticketsView.setLayout(GridLayoutFactory.swtDefaults().create());
 		
 		_tree = createTicketViewer(ticketsView);
 		createTicketTableButtons(ticketsView);
@@ -267,14 +270,11 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 	 */
 	private void createTicketTableButtons(final Composite parent) {
 		final Composite buttons = new Composite(parent, SWT.NONE);
-		buttons.setLayoutData(new GridData(SWT.FILL, SWT.NONE, true, false));
-		final GridLayout buttonsLayout = new GridLayout(2, false);
-		buttonsLayout.marginWidth = 0;
-		buttonsLayout.marginHeight = 0;
-		buttons.setLayout(buttonsLayout);
+		buttons.setLayoutData(new GridData(SWT.FILL, SWT.BEGINNING, true, false));
+		buttons.setLayout(GridLayoutFactory.fillDefaults().numColumns(2).create());
 		
 		final Button all = new Button(buttons, SWT.NONE);
-		all.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false));
+		all.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
 		all.setText("Select All");
 		all.setToolTipText("Select all tickets (including all revisions) accepted by the current filter.");
 		all.addSelectionListener(new SelectionAdapter() {
@@ -295,7 +295,7 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 		});
 		
 		final Button none = new Button(buttons, SWT.NONE);
-		none.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false));
+		none.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
 		none.setText("Deselect All");
 		none.setToolTipText("Deselect all tickets (including all revisions) accepted by the current filter.");
 		none.addSelectionListener(new SelectionAdapter() {
@@ -447,7 +447,7 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 		@Override
 		public Font getFont(final Object element) {
 			if(element instanceof SubcherryTreeTicketNode) {
-				return SubcherryUI.getInstance().getFontRegistry().getBold(SubcherryUI.DEFAULT);
+				return SubcherryUI.getBoldDefault();
 			}
 			
 			return super.getFont(element);

@@ -37,6 +37,7 @@ import org.eclipse.jface.dialogs.IPageChangingListener;
 import org.eclipse.jface.dialogs.PageChangingEvent;
 import org.eclipse.jface.fieldassist.ControlDecoration;
 import org.eclipse.jface.fieldassist.FieldDecorationRegistry;
+import org.eclipse.jface.layout.GridLayoutFactory;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -55,7 +56,6 @@ import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.layout.FormLayout;
 import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
@@ -199,7 +199,7 @@ public class SubcherryMergeWizardTargetPage extends WizardPage {
 	 */
 	private Composite createBranchView(final Composite parent) {
 		final Composite contents = new Composite(parent, SWT.NONE);
-		contents.setLayout(new GridLayout(2, false));
+		contents.setLayout(GridLayoutFactory.swtDefaults().numColumns(2).create());
 		
 		final Label label = new Label(contents, SWT.NONE);
 		label.setText("Target branch:");
@@ -221,7 +221,7 @@ public class SubcherryMergeWizardTargetPage extends WizardPage {
 	 */
 	private Composite createOptionsView(final Composite parent, final IProject[] options) {
 		final Composite contents = new Composite(parent, SWT.NONE);
-		contents.setLayout(new GridLayout());
+		contents.setLayout(GridLayoutFactory.swtDefaults().create());
 		
 		final Text filterText = new Text(contents, SWT.BORDER | SWT.SEARCH | SWT.ICON_SEARCH | SWT.ICON_CANCEL);
 		filterText.setMessage("<filter regular expression>");
@@ -295,7 +295,7 @@ public class SubcherryMergeWizardTargetPage extends WizardPage {
 	 */
 	private Composite createButtonsView(final Composite parent, final IProject[] options) {
 		final Composite contents = new Composite(parent, SWT.NONE);
-		contents.setLayout(new GridLayout());
+		contents.setLayout(GridLayoutFactory.swtDefaults().create());
 		
 		_add = new Button(contents, SWT.PUSH);
 		_add.setText("Add ->");
@@ -354,7 +354,7 @@ public class SubcherryMergeWizardTargetPage extends WizardPage {
 	 */
 	private Composite createSelectionView(final Composite parent) {
 		final Composite contents = new Composite(parent, SWT.NONE);
-		contents.setLayout(new GridLayout());
+		contents.setLayout(GridLayoutFactory.swtDefaults().create());
 		
 		_selection = new TableViewer(contents);
 		_selection.getTable().setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));

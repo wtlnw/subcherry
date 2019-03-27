@@ -17,6 +17,7 @@
  */
 package com.subcherry.ui.views;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 import org.eclipse.jface.viewers.ColumnLabelProvider;
@@ -39,7 +40,7 @@ import org.eclipse.ui.part.ViewPart;
 import org.eclipse.ui.services.IEvaluationService;
 
 import com.subcherry.ui.SubcherryUI;
-import com.subcherry.ui.dialogs.SubcherryEditDialog;
+import com.subcherry.ui.dialogs.SubcherryRevisionDialog;
 import com.subcherry.ui.expressions.SubcherryEntryTester;
 
 /**
@@ -83,7 +84,7 @@ public class SubcherryMergeView extends ViewPart {
 			if (selection instanceof IStructuredSelection) {
 				final Object entry = ((IStructuredSelection) selection).getFirstElement();
 				if (entry instanceof SubcherryMergeEntry) {
-					new SubcherryEditDialog(event.getViewer().getControl().getShell(), (SubcherryMergeEntry) entry).open();
+					new SubcherryRevisionDialog(event.getViewer().getControl().getShell(), (SubcherryMergeEntry) entry).open();
 				}
 			}
 		});
@@ -105,7 +106,12 @@ public class SubcherryMergeView extends ViewPart {
 				
 				switch(entry.getState()) {
 				case ERROR: {
-					return entry.getError().getLocalizedMessage();
+					final Throwable error = entry.getError();
+					if (error instanceof InvocationTargetException) {
+						return ((InvocationTargetException) error).getTargetException().getLocalizedMessage();
+					} else {
+						return error.getLocalizedMessage();
+					}
 				}
 				default:
 					return null;
@@ -276,7 +282,7 @@ public class SubcherryMergeView extends ViewPart {
 			final SubcherryMergeEntry entry = (SubcherryMergeEntry) element;
 			
 			if(entry.getState().isWorking()) {
-				return SubcherryUI.getInstance().getFontRegistry().getBold(SubcherryUI.DEFAULT);
+				return SubcherryUI.getBoldDefault();
 			}
 			
 			return super.getFont(element);

@@ -56,6 +56,7 @@ import com.subcherry.repository.core.LogEntry;
 import com.subcherry.repository.core.RepositoryException;
 import com.subcherry.ui.views.SubcherryMergeContext;
 import com.subcherry.ui.views.SubcherryMergeEntry;
+import com.subcherry.ui.views.SubcherryMergeListener;
 import com.subcherry.ui.views.SubcherryMergeState;
 import com.subcherry.utils.Utils.TicketMessage;
 
@@ -118,7 +119,7 @@ public class SubcherryMergeOperation extends AbstractSubcherryOperation {
 			}
 
 			// provide progress feedback to users
-			monitor.subTask(String.format("Entry %d/%d: Revision [%d]\n%s", ++progress, total, entry.getChange().getRevision(), entry.getMessage()));
+			monitor.subTask(String.format("%d/%d: Revision [%d]: %s", ++progress, total, entry.getChange().getRevision(), entry.getMessage().getLogEntryMessage()));
 
 			// process the current entry
 			processEntry(entry, monitor.split(1));
@@ -143,54 +144,12 @@ public class SubcherryMergeOperation extends AbstractSubcherryOperation {
 		
 		try {
 			switch(entry.getState()) {
-			case NEW: // continue processing
-				monitor.setWorkRemaining(2);
-				final SyncInfoSet sync = merge(entry.getChange(), monitor.split(1));
-				
-				// no changes -> continue execution
-				if (sync.isEmpty()) {
-					entry.setState(SubcherryMergeState.NO_COMMIT);
-				}
-				// conflicts detected -> break execution
-				else if (hasConflicts(sync)) {
-					// create a change set for user processing
-					if (commitChanges) {
-						entry.setChangeSet(newChangeSet(sync, entry.getMessage()));
-					}
-					
-					// install a listener to the sync set for conflict resolution
-					SVNProviderPlugin.addResourceStateChangeListener(new ConflictResolveListener(entry, sync));
-					entry.setState(SubcherryMergeState.CONFLICT);
-				}
-				// commit changes -> continue execution
-				else if(commitChanges) {
-					try {
-						commit(entry.getMessage().getMergeMessage(), sync.getResources(), monitor.split(1));
-						entry.setState(SubcherryMergeState.COMMITTED);
-					} catch (Throwable e) {
-						e.printStackTrace();
-						entry.setError(e);
-						entry.setChangeSet(newChangeSet(sync, entry.getMessage()));
-						entry.setState(SubcherryMergeState.ERROR);
-					}
-				}
-				// no commit requested
-				else {
-					entry.setState(SubcherryMergeState.NO_COMMIT);
-				}
+			case NEW:
+				processNewEntry(entry, monitor, commitChanges);
 				break;
 			case MERGED: // try committing changes
 			case ERROR:
-				if (commitChanges) {
-					monitor.setWorkRemaining(1);
-					final ActiveChangeSet set = entry.getChangeSet();
-					commit(set.getComment(), set.getResources(), monitor.split(1));
-					SVNProviderPlugin.getPlugin().getChangeSetManager().remove(set);
-					entry.setState(SubcherryMergeState.COMMITTED);
-				} else {
-					// no-commit mode -> just update the state
-					entry.setState(SubcherryMergeState.NO_COMMIT);
-				}
+				processMerged(entry, monitor, commitChanges);
 				break;
 			default:
 				break;
@@ -199,9 +158,88 @@ public class SubcherryMergeOperation extends AbstractSubcherryOperation {
 			e.printStackTrace();
 			entry.setError(e);
 			entry.setState(SubcherryMergeState.ERROR);
+		} finally {
+			monitor.done();
 		}
 	}
 
+	/**
+	 * Process the given entry assuming the {@link SubcherryMergeState#NEW} state.
+	 * 
+	 * @param entry
+	 *            the {@link SubcherryMergeEntry} to process
+	 * @param monitor
+	 *            the {@link SubMonitor} instance to report the progress to
+	 * @param commit
+	 *            {@code true} to commit changes, {@code false} to skip committing
+	 * @throws Throwable
+	 *             if an error occurred during processing
+	 */
+	private void processNewEntry(final SubcherryMergeEntry entry, final SubMonitor monitor, final boolean commit) throws Throwable {
+		monitor.setWorkRemaining(2);
+		
+		// perform the merge operation
+		final SyncInfoSet sync = merge(entry.getChange(), monitor.split(1));
+		
+		// no changes -> continue execution
+		if (sync.isEmpty()) {
+			entry.setState(SubcherryMergeState.NO_COMMIT);
+		}
+		// conflicts detected -> break execution
+		else if (hasConflicts(sync)) {
+			// create a change set for user processing
+			if (commit) {
+				entry.setChangeSet(newChangeSet(sync, entry.getMessage()));
+			}
+			
+			// install a listener to the sync set for conflict resolution
+			new ConflictResolveListener(entry, sync);
+			entry.setState(SubcherryMergeState.CONFLICT);
+		}
+		// commit changes -> continue execution
+		else if(commit) {
+			try {
+				commit(entry.getMessage().getMergeMessage(), sync.getResources(), monitor.split(1));
+				entry.setState(SubcherryMergeState.COMMITTED);
+			} catch (Throwable e) {
+				e.printStackTrace();
+				entry.setError(e);
+				entry.setChangeSet(newChangeSet(sync, entry.getMessage()));
+				entry.setState(SubcherryMergeState.ERROR);
+			}
+		}
+		// no commit requested
+		else {
+			entry.setState(SubcherryMergeState.NO_COMMIT);
+		}
+	}
+
+	/**
+	 * Process the given entry assuming the {@link SubcherryMergeState#MERGED}
+	 * state.
+	 * 
+	 * @param entry
+	 *            the {@link SubcherryMergeEntry} to process
+	 * @param monitor
+	 *            the {@link SubMonitor} instance to report the progress to
+	 * @param commit
+	 *            {@code true} to commit changes, {@code false} to skip committing
+	 * @throws Throwable
+	 *             if an error occurred during processing
+	 */
+	private void processMerged(final SubcherryMergeEntry entry, final SubMonitor monitor, final boolean commit) throws Throwable {
+		if (commit) {
+			monitor.setWorkRemaining(1);
+			final ActiveChangeSet set = entry.getChangeSet();
+			commit(set.getComment(), set.getResources(), monitor.split(1));
+			SVNProviderPlugin.getPlugin().getChangeSetManager().remove(set);
+			entry.setState(SubcherryMergeState.COMMITTED);
+		} else {
+			// no-commit mode -> just update the state
+			entry.setState(SubcherryMergeState.NO_COMMIT);
+		}
+	}
+	
 	/**
 	 * @param sync
 	 *            the {@link SyncInfoSet} containing the changes to be grouped into
@@ -241,54 +279,62 @@ public class SubcherryMergeOperation extends AbstractSubcherryOperation {
 		final Map<SVNTeamProvider, List<IResource>> resByProvider = groupByProvider(changes);
 		final SubMonitor progress = SubMonitor.convert(monitor, resByProvider.size());
 		
-		for (final Entry<SVNTeamProvider, List<IResource>> entry : resByProvider.entrySet()) {
-			final SubMonitor subprogress = progress.split(1);
-			subprogress.setWorkRemaining(2);
-			
-			final List<IResource> resources = entry.getValue();
-			final List<IResource> addedResources = new ArrayList<>();
-			final List<IResource> removedResources = new ArrayList<>();
-			
-			for (final IResource resource : resources) {
-				final ISVNLocalResource svnResource = SVNWorkspaceRoot.getSVNResourceFor(resource);
-				if (svnResource.exists() && !svnResource.isManaged()) {
-					addedResources.add(resource);
-				}
+		try {
+			for (final Entry<SVNTeamProvider, List<IResource>> entry : resByProvider.entrySet()) {
+				final SubMonitor subprogress = progress.split(1);
+				subprogress.setWorkRemaining(2);
+				
+				try {
+					final List<IResource> resources = entry.getValue();
+					final List<IResource> addedResources = new ArrayList<>();
+					final List<IResource> removedResources = new ArrayList<>();
+					
+					for (final IResource resource : resources) {
+						final ISVNLocalResource svnResource = SVNWorkspaceRoot.getSVNResourceFor(resource);
+						if (svnResource.exists() && !svnResource.isManaged()) {
+							addedResources.add(resource);
+						}
 
-				if (svnResource.getStatus().isMissing()) {
-					removedResources.add(resource);
+						if (svnResource.getStatus().isMissing()) {
+							removedResources.add(resource);
+						}
+					}
+					
+					final IWorkbenchPart part = getPart();
+					final Display display = part.getSite().getShell().getDisplay();
+					final IResource[] allResources = array(resources);
+					
+					// commit resources
+					final CommitOperation commit = new CommitOperation(
+						part, 
+						allResources,
+						array(addedResources),
+						array(removedResources),
+						allResources,
+						message,
+						false);
+					commit.setCanRunAsJob(false);
+					final SVNOperationRunnable commitRunnable = new SVNOperationRunnable(commit, subprogress.split(1));
+					display.syncExec(commitRunnable);
+					if (commitRunnable.error() != null) {
+						throw commitRunnable.error();
+					}
+					
+					// update committed resources
+					final UpdateOperation update = new UpdateOperation(part, allResources, SVNRevision.HEAD);
+					update.setCanRunAsJob(false);
+					update.setForce(true);
+					final SVNOperationRunnable updateRunnable = new SVNOperationRunnable(update, subprogress.split(1));
+					display.syncExec(updateRunnable);
+					if (updateRunnable.error() != null) {
+						throw updateRunnable.error();
+					}
+				} finally {
+					subprogress.done();
 				}
 			}
-			
-			final IWorkbenchPart part = getPart();
-			final Display display = part.getSite().getShell().getDisplay();
-			final IResource[] allResources = array(resources);
-			
-			// commit resources
-			final CommitOperation commit = new CommitOperation(
-				part, 
-				allResources,
-				array(addedResources),
-				array(removedResources),
-				allResources,
-				message,
-				false);
-			commit.setCanRunAsJob(false);
-			final SVNOperationRunnable commitRunnable = new SVNOperationRunnable(commit, subprogress.split(1));
-			display.syncExec(commitRunnable);
-			if (commitRunnable.error() != null) {
-				throw commitRunnable.error();
-			}
-			
-			// update committed resources
-			final UpdateOperation update = new UpdateOperation(part, allResources, SVNRevision.HEAD);
-			update.setCanRunAsJob(false);
-			update.setForce(true);
-			final SVNOperationRunnable updateRunnable = new SVNOperationRunnable(update, subprogress.split(1));
-			display.syncExec(updateRunnable);
-			if (updateRunnable.error() != null) {
-				throw updateRunnable.error();
-			}
+		} finally {
+			progress.done();
 		}
 	}
 
@@ -306,37 +352,45 @@ public class SubcherryMergeOperation extends AbstractSubcherryOperation {
 	private SyncInfoSet merge(final LogEntry mergeEntry, final IProgressMonitor monitor) throws RepositoryException, CoreException {
 		final SubMonitor progress = SubMonitor.convert(monitor, 6);
 		
-		final SyncInfoSet sync = new SyncInfoSet();
-		final SubcherryMergeContext context = getContext();
-		
-		final MergeOperation merge = context.getMergeHandler().parseMerge(mergeEntry);
-		progress.worked(1);
-		
-		context.getCommandExecutor().execute(merge.getCommands());
-		progress.worked(1);
+		try {
+			final SyncInfoSet sync = new SyncInfoSet();
+			final SubcherryMergeContext context = getContext();
+			
+			final MergeOperation merge = context.getMergeHandler().parseMerge(mergeEntry);
+			progress.worked(1);
+			
+			context.getCommandExecutor().execute(merge.getCommands());
+			progress.worked(1);
 
-		// resolve touched projects
-		final Set<String> paths = merge.getTouchedResources();
-		final IResource[] projects = computeChangedProjects(paths);
-		progress.worked(1);
+			// resolve touched projects
+			final Set<String> paths = merge.getTouchedResources();
+			final IResource[] projects = computeChangedProjects(paths);
+			progress.worked(1);
 
-		// map touched projects by their TeamProvider
-		final Map<SVNTeamProvider, List<IResource>> providerProjects = groupByProvider(projects);
-		progress.worked(1);
+			// map touched projects by their TeamProvider
+			final Map<SVNTeamProvider, List<IResource>> providerProjects = groupByProvider(projects);
+			progress.worked(1);
 
-		// refresh/cleanup
-		final SubMonitor subprogress = progress.split(1);
-		subprogress.setWorkRemaining(providerProjects.size());
-		for (final Entry<SVNTeamProvider, List<IResource>> entry : providerProjects.entrySet()) {
-			new CleanupResourcesCommand(entry.getKey().getSVNWorkspaceRoot(), array(entry.getValue()))
-				.run(subprogress.split(1));
+			// refresh/cleanup
+			final SubMonitor subprogress = progress.split(1);
+			subprogress.setWorkRemaining(providerProjects.size());
+			try {
+				for (final Entry<SVNTeamProvider, List<IResource>> entry : providerProjects.entrySet()) {
+					new CleanupResourcesCommand(entry.getKey().getSVNWorkspaceRoot(), array(entry.getValue()))
+					.run(subprogress.split(1));
+				}
+			} finally {
+				subprogress.done();
+			}
+			
+			// update the given SyncInfoSet instance with computed changes
+			computeChangedResources(providerProjects, sync, progress.split(1));
+			sync.removeIncomingNodes();
+			
+			return sync;
+		} finally {
+			progress.done();
 		}
-		
-		// update the given SyncInfoSet instance with computed changes
-		computeChangedResources(providerProjects, sync, progress.split(1));
-		sync.removeIncomingNodes();
-		
-		return sync;
 	}
 	
 	/**
@@ -363,7 +417,7 @@ public class SubcherryMergeOperation extends AbstractSubcherryOperation {
 	 * {@link SubcherryMergeEntry} state when all conflicts of a {@link SyncInfoSet}
 	 * have been resolved.
 	 */
-	static class ConflictResolveListener implements IResourceStateChangeListener {
+	static class ConflictResolveListener implements IResourceStateChangeListener, SubcherryMergeListener {
 		
 		/**
 		 * @see #entry()
@@ -384,6 +438,14 @@ public class SubcherryMergeOperation extends AbstractSubcherryOperation {
 		ConflictResolveListener(final SubcherryMergeEntry entry, final SyncInfoSet changes) {
 			_entry = entry;
 			_changes = changes;
+			
+			// attach itself to the entry's context to be notified when the entry's
+			// state changes from CONFLICT to any other state.
+			_entry.getContext().addMergeListener(this);
+			
+			// attach itself to the SVNProviderPlugin to be notified when resources
+			// change their synchronize state.
+			SVNProviderPlugin.addResourceStateChangeListener(this);
 		}
 		
 		/**
@@ -401,53 +463,72 @@ public class SubcherryMergeOperation extends AbstractSubcherryOperation {
 		SyncInfoSet changes() {
 			return _changes;
 		}
-
+		
 		@Override
-		public void resourceSyncInfoChanged(final IResource[] changedResources) {
-			update(changedResources);
+		public void onEntryChanged(final SubcherryMergeEntry entry) {
+			// ignore
 		}
-
+		
 		@Override
-		public void resourceModified(final IResource[] changedResources) {
-			update(changedResources);
+		public void onStateChanged(final SubcherryMergeEntry entry, final SubcherryMergeState oldState, final SubcherryMergeState newState) {
+			// detach itself from the entry's context and SyncInfoSet when the 
+			// entry has switched from CONFLICT to any other state.
+			if (entry() == entry && SubcherryMergeState.CONFLICT != newState) {
+				entry().getContext().removeMergeListener(this);
+				SVNProviderPlugin.removeResourceStateChangeListener(this);
+			}
 		}
-
-		@Override
-		public void projectConfigured(final IProject project) {
-			// does nothing
-		}
-
-		@Override
-		public void projectDeconfigured(final IProject project) {
-			// does nothing
-		}
-
+		
 		@Override
 		public void initialize() {
 			// does nothing
 		}
 		
+		@Override
+		public void projectConfigured(final IProject project) {
+			// does nothing
+		}
+		
+		@Override
+		public void projectDeconfigured(final IProject project) {
+			// does nothing
+		}
+		
+		@Override
+		public void resourceModified(final IResource[] changedResources) {
+			update(changedResources);
+		}
+		
+		@Override
+		public void resourceSyncInfoChanged(final IResource[] changedResources) {
+			update(changedResources);
+		}
+		
 		/**
 		 * Update {@link #entry()} upon changes to the given resources.
 		 * 
-		 * @param changedResources
+		 * @param changes
 		 *            the {@link IResource}s which were changed (either {@link SyncInfo}
 		 *            or modification)
 		 */
-		private void update(final IResource[] changedResources) {
-			// no changes to relevant resources
-			if(Collections.disjoint(Arrays.asList(changedResources), Arrays.asList(changes().getResources()))) {
-				return;
-			}
-
+		private void update(final IResource[] changes) {
 			try {
-				if (!hasConflicts(changes())) {
-					SVNProviderPlugin.removeResourceStateChangeListener(this);
+				if (isRelated(changes) && !hasConflicts(changes())) {
 					entry().setState(SubcherryMergeState.MERGED);
 				}
 			} catch (SVNException e) {
 				e.printStackTrace();
 			}
+		}
+
+		/**
+		 * @param changes
+		 *            a (possibly empty) array of modified {@link IResource}s
+		 * @return {@code true} if the given resources are part of {@link #changes()},
+		 *         {@code false} otherwise
+		 */
+		private boolean isRelated(final IResource[] changes) {
+			return !Collections.disjoint(Arrays.asList(changes), Arrays.asList(changes().getResources()));
 		}
 	}
 

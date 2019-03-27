@@ -19,9 +19,11 @@ package com.subcherry.ui.handlers;
 
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
+import org.eclipse.jface.dialogs.ProgressMonitorDialog;
 
 import com.subcherry.ui.SubcherryUI;
 import com.subcherry.ui.operations.SubcherryMergeOperation;
+import com.subcherry.ui.views.SubcherryMergeView;
 
 /**
  * An {@link AbstractSubcherryHandler} implementation for {@link SubcherryUI} which
@@ -36,9 +38,17 @@ public class SubcherryRunHandler extends AbstractSubcherryHandler {
 	@Override
 	public Object execute(final ExecutionEvent event) throws ExecutionException {
 		try {
-			new SubcherryMergeOperation(getView(event)).run();
+			final SubcherryMergeView view = getView(event);
+			final boolean fork = true;
+			final boolean cancelable = true;
+
+			new ProgressMonitorDialog(view.getSite().getShell()).run(fork, cancelable, progress -> {
+				new SubcherryMergeOperation(view).run(progress);
+			});
+		} catch(final InterruptedException e) {
+			// user cancellation -> ignore
 		} catch (Throwable e) {
-			throw new ExecutionException(null, e);
+			throw new ExecutionException(e.getMessage(), e);
 		}
 		
 		return null;

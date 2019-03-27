@@ -47,17 +47,17 @@ public class SubcherryMergeEntry {
 	/**
 	 * @see #getChangeSet()
 	 */
-	private ActiveChangeSet _changeset;
+	private volatile ActiveChangeSet _changeset;
 	
 	/**
 	 * @see #getState()
 	 */
-	private SubcherryMergeState _state = SubcherryMergeState.NEW;
+	private volatile SubcherryMergeState _state = SubcherryMergeState.NEW;
 
 	/**
 	 * @see #getError()
 	 */
-	private Throwable _error;
+	private volatile Throwable _error;
 
 	
 	/**
@@ -127,7 +127,7 @@ public class SubcherryMergeEntry {
 	 * @param newState
 	 *            see {@link #getState()}
 	 */
-	public void setState(final SubcherryMergeState newState) {
+	public synchronized void setState(final SubcherryMergeState newState) {
 		final SubcherryMergeState oldState = _state;
 		_state = newState;
 

@@ -35,11 +35,6 @@
       </command>
       <command
             categoryId="com.subcherry.ui.category"
-            id="com.subcherry.ui.commands.pause"
-            name="Pause Merge">
-      </command>
-      <command
-            categoryId="com.subcherry.ui.category"
             id="com.subcherry.ui.commands.skip"
             name="Skip Revision">
       </command>
@@ -71,12 +66,6 @@
                id="subcherry.ui.toolbars.run"
                label="Run"
                tooltip="Merge all revisions automatically.">
-         </command>
-         <command
-               commandId="com.subcherry.ui.commands.pause"
-               id="subcherry.ui.toolbars.pause"
-               label="Pause"
-               tooltip="Pause automatic merge.">
          </command>
          <command
                commandId="com.subcherry.ui.commands.skip"
@@ -112,15 +101,6 @@
          <enabledWhen>
             <reference
                   definitionId="com.subcherry.ui.expressions.SubcherryMergeViewPaused">
-            </reference>
-         </enabledWhen>
-      </handler>
-      <handler
-            class="com.subcherry.ui.handlers.SubcherryPauseHandler"
-            commandId="com.subcherry.ui.commands.pause">
-         <enabledWhen>
-            <reference
-                  definitionId="com.subcherry.ui.expressions.SubcherryMergeViewRunning">
             </reference>
          </enabledWhen>
       </handler>

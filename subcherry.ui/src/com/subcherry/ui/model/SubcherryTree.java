@@ -18,6 +18,7 @@
 package com.subcherry.ui.model;
 
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -142,8 +143,10 @@ public class SubcherryTree {
 				_nodes = groupByTicket(entries, progress);
 			} catch(Exception e) {
 				final Throwable cause;
-				if(e instanceof UndeclaredThrowableException) {
+				if (e instanceof UndeclaredThrowableException) {
 					cause = e.getCause();
+				} else if (e instanceof InvocationTargetException) {
+					cause = ((InvocationTargetException) e).getTargetException();
 				} else {
 					cause = e;
 				}

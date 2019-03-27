@@ -90,6 +90,7 @@ public class SubcherryMergeOperation extends AbstractSubcherryOperation {
 			process(progress);
 		} finally {
 			monitor.done();
+			updatePart();
 		}
 	}
 
@@ -417,7 +418,7 @@ public class SubcherryMergeOperation extends AbstractSubcherryOperation {
 	 * {@link SubcherryMergeEntry} state when all conflicts of a {@link SyncInfoSet}
 	 * have been resolved.
 	 */
-	static class ConflictResolveListener implements IResourceStateChangeListener, SubcherryMergeListener {
+	class ConflictResolveListener implements IResourceStateChangeListener, SubcherryMergeListener {
 		
 		/**
 		 * @see #entry()
@@ -441,7 +442,7 @@ public class SubcherryMergeOperation extends AbstractSubcherryOperation {
 			
 			// attach itself to the entry's context to be notified when the entry's
 			// state changes from CONFLICT to any other state.
-			_entry.getContext().addMergeListener(this);
+			_entry.addMergeListener(this);
 			
 			// attach itself to the SVNProviderPlugin to be notified when resources
 			// change their synchronize state.
@@ -465,17 +466,13 @@ public class SubcherryMergeOperation extends AbstractSubcherryOperation {
 		}
 		
 		@Override
-		public void onEntryChanged(final SubcherryMergeEntry entry) {
-			// ignore
-		}
-		
-		@Override
 		public void onStateChanged(final SubcherryMergeEntry entry, final SubcherryMergeState oldState, final SubcherryMergeState newState) {
 			// detach itself from the entry's context and SyncInfoSet when the 
 			// entry has switched from CONFLICT to any other state.
 			if (entry() == entry && SubcherryMergeState.CONFLICT != newState) {
-				entry().getContext().removeMergeListener(this);
+				entry().removeMergeListener(this);
 				SVNProviderPlugin.removeResourceStateChangeListener(this);
+				updatePart();
 			}
 		}
 		

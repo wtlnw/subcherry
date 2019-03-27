@@ -17,6 +17,7 @@
  */
 package com.subcherry.ui.views;
 
+import org.eclipse.core.runtime.ListenerList;
 import org.eclipse.team.internal.core.subscribers.ActiveChangeSet;
 
 import com.subcherry.repository.core.LogEntry;
@@ -28,6 +29,12 @@ import com.subcherry.utils.Utils.TicketMessage;
  * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
  */
 public class SubcherryMergeEntry {
+	
+	/**
+	 * @see #addMergeListener()
+	 * @see #removeMergeListener()
+	 */
+	private final ListenerList<SubcherryMergeListener> _listeners = new ListenerList<>();
 	
 	/**
 	 * @see #getContext()
@@ -123,11 +130,19 @@ public class SubcherryMergeEntry {
 	
 	/**
 	 * Setter for {@link #getState()}.
+	 * <p>
+	 * Note: Has no effect if the given state matches the current one.
+	 * </p>
 	 * 
 	 * @param newState
 	 *            see {@link #getState()}
 	 */
 	public synchronized void setState(final SubcherryMergeState newState) {
+		// fast-path return for same states
+		if(newState == _state) {
+			return;
+		}
+		
 		final SubcherryMergeState oldState = _state;
 		_state = newState;
 
@@ -139,7 +154,7 @@ public class SubcherryMergeEntry {
 		}
 		
 		// notify registered listeners
-		getContext().notifyStateChanged(this, oldState, newState);
+		notifyStateChanged(this, oldState, newState);
 	}
 	
 	/**
@@ -158,5 +173,48 @@ public class SubcherryMergeEntry {
 	 */
 	public void setError(final Throwable error) {
 		_error = error;
+	}
+	
+	/**
+	 * Register the given listener for merge updates.
+	 * 
+	 * <p>
+	 * Note: Has no effect if the given listener has already been registered.
+	 * </p>
+	 * 
+	 * @param listener
+	 *            the {@link SubcherryMergeListener} to register
+	 */
+	public void addMergeListener(final SubcherryMergeListener listener) {
+		_listeners.add(listener);
+	}
+	
+	/**
+	 * Unregister the given listener from merge update notification.
+	 * 
+	 * <p>
+	 * Note: Has no effect if the given listener was not registered.
+	 * </p>
+	 * 
+	 * @param listener
+	 *            the {@link SubcherryMergeListener} to unregister
+	 */
+	public void removeMergeListener(final SubcherryMergeListener listener) {
+		_listeners.remove(listener);
+	}
+	
+	/**
+	 * Notify all currently registered {@link SubcherryMergeListener}s that the
+	 * given {@link SubcherryMergeEntry} state has changed.
+	 * 
+	 * @param entry
+	 *            the {@link SubcherryMergeEntry} whose state changed
+	 * @param oldState
+	 *            the previous {@link SubcherryMergeState}
+	 * @param newState
+	 *            the new {@link SubcherryMergeState}
+	 */
+	/* package private */ void notifyStateChanged(final SubcherryMergeEntry entry, final SubcherryMergeState oldState, final SubcherryMergeState newState) {
+		_listeners.forEach(listener -> listener.onStateChanged(entry, oldState, newState));
 	}
 }

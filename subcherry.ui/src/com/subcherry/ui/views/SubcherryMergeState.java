@@ -21,7 +21,6 @@ package com.subcherry.ui.views;
  * This enumeration defines all possible states for a {@link SubcherryMergeEntry}.
  * 
  * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
- * @version $Revision: $ $Author: $ $Date: $
  */
 public enum SubcherryMergeState {
 

@@ -31,6 +31,8 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.SubMonitor;
 import org.eclipse.core.runtime.jobs.IJobChangeEvent;
+import org.eclipse.jface.viewers.StructuredSelection;
+import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.team.core.RepositoryProvider;
 import org.eclipse.team.core.synchronize.SyncInfoSet;
 import org.eclipse.ui.IWorkbenchPart;
@@ -42,6 +44,7 @@ import org.tigris.subversion.subclipse.ui.operations.SVNOperation;
 
 import com.subcherry.ui.expressions.SubcherryStateTester;
 import com.subcherry.ui.views.SubcherryMergeContext;
+import com.subcherry.ui.views.SubcherryMergeEntry;
 import com.subcherry.ui.views.SubcherryMergeView;
 
 /**
@@ -70,12 +73,43 @@ public abstract class AbstractSubcherryOperation extends SVNOperation {
 	}
 	
 	@Override
-	public void done(IJobChangeEvent event) {
+	public void done(final IJobChangeEvent event) {
 		super.done(event);
 		
 		evaluateVariables();
+		
+		updatePart();
 	}
 	
+	/**
+	 * Update {@link #getPart()} in order to reflect the changes made by this
+	 * operation.
+	 */
+	protected void updatePart() {
+		final IWorkbenchPart part = getPart();
+		if (part instanceof SubcherryMergeView) {
+			final SubcherryMergeView view = (SubcherryMergeView) part;
+			
+			view.getSite().getShell().getDisplay().asyncExec(() -> {
+				final TableViewer viewer = view.getViewer();
+				
+				// refresh the viewer first
+				viewer.refresh();
+				
+				// display the current entry (if applicable)
+				final SubcherryMergeEntry current = getContext().getCurrentEntry();
+				if (current != null) {
+					viewer.setSelection(new StructuredSelection(current), true);
+				} else {
+					final List<SubcherryMergeEntry> entries = getContext().getAllEntries();
+					if (!entries.isEmpty()) {
+						viewer.setSelection(new StructuredSelection(entries.get(entries.size() - 1)), true);
+					}
+				}
+			});
+		}
+	}
+
 	@Override
 	public boolean belongsTo(final Object family) {
 		return family == AbstractSubcherryOperation.class;

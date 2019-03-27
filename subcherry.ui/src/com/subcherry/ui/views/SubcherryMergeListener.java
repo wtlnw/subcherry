@@ -23,8 +23,8 @@ import com.subcherry.ui.SubcherryUI;
  * Implementing classes react to changes during the merge operation with {@link SubcherryUI}.
  * 
  * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
- * @version $Revision: $ $Author: $ $Date: $
  */
+@FunctionalInterface
 public interface SubcherryMergeListener {
 
 	/**
@@ -38,13 +38,4 @@ public interface SubcherryMergeListener {
 	 *            the new {@link SubcherryMergeState}
 	 */
 	void onStateChanged(SubcherryMergeEntry entry, SubcherryMergeState oldState, SubcherryMergeState newState);
-	
-	/**
-	 * This method is called when a {@link SubcherryMergeEntry}'s property has
-	 * changed.
-	 * 
-	 * @param entry
-	 *            the {@link SubcherryMergeEntry} whose property has changed
-	 */
-	void onEntryChanged(SubcherryMergeEntry entry);
 }

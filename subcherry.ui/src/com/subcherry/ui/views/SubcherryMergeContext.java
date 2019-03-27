@@ -25,8 +25,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
-import org.eclipse.core.runtime.ListenerList;
-
 import com.subcherry.Configuration;
 import com.subcherry.MergeCommitHandler.UpdateableRevisionRewriter;
 import com.subcherry.PortingTickets;
@@ -50,12 +48,6 @@ import com.subcherry.utils.PathParser;
  * @version $Revision: $ $Author: $ $Date: $
  */
 public class SubcherryMergeContext {
-
-	/**
-	 * @see #addMergeListener()
-	 * @see #removeMergeListener()
-	 */
-	private final ListenerList<SubcherryMergeListener> _listeners = new ListenerList<>();
 	
 	/**
 	 * @see #getClientManager()
@@ -140,61 +132,7 @@ public class SubcherryMergeContext {
 		
 		return entries;
 	}
-	
-	/**
-	 * Register the given listener for merge updates.
-	 * 
-	 * <p>
-	 * Note: Has no effect if the given listener has already been registered.
-	 * </p>
-	 * 
-	 * @param listener
-	 *            the {@link SubcherryMergeListener} to register
-	 */
-	public void addMergeListener(final SubcherryMergeListener listener) {
-		_listeners.add(listener);
-	}
-	
-	/**
-	 * Unregister the given listener from merge update notification.
-	 * 
-	 * <p>
-	 * Note: Has no effect if the given listener was not registered.
-	 * </p>
-	 * 
-	 * @param listener
-	 *            the {@link SubcherryMergeListener} to unregister
-	 */
-	public void removeMergeListener(final SubcherryMergeListener listener) {
-		_listeners.remove(listener);
-	}
 
-	/**
-	 * Notify all currently registered {@link SubcherryMergeListener}s that the
-	 * given {@link SubcherryMergeEntry} state has changed.
-	 * 
-	 * @param entry
-	 *            the {@link SubcherryMergeEntry} whose state changed
-	 * @param oldState
-	 *            the previous {@link SubcherryMergeState}
-	 * @param newState
-	 *            the new {@link SubcherryMergeState}
-	 */
-	/* package private */ void notifyStateChanged(final SubcherryMergeEntry entry, final SubcherryMergeState oldState, final SubcherryMergeState newState) {
-		_listeners.forEach(listener -> listener.onStateChanged(entry, oldState, newState));
-	}
-	
-	/**
-	 * Notify all currently registered {@link SubcherryMergeListener}s that the
-	 * given {@link SubcherryMergeEntry} property has changed.
-	 * 
-	 * @param entry
-	 *            the {@link SubcherryMergeEntry} whose property changed
-	 */
-	/* package private */ void notifyEntryChanged(final SubcherryMergeEntry entry) {
-		_listeners.forEach(listener -> listener.onEntryChanged(entry));
-	}
-	
 	/**
 	 * @return the {@link ClientManager} to be used for {@link Client} access
 	 */

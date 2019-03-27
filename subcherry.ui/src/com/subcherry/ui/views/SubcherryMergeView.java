@@ -18,15 +18,12 @@
 package com.subcherry.ui.views;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.List;
 
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.ColumnViewerToolTipSupport;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.jface.viewers.StructuredSelection;
-import org.eclipse.jface.viewers.StructuredViewer;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.viewers.Viewer;
@@ -35,13 +32,10 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Table;
-import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.ViewPart;
-import org.eclipse.ui.services.IEvaluationService;
 
 import com.subcherry.ui.SubcherryUI;
 import com.subcherry.ui.dialogs.SubcherryRevisionDialog;
-import com.subcherry.ui.expressions.SubcherryEntryTester;
 
 /**
  * An {@link ViewPart} implementation for {@link SubcherryUI} which allows
@@ -189,83 +183,22 @@ public class SubcherryMergeView extends ViewPart {
 	 * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
 	 */
 	public static class SubcherryMergeViewContentProvider implements IStructuredContentProvider {
-		
-		/**
-		 * The {@link SubcherryMergeListener} which will update the viewer upon merge
-		 * changes.
-		 */
-		private SubcherryMergeListener _listener;
 
 		@Override
 		public void inputChanged(final Viewer viewer, final Object oldInput, final Object newInput) {
-			// unregister listener from the old context
+			// dispose the old input (if necessary)
 			if (oldInput instanceof SubcherryMergeContext) {
-				final SubcherryMergeContext context = (SubcherryMergeContext) oldInput;
-				context.removeMergeListener(_listener);
-				context.dispose();
-
-				// reset the old listener
-				_listener = null;
-			}
-
-			// register a new listener instance with the new context
-			if (newInput instanceof SubcherryMergeContext) {
-				_listener = new SubcherryMergeListener() {
-					@Override
-					public void onStateChanged(final SubcherryMergeEntry entry, final SubcherryMergeState oldState, final SubcherryMergeState newState) {
-						PlatformUI.getWorkbench().getService(IEvaluationService.class).requestEvaluation(
-								SubcherryEntryTester.NAMESPACE + SubcherryEntryTester.PROPERTY_ENTRY);
-						
-						update(entry);
-					}
-					
-					@Override
-					public void onEntryChanged(final SubcherryMergeEntry entry) {
-						update(entry);
-					}
-
-					/**
-					 * Update the given {@link SubcherryMergeEntry} display.
-					 * 
-					 * @param entry
-					 *            the {@link SubcherryMergeEntry} to update the display for
-					 */
-					private void update(final SubcherryMergeEntry entry) {
-						PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
-							@Override
-							public void run() {
-								if (viewer instanceof StructuredViewer) {
-									final StructuredViewer structuredViewer = (StructuredViewer) viewer;
-									
-									structuredViewer.update(entry, null);
-									structuredViewer.setSelection(new StructuredSelection(entry), true);
-								} else {
-									viewer.refresh();
-								}
-							}
-						});
-					}
-					
-				};
-
-				((SubcherryMergeContext) newInput).addMergeListener(_listener);
+				((SubcherryMergeContext) oldInput).dispose();
 			}
 		}
 
 		@Override
 		public Object[] getElements(final Object input) {
-			if(input instanceof SubcherryMergeContext) {
-				final List<SubcherryMergeEntry> entries = ((SubcherryMergeContext) input).getAllEntries();
-				
-				return entries.toArray();
+			if (input instanceof SubcherryMergeContext) {
+				return ((SubcherryMergeContext) input).getAllEntries().toArray();
 			}
 			
 			return new Object[0];
-		}
-
-		@Override
-		public void dispose() {
-			_listener = null;
 		}
 	}
 	

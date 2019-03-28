@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="de.haumacher.subcherry"
+      label="Subcherry"
+      version="1.8.0.qualifier">
+
+   <description url="https://github.com/haumacher/subcherry">
+      SubCherry enables you to manage multiple development branches
+of a software development project on the feature level. It enriches
+the Subversion infrastructure with selective merge functionality
+that keeps precise annotate/blame information on each line of
+your code on every branch. In combination with the Trac issue
+tracking system this empowers you to arbitrarily combine software
+features to new software configurations and easily maintain them.
+   </description>
+
+   <copyright url="https://github.com/haumacher/subcherry">
+      SubCherry - Cherry Picking with Trac and Subversion
+Copyright (C) 2018 Bernhard Haumacher and others.
+   </copyright>
+
+   <license url="http://www.gnu.org/licenses/">
+      This program is free software: you can redistribute it and/or
+modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of
+the License, or (at your option) any later version.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the GNU General Public License for more details. You should
+have received a copy of the GNU General Public License along
+with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+   </license>
+
+   <url>
+      <discovery label="Subclipse" url="https://dl.bintray.com/subclipse/releases/subclipse/latest/"/>
+   </url>
+
+   <requires>
+      <import plugin="org.eclipse.core.runtime"/>
+      <import plugin="org.eclipse.core.expressions"/>
+      <import plugin="org.eclipse.ui"/>
+      <import plugin="org.eclipse.team.core"/>
+      <import plugin="org.eclipse.team.ui"/>
+      <import plugin="org.eclipse.core.resources"/>
+      <import plugin="org.tigris.subversion.subclipse.core"/>
+      <import plugin="org.tigris.subversion.subclipse.ui"/>
+      <import plugin="org.eclipse.equinox.security"/>
+      <import plugin="org.eclipse.ui.ide"/>
+      <import plugin="org.tigris.subversion.clientadapter.javahl" version="1.10.4" match="greaterOrEqual"/>
+   </requires>
+
+   <plugin
+         id="ext.org.apache.ws.commons"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"/>
+
+   <plugin
+         id="ext.org.apache.xmlrpc"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"/>
+
+   <plugin
+         id="ext.org.lustin.trac"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"/>
+
+   <plugin
+         id="de.haumacher.common.config"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="de.haumacher.common.util"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="de.haumacher.subcherry.core"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="de.haumacher.subcherry.repository"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="de.haumacher.subcherry.repository.javahl"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="de.haumacher.subcherry.ui"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+</feature>

@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Subcherry Core
-Bundle-SymbolicName: subcherry.core;singleton:=true
+Bundle-SymbolicName: de.haumacher.subcherry.core;singleton:=true
 Bundle-Version: 1.0.1.qualifier
 Export-Package: base64,
  com.subcherry;
@@ -38,11 +38,10 @@ Export-Package: base64,
  com.subcherry.util,
  com.subcherry.utils;uses:="com.subcherry.commit,com.subcherry.repository.core,com.subcherry"
 Require-Bundle: org.eclipse.core.runtime,
- de.haumacher.common.config,
+ de.haumacher.common.config;visibility:=reexport,
  ext.org.apache.ws.commons,
- ext.org.apache.xmlrpc,
  ext.org.lustin.trac,
- subcherry.repository
+ de.haumacher.subcherry.repository.javahl;visibility:=reexport
 Automatic-Module-Name: subcherry.core
 Bundle-ActivationPolicy: lazy
 Bundle-Activator: com.subcherry.core.SubcherryCore

@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Commons
+Bundle-Name: Apache Commons
 Bundle-SymbolicName: ext.org.apache.ws.commons;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Bundle-ClassPath: commons-codec-1.6.jar

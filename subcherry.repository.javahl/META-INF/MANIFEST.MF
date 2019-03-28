@@ -1,12 +1,12 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Subcherry JavaHL
-Bundle-SymbolicName: subcherry.repository.javahl;singleton:=true
+Bundle-Name: Subcherry Repository JavaHL
+Bundle-SymbolicName: de.haumacher.subcherry.repository.javahl;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Export-Package: com.subcherry.repository.javahl,
  com.subcherry.repository.javahl.internal
-Require-Bundle: subcherry.repository,
- org.tigris.subversion.clientadapter.javahl;bundle-version="1.10.4"
+Require-Bundle: de.haumacher.subcherry.repository;visibility:=reexport,
+ org.tigris.subversion.clientadapter.javahl;bundle-version="1.10.4";visibility:=reexport
 Automatic-Module-Name: subcherry.repository.javahl
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8

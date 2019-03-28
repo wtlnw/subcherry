@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Repository
-Bundle-SymbolicName: subcherry.repository;singleton:=true
+Bundle-Name: Subcherry Repository
+Bundle-SymbolicName: de.haumacher.subcherry.repository;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Export-Package: com.subcherry.repository,
  com.subcherry.repository.command,

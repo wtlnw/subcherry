@@ -3,7 +3,6 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Util
 Bundle-SymbolicName: de.haumacher.common.util;singleton:=true
 Bundle-Version: 1.0.0
-Bundle-Vendor: haumacher.de
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Export-Package: de.haumacher.common.util
 Automatic-Module-Name: de.haumacher.common.util

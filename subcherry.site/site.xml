@@ -3,7 +3,7 @@
    <description name="Subcherry - Cherry Picking with Trac and Subversion">
       
    </description>
-   <feature url="features/de.haumacher.subcherry_1.8.0.201903281921.jar" id="de.haumacher.subcherry" version="1.8.0.201903281921">
+   <feature url="features/de.haumacher.subcherry_1.8.0.201903281944.jar" id="de.haumacher.subcherry" version="1.8.0.201903281944">
       <category name="de.haumacher.subcherry"/>
    </feature>
    <category-def name="de.haumacher.subcherry" label="Subcherry"/>

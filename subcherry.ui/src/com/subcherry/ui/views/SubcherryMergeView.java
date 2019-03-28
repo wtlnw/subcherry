@@ -17,8 +17,6 @@
  */
 package com.subcherry.ui.views;
 
-import java.lang.reflect.InvocationTargetException;
-
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.ColumnViewerToolTipSupport;
 import org.eclipse.jface.viewers.ISelection;
@@ -30,6 +28,7 @@ import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.window.ToolTip;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.ui.part.ViewPart;
@@ -89,9 +88,7 @@ public class SubcherryMergeView extends ViewPart {
 		stateCol.setLabelProvider(new SubcherryMergeViewLabelProvider() {
 			@Override
 			public String getText(final Object element) {
-				final SubcherryMergeEntry entry = (SubcherryMergeEntry) element;
-				
-				return entry.getState().toString();
+				return null;
 			}
 			
 			@Override
@@ -99,17 +96,30 @@ public class SubcherryMergeView extends ViewPart {
 				final SubcherryMergeEntry entry = (SubcherryMergeEntry) element;
 				
 				switch(entry.getState()) {
-				case ERROR: {
-					final Throwable error = entry.getError();
-					if (error instanceof InvocationTargetException) {
-						return ((InvocationTargetException) error).getTargetException().getLocalizedMessage();
-					} else {
-						return error.getLocalizedMessage();
-					}
-				}
+				case COMMITTED:
+					return "Merged and committed.";
+				case CONFLICT:
+					return "Conflicts detected.";
+				case ERROR:
+					return "Errors detected. See revision dialog for details.";
+				case MERGED:
+					return "Merged, commit pending.";
+				case NEW:
+					return "Merge pending";
+				case NO_COMMIT:
+					return "Merged without committing.";
+				case SKIPPED:
+					return "Skipped without merging.";
 				default:
-					return null;
+					return entry.getState().toString();
 				}
+			}
+			
+			@Override
+			public Image getImage(final Object element) {
+				final SubcherryMergeEntry entry = (SubcherryMergeEntry) element;
+				
+				return SubcherryUI.getInstance().getImageRegistry().get(SubcherryUI.getStateImageKey(entry.getState()));
 			}
 		});
 		

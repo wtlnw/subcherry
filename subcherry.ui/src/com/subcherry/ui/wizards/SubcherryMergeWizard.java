@@ -24,6 +24,7 @@ import org.eclipse.equinox.security.storage.ISecurePreferences;
 import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.wizard.Wizard;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
@@ -76,6 +77,11 @@ public class SubcherryMergeWizard extends Wizard {
 	 */
 	public SubcherryMergeWizard() {
 		setWindowTitle("Subcherry Merge");
+	}
+	
+	@Override
+	public Image getDefaultPageImage() {
+		return SubcherryUI.getInstance().getImageRegistry().get(SubcherryUI.IMG_WIZARD_DEFAULT);
 	}
 	
 	/**

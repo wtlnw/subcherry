@@ -52,9 +52,10 @@
                id="subcherry.ui.toolbars">
             <command
                   commandId="subcherry.ui.commands.merge"
-                  icon="icons/etool/mrg_wiz.png"
+                  disabledIcon="icons/full/dtool/mrg_wiz.png"
+                  icon="icons/full/etool/mrg_wiz.png"
                   id="subcherry.ui.toolbars.merge"
-                  tooltip="Open the merge wizard.">
+                  tooltip="Open the Subcherry merge wizard.">
             </command>
          </toolbar>
       </menuContribution>
@@ -63,18 +64,24 @@
             locationURI="toolbar:com.subcherry.ui.views.SubcherryMergeView">
          <command
                commandId="com.subcherry.ui.commands.run"
+               disabledIcon="icons/full/dlcl/run_exec.png"
+               icon="icons/full/elcl/run_exec.png"
                id="subcherry.ui.toolbars.run"
                label="Run"
                tooltip="Merge all revisions automatically.">
          </command>
          <command
                commandId="com.subcherry.ui.commands.skip"
+               disabledIcon="icons/full/dlcl/skip_exec.png"
+               icon="icons/full/elcl/skip_exec.png"
                id="subcherry.ui.toolbars.skip"
                label="Skip"
                tooltip="Skip the current revision.">
          </command>
          <command
                commandId="com.subcherry.ui.commands.reset"
+               disabledIcon="icons/full/dlcl/reset_exec.png"
+               icon="icons/full/elcl/reset_exec.png"
                id="subcherry.ui.toolbars.reset"
                label="Reset"
                tooltip="Reset the current revision.">
@@ -87,6 +94,7 @@
             allowMultiple="false"
             category="org.tigris.subversion.subclipse"
             class="com.subcherry.ui.views.SubcherryMergeView"
+            icon="icons/full/eview/mrg_wiz.png"
             id="com.subcherry.ui.views.SubcherryMergeView"
             inject="false"
             name="Subcherry Merge"

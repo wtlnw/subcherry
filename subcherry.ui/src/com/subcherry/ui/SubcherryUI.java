@@ -17,12 +17,20 @@
  */
 package com.subcherry.ui;
 
+import java.net.URL;
+
+import org.eclipse.core.runtime.FileLocator;
+import org.eclipse.core.runtime.Path;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.equinox.security.storage.ISecurePreferences;
 import org.eclipse.equinox.security.storage.SecurePreferencesFactory;
 import org.eclipse.jface.resource.FontRegistry;
+import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.jface.resource.ImageRegistry;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTError;
 import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
@@ -30,6 +38,8 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 
 import com.subcherry.core.SubcherryCore;
+import com.subcherry.ui.views.SubcherryMergeState;
+import com.subcherry.ui.wizards.SubcherryMergeWizard;
 
 /**
  * {@link AbstractUIPlugin} implementation for the {@code subcherry.ui} plug-in.
@@ -39,6 +49,17 @@ import com.subcherry.core.SubcherryCore;
  */
 public class SubcherryUI extends AbstractUIPlugin {
 
+	/**
+	 * The locale specific path to bundle icons.
+	 */
+	public static final String ICONS_PATH = "$nl$/icons/full/";
+	
+	/**
+	 * The identifier of the {@link Image} to be used for all
+	 * {@link SubcherryMergeWizard} pages.
+	 */
+	public static final String IMG_WIZARD_DEFAULT = "com.subcherry.ui.wizards.SubcherryMergeWizard.banner";
+	
 	/**
 	 * The symbolic name for the default {@link Font} with bold style.
 	 */
@@ -123,6 +144,59 @@ public class SubcherryUI extends AbstractUIPlugin {
 		// nothing to initialize (yet)
 	}
 	
+	@Override
+	protected void initializeImageRegistry(final ImageRegistry registry) {
+		super.initializeImageRegistry(registry);
+		
+		// load the wizard banner image
+		final URL bannerUrl = FileLocator.find(getBundle(), new Path(ICONS_PATH + "wizban/mrg_wizban.png"));
+		if (bannerUrl != null) {
+			final ImageDescriptor img = ImageDescriptor.createFromURL(bannerUrl);
+			registry.put(IMG_WIZARD_DEFAULT, img);
+		}
+		
+		// load icons for entry states
+		final Bundle platform = Platform.getBundle(PlatformUI.PLUGIN_ID);
+		for (final SubcherryMergeState state : SubcherryMergeState.values()) {
+			final String path;
+			
+			switch (state) {
+			case COMMITTED:
+				path = ICONS_PATH + "elcl16/step_done.png";
+				break;
+			case CONFLICT:
+				path = ICONS_PATH + "obj16/warn_tsk.png";
+				break;
+			case ERROR:
+				path = ICONS_PATH + "obj16/error_tsk.png";
+				break;
+			case MERGED:
+				path = ICONS_PATH + "obj16/change_obj.png";
+				break;
+			case NEW:
+				path = ICONS_PATH + "obj16/generic_element.png";
+				break;
+			case NO_COMMIT:
+				path = ICONS_PATH + "obj16/info_tsk.png";
+				break;
+			case SKIPPED:
+				path = ICONS_PATH + "elcl16/trash.png";
+				break;
+			default:
+				path = null;
+				break;
+			}
+			
+			if (path != null) {
+				final URL url = FileLocator.find(platform, new Path(path));
+				if (url != null) {
+					final ImageDescriptor img = ImageDescriptor.createFromURL(url);
+					registry.put(getStateImageKey(state), img);
+				}
+			}
+		}
+	}
+	
 	/**
 	 * @return the shared {@link SubcherryCore} instance or {@code null} if it has
 	 *         not been {@link #start(BundleContext) started} yet or has already
@@ -147,5 +221,19 @@ public class SubcherryUI extends AbstractUIPlugin {
 	 */
 	public static Font getBoldDefault() {
 		return getInstance().getFontRegistry().getBold(SubcherryUI.DEFAULT);
+	}
+	
+	/**
+	 * @param state
+	 *            the {@link SubcherryMergeState} to build the image key for
+	 * @return the key {@link String} to be used for resolving the {@link Image} for
+	 *         the given {@link SubcherryMergeState} from
+	 *         {@link #getImageRegistry()}
+	 */
+	public static final String getStateImageKey(final SubcherryMergeState state) {
+		return new StringBuilder(SubcherryMergeState.class.getName())
+			.append('.')
+			.append(state.toString())
+			.toString();
 	}
 }

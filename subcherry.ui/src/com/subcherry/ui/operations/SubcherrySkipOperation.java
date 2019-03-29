@@ -45,11 +45,17 @@ public class SubcherrySkipOperation extends AbstractSubcherryOperation {
 	@Override
 	protected void executeOperation(final IProgressMonitor monitor) throws SVNException, InterruptedException {
 		final SubcherryMergeContext context = getContext();
-		final SubcherryMergeEntry entry = context.getCurrentEntry();
+		final SubcherryMergeEntry current = context.getCurrentEntry();
 		
-		if (entry != null) {
-			entry.setState(SubcherryMergeState.SKIPPED);
-			updateViewer(entry);
+		if (current != null) {
+			current.setState(SubcherryMergeState.SKIPPED);
+			
+			final SubcherryMergeEntry next = context.getCurrentEntry();
+			if (next != null) {
+				updateViewer(current, next);
+			} else {
+				updateViewer(current);
+			}
 		}
 	}
 

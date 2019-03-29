@@ -94,25 +94,16 @@ public abstract class AbstractSubcherryOperation extends SVNOperation {
 	public SubcherryMergeView getPart() {
 		return (SubcherryMergeView) super.getPart();
 	}
-
-	/**
-	 * @param entry
-	 *            the {@link SubcherryMergeEntry} to update the viewer for
-	 * @see #updateViewer(SubcherryMergeEntry[])
-	 */
-	protected void updateViewer(final SubcherryMergeEntry entry) {
-		updateViewer(new SubcherryMergeEntry[] { entry });
-	}
 	
 	/**
 	 * Asynchronously update the {@link #getPart()} to reflect changes to the given
-	 * entries.
+	 * entries and set the viewer's selection to the last entry.
 	 * 
 	 * @param entries
 	 *            a (possibly empty) {@link List} of {@link SubcherryMergeEntry}s to
 	 *            update the viewer for
 	 */
-	protected void updateViewer(final SubcherryMergeEntry[] entries) {
+	protected void updateViewer(final SubcherryMergeEntry... entries) {
 		if(entries.length < 1) {
 			return;
 		}

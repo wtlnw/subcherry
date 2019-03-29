@@ -19,9 +19,13 @@ package com.subcherry.ui.handlers;
 
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
+import org.eclipse.jface.dialogs.IDialogConstants;
+import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.swt.widgets.Shell;
 
 import com.subcherry.ui.operations.SubcherrySkipOperation;
 import com.subcherry.ui.views.SubcherryMergeEntry;
+import com.subcherry.ui.views.SubcherryMergeView;
 
 /**
  * An {@link AbstractSubcherryHandler} implementation which reverts uncommitted changes
@@ -34,7 +38,23 @@ public class SubcherrySkipHandler extends AbstractSubcherryHandler {
 	@Override
 	public Object execute(final ExecutionEvent event) throws ExecutionException {
 		try {
-			new SubcherrySkipOperation(getView(event)).run();
+			final SubcherryMergeEntry entry = getContext(event).getCurrentEntry();
+			final SubcherryMergeView view = getView(event);
+			final Shell shell = view.getSite().getShell();
+			
+			final String title = "Skip Revision";
+			final StringBuilder message = new StringBuilder();
+			message.append("Skipping the currently pending revision: \n\n\t");
+			message.append(entry.getMessage().getLogEntryMessage()).append("\n\n");
+			message.append("Changed resources will not be reverted. ");
+			message.append("Please revert these changes manually before resuming the merge process.");
+			message.append("\n\n").append("Skip the revision?");
+			
+			final MessageDialog dialog = new MessageDialog(shell, title, null, message.toString(), MessageDialog.CONFIRM, 0, "Skip", IDialogConstants.CANCEL_LABEL);
+			
+			if (dialog.open() == IDialogConstants.OK_ID) {
+				new SubcherrySkipOperation(view).run();
+			}
 		} catch (Throwable e) {
 			throw new ExecutionException(null, e);
 		}

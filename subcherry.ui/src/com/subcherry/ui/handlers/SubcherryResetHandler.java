@@ -19,23 +19,43 @@ package com.subcherry.ui.handlers;
 
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
+import org.eclipse.jface.dialogs.IDialogConstants;
+import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.swt.widgets.Shell;
 
 import com.subcherry.ui.operations.SubcherryResetOperation;
 import com.subcherry.ui.views.SubcherryMergeContext;
+import com.subcherry.ui.views.SubcherryMergeEntry;
+import com.subcherry.ui.views.SubcherryMergeView;
 
 /**
  * An {@link AbstractSubcherryHandler} which resets the
  * {@link SubcherryMergeContext#getCurrentEntry()}.
  * 
  * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
- * @version $Revision: $ $Author: $ $Date: $
  */
 public class SubcherryResetHandler extends AbstractSubcherryHandler {
 
 	@Override
 	public Object execute(final ExecutionEvent event) throws ExecutionException {
 		try {
-			new SubcherryResetOperation(getView(event)).run();
+			final SubcherryMergeEntry entry = getContext(event).getCurrentEntry();
+			final SubcherryMergeView view = getView(event);
+			final Shell shell = view.getSite().getShell();
+			
+			final String title = "Reset Revision State";
+			final StringBuilder message = new StringBuilder();
+			message.append("Resetting the merge state for the currently pending revision: \n\n\t");
+			message.append(entry.getMessage().getLogEntryMessage()).append("\n\n");
+			message.append("Changed resources will not be reverted. ");
+			message.append("Please revert these changes manually before resuming the merge process.");
+			message.append("\n\n").append("Reset the merge state?");
+			
+			final MessageDialog dialog = new MessageDialog(shell, title, null, message.toString(), MessageDialog.CONFIRM, 0, "Reset", IDialogConstants.CANCEL_LABEL);
+			
+			if (dialog.open() == IDialogConstants.OK_ID) {
+				new SubcherryResetOperation(view).run();
+			}
 		} catch (Throwable e) {
 			throw new ExecutionException(null, e);
 		}

@@ -37,17 +37,17 @@ public class SubcherryEntryTester extends PropertyTester {
 	 * The namespace of properties supported by this {@link PropertyTester}
 	 * implementation.
 	 */
-	public static final String NAMESPACE = "com.subcherry.ui.merge";
+	public static final String NAMESPACE = "com.subcherry.ui.merge"; //$NON-NLS-1$
 	
 	/**
 	 * The name of the property indicating the state of the current {@link SubcherryMergeEntry}.
 	 */
-	public static final String PROPERTY_ENTRY = "entry";
+	public static final String PROPERTY_ENTRY = "entry"; //$NON-NLS-1$
 	
 	/**
 	 * A wildcard representing any state.
 	 */
-	public static final String STATE_ANY = "*";
+	public static final String STATE_ANY = "*"; //$NON-NLS-1$
 	
 	@Override
 	public boolean test(final Object receiver, final String property, final Object[] args, final Object expected) {

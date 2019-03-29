@@ -37,6 +37,7 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.dialogs.ErrorDialog;
+import org.eclipse.osgi.util.NLS;
 import org.eclipse.swt.widgets.Display;
 
 import com.subcherry.Configuration;
@@ -134,7 +135,7 @@ public class SubcherryTree {
 	public List<SubcherryTreeTicketNode> getTickets(final IProgressMonitor progress) {
 		if(_nodes == null) {
 			try {
-				progress.beginTask("Computing merge revisions.", IProgressMonitor.UNKNOWN);
+				progress.beginTask(L10N.SubcherryTree_progress_compute, IProgressMonitor.UNKNOWN);
 				
 				final LogReader log = newLogReader(progress);
 				final List<String> paths = computePaths(progress);
@@ -150,8 +151,8 @@ public class SubcherryTree {
 				} else {
 					cause = e;
 				}
-				final Status status = new Status(IStatus.ERROR, SubcherryUI.id(), "Trac access failed.", cause);
-				ErrorDialog.openError(Display.getCurrent().getActiveShell(), "Subcherry Merge", "Failed to resolve trac tickets.", status);
+				final Status status = new Status(IStatus.ERROR, SubcherryUI.id(), L10N.SubcherryTree_progress_error_trac_status, cause);
+				ErrorDialog.openError(Display.getCurrent().getActiveShell(), L10N.SubcherryTree_progress_error_trac_title, L10N.SubcherryTree_progress_error_trac_message, status);
 				
 				// no data upon failure
 				_nodes = Collections.emptyList();
@@ -242,7 +243,7 @@ public class SubcherryTree {
 	 *         paths
 	 */
 	private List<LogEntry> readHistory(final LogReader log, final List<String> paths, final IProgressMonitor progress) {
-		progress.subTask("Reading log.");
+		progress.subTask(L10N.SubcherryTree_progress_reading);
 		
 		final Configuration config = getConfiguration();
 		final MergeInfoPredicate filter;
@@ -256,8 +257,8 @@ public class SubcherryTree {
 		try {
 			log.readLog(paths.toArray(new String[paths.size()]), handler);
 		} catch (RepositoryException e) {
-			final Status status = new Status(IStatus.ERROR, SubcherryUI.id(), "Failed to access remote location.", e);
-			ErrorDialog.openError(Display.getCurrent().getActiveShell(), "Subcherry Merge", "No revision logs available.", status);
+			final Status status = new Status(IStatus.ERROR, SubcherryUI.id(), L10N.SubcherryTree_progress_error_svn_status, e);
+			ErrorDialog.openError(Display.getCurrent().getActiveShell(), L10N.SubcherryTree_progress_error_svn_title, L10N.SubcherryTree_progress_error_svn_message, status);
 		}
 		
 		// convert from descending to ascending order
@@ -277,7 +278,7 @@ public class SubcherryTree {
 	 *         the history for
 	 */
 	private List<String> computePaths(final IProgressMonitor progress) {
-		progress.subTask("Computing merge paths.");
+		progress.subTask(L10N.SubcherryTree_progress_paths);
 		
 		// list all paths in the client workspace
 		final String source = getConfiguration().getSourceBranch();
@@ -286,7 +287,7 @@ public class SubcherryTree {
 		for (final String module : getConfiguration().getModules()) {
 			final StringBuilder path = new StringBuilder();
 			path.append(source);
-			if (!source.endsWith("/")) {
+			if (!source.endsWith("/")) { //$NON-NLS-1$
 				path.append('/');
 			}
 			path.append(module);
@@ -305,7 +306,7 @@ public class SubcherryTree {
 	 * @return a new {@link LogReader} instance
 	 */
 	private LogReader newLogReader(final IProgressMonitor progress) {
-		progress.subTask("Initializing log reader.");
+		progress.subTask(L10N.SubcherryTree_progress_init);
 		
 		final Configuration config = getConfiguration();
 		final Client client = getClientManager().getClient();
@@ -427,7 +428,7 @@ public class SubcherryTree {
 		
 		@Override
 		public void handleLogEntry(final LogEntry entry) throws RepositoryException {
-			_progress.subTask(String.format("[%d]: Parsing log entry.", entry.getRevision()));
+			_progress.subTask(NLS.bind(L10N.SubcherryTree_progress_parse, entry.getRevision()));
 			
 			if (_filter == null || _filter.test(entry)) {
 				_entries.add(entry);
@@ -498,7 +499,7 @@ public class SubcherryTree {
 		
 		@Override
 		public boolean test(final LogEntry entry) {
-			_progress.subTask(String.format("[%d]: Analyzing merge info.", entry.getRevision()));
+			_progress.subTask(NLS.bind(L10N.SubcherryTree_progress_analyze, entry.getRevision()));
 
 			try {
 				final long mergedRevision = entry.getRevision();

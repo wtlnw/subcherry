@@ -61,6 +61,6 @@ public class SubcherrySkipOperation extends AbstractSubcherryOperation {
 
 	@Override
 	protected String getTaskName() {
-		return "Skip Revision";
+		return L10N.SubcherrySkipOperation_name;
 	}
 }

@@ -42,10 +42,10 @@ public class SubcherryPreferenceInitializer extends AbstractPreferenceInitialize
 		node.putBoolean(SubcherryPreferenceConstants.SKIP_WAIT_FOR_TIMESTAMP, true);
 		
 		// assume default SVN layout
-		node.put(SubcherryPreferenceConstants.TRUNK_PATTERN, "/trunk/[^/\\._]+/|/trunk/");
-		node.put(SubcherryPreferenceConstants.BRANCH_PATTERN, "/branches/[^/]+/[^/]+/|/tags/[^/]+/[^/]+/");
+		node.put(SubcherryPreferenceConstants.TRUNK_PATTERN, "/trunk/[^/\\._]+/|/trunk/"); //$NON-NLS-1$
+		node.put(SubcherryPreferenceConstants.BRANCH_PATTERN, "/branches/[^/]+/[^/]+/|/tags/[^/]+/[^/]+/"); //$NON-NLS-1$
 		
 		// provide a pattern for trac server RPC access
-		node.put(SubcherryPreferenceConstants.TRAC_URL, "http://<myserver>/trac/login/xmlrpc");
+		node.put(SubcherryPreferenceConstants.TRAC_URL, "http://<myserver>/trac/login/xmlrpc"); //$NON-NLS-1$
 	}
 }

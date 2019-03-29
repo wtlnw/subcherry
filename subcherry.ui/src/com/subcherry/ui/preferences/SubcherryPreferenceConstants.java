@@ -34,40 +34,40 @@ public interface SubcherryPreferenceConstants {
 	 * The name of the key in {@link Preferences} defining whether semantic moves
 	 * should be detected or not.
 	 */
-	String SEMANTIC_MOVES = "semanticMoves";
+	String SEMANTIC_MOVES = "semanticMoves"; //$NON-NLS-1$
 	
 	/**
 	 * The name of the key in {@link Preferences} defining whether to skip waiting
 	 * for SVN to return timestamps. Setting this property to {@code false} may
 	 * provide huge performance improvements during merging.
 	 */
-	String SKIP_WAIT_FOR_TIMESTAMP = "skipWaitForTimestamp";
+	String SKIP_WAIT_FOR_TIMESTAMP = "skipWaitForTimestamp"; //$NON-NLS-1$
 	
 	/**
 	 * The name of the key in {@link Preferences} containing the trunk name pattern.
 	 */
-	String TRUNK_PATTERN = "trunkPattern";
+	String TRUNK_PATTERN = "trunkPattern"; //$NON-NLS-1$
 	
 	/**
 	 * The name of the key in {@link Preferences} containing the branch name
 	 * pattern.
 	 */
-	String BRANCH_PATTERN = "branchPattern";
+	String BRANCH_PATTERN = "branchPattern"; //$NON-NLS-1$
 	
 	/**
 	 * The name of the key in {@link Preferences} containing the trac URL.
 	 */
-	String TRAC_URL = "trac.url";
+	String TRAC_URL = "trac.url"; //$NON-NLS-1$
 	
 	/**
 	 * The name of the key in {@link ISecurePreferences} containing the trac user
 	 * name.
 	 */
-	String TRAC_USERNAME = "trac.username";
+	String TRAC_USERNAME = "trac.username"; //$NON-NLS-1$
 
 	/**
 	 * The name of the key in {@link ISecurePreferences} containing the trac
 	 * password.
 	 */
-	String TRAC_PASSWORD = "trac.password";
+	String TRAC_PASSWORD = "trac.password"; //$NON-NLS-1$
 }

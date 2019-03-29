@@ -30,6 +30,7 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.SubMonitor;
+import org.eclipse.osgi.util.NLS;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.team.core.diff.IDiff;
 import org.eclipse.team.core.synchronize.SyncInfo;
@@ -80,7 +81,7 @@ public class SubcherryMergeOperation extends AbstractSubcherryOperation {
 
 	@Override
 	public String getTaskName() {
-		return "Run Merge";
+		return L10N.SubcherryMergeOperation_name;
 	}
 	
 	@Override
@@ -125,7 +126,7 @@ public class SubcherryMergeOperation extends AbstractSubcherryOperation {
 			}
 
 			// provide progress feedback to users
-			monitor.subTask(String.format("%d/%d: Revision [%d]: %s", ++progress, total, entry.getChange().getRevision(), entry.getMessage().getLogEntryMessage()));
+			monitor.subTask(NLS.bind(L10N.SubcherryMergeOperation_progress_process, new Object[] {++progress, total, entry.getChange().getRevision(), entry.getMessage().getLogEntryMessage()}));
 
 			// process the current entry
 			processEntry(entry, monitor.split(1));
@@ -261,7 +262,7 @@ public class SubcherryMergeOperation extends AbstractSubcherryOperation {
 	 */
 	private ActiveChangeSet newChangeSet(final SyncInfoSet sync, final TicketMessage message) throws CoreException {
 		final ActiveChangeSetManager mgr = SVNProviderPlugin.getPlugin().getChangeSetManager();
-		final String title = String.format("Revision [%d]", message.getOriginalRevision());
+		final String title = NLS.bind(L10N.SubcherryMergeOperation_changeset_title, message.getOriginalRevision());
 		final IDiff[] diff = null;
 		
 		final ActiveChangeSet set = mgr.createSet(title, diff);

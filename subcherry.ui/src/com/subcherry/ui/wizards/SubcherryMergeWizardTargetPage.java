@@ -118,10 +118,10 @@ public class SubcherryMergeWizardTargetPage extends WizardPage {
 	 * Create a {@link SubcherryMergeWizardTargetPage}.
 	 */
 	public SubcherryMergeWizardTargetPage() {
-		super("Target");
+		super(L10N.SubcherryMergeWizardTargetPage_name);
 		
-		setTitle("SVN Cherry Picking With Subcherry");
-		setMessage("Please select the target modules.");
+		setTitle(L10N.SubcherryMergeWizardTargetPage_title);
+		setMessage(L10N.SubcherryMergeWizardTargetPage_message);
 	}
 	
 	@Override
@@ -202,7 +202,7 @@ public class SubcherryMergeWizardTargetPage extends WizardPage {
 		contents.setLayout(GridLayoutFactory.swtDefaults().numColumns(2).create());
 		
 		final Label label = new Label(contents, SWT.NONE);
-		label.setText("Target branch:");
+		label.setText(L10N.SubcherryMergeWizardTargetPage_label_target);
 		label.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false));
 		
 		_branch = new Text(contents, SWT.BORDER | SWT.READ_ONLY);
@@ -224,7 +224,7 @@ public class SubcherryMergeWizardTargetPage extends WizardPage {
 		contents.setLayout(GridLayoutFactory.swtDefaults().create());
 		
 		final Text filterText = new Text(contents, SWT.BORDER | SWT.SEARCH | SWT.ICON_SEARCH | SWT.ICON_CANCEL);
-		filterText.setMessage("<filter regular expression>");
+		filterText.setMessage(L10N.SubcherryMergeWizardTargetPage_hint_filter);
 		filterText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 		
 		final ControlDecoration filterDeco = new ControlDecoration(filterText, SWT.LEFT | SWT.TOP);
@@ -246,7 +246,7 @@ public class SubcherryMergeWizardTargetPage extends WizardPage {
 							patternFilter.setPattern(Pattern.compile(text));
 							filterDeco.hide();
 						} catch (PatternSyntaxException e) {
-							filterDeco.setDescriptionText("Regular expression is invalid.");
+							filterDeco.setDescriptionText(L10N.SubcherryMergeWizardTargetPage_error_filter_invalid);
 							filterDeco.show();
 						}
 					}
@@ -298,7 +298,7 @@ public class SubcherryMergeWizardTargetPage extends WizardPage {
 		contents.setLayout(GridLayoutFactory.swtDefaults().create());
 		
 		_add = new Button(contents, SWT.PUSH);
-		_add.setText("Add ->");
+		_add.setText(L10N.SubcherryMergeWizardTargetPage_label_add);
 		_add.setEnabled(false);
 		_add.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
 		_add.addSelectionListener(new SelectionAdapter() {
@@ -310,7 +310,7 @@ public class SubcherryMergeWizardTargetPage extends WizardPage {
 		});
 		
 		_addAll = new Button(contents, SWT.PUSH);
-		_addAll.setText("Add All ->");
+		_addAll.setText(L10N.SubcherryMergeWizardTargetPage_label_add_all);
 		_addAll.setEnabled(options.length > 0);
 		_addAll.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
 		_addAll.addSelectionListener(new SelectionAdapter() {
@@ -321,7 +321,7 @@ public class SubcherryMergeWizardTargetPage extends WizardPage {
 		});
 		
 		_remove = new Button(contents, SWT.PUSH);
-		_remove.setText("<- Remove");
+		_remove.setText(L10N.SubcherryMergeWizardTargetPage_label_remove);
 		_remove.setEnabled(false);
 		_remove.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
 		_remove.addSelectionListener(new SelectionAdapter() {
@@ -333,7 +333,7 @@ public class SubcherryMergeWizardTargetPage extends WizardPage {
 		});
 		
 		_removeAll = new Button(contents, SWT.PUSH);
-		_removeAll.setText("<- Remove All");
+		_removeAll.setText(L10N.SubcherryMergeWizardTargetPage_label_remove_all);
 		_removeAll.setEnabled(false);
 		_removeAll.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
 		_removeAll.addSelectionListener(new SelectionAdapter() {
@@ -480,7 +480,7 @@ public class SubcherryMergeWizardTargetPage extends WizardPage {
 						final SVNUrl modulePath = svn.getStatusCacheManager().getStatus(module).getUrl();
 						final SVNUrl branchPath = modulePath.getParent();
 						final SVNUrl repoPath = svn.getRepository(branchPath.toString()).getRepositoryRoot();
-						final String branchName = branchPath.toString().replace(repoPath.toString(), "");
+						final String branchName = branchPath.toString().replace(repoPath.toString(), ""); //$NON-NLS-1$
 						
 						return branchName;
 					} catch (final SVNException e) {
@@ -491,7 +491,7 @@ public class SubcherryMergeWizardTargetPage extends WizardPage {
 			})
 			.filter(branch -> branch != null)
 			.distinct()
-			.collect(Collectors.joining("; "));
+			.collect(Collectors.joining("; ")); //$NON-NLS-1$
 		
 		_branch.setText(branches);
 	}
@@ -502,15 +502,15 @@ public class SubcherryMergeWizardTargetPage extends WizardPage {
 	private void validate() {
 		// validate target branch selection
 		final String branch = _branch.getText();
-		switch(branch.split(";").length) {
+		switch(branch.split(";").length) { //$NON-NLS-1$
 		case 0:
-			setErrorMessage("Target branch could not be resolved.");
+			setErrorMessage(L10N.SubcherryMergeWizardTargetPage_error_message_no_target);
 			break;
 		case 1:
 			setErrorMessage(null);
 			break;
 		default:
-			setErrorMessage("Merging into multiple branches is not supported.");
+			setErrorMessage(L10N.SubcherryMergeWizardTargetPage_error_message_multiple_targets);
 			break;
 		}
 		
@@ -519,7 +519,7 @@ public class SubcherryMergeWizardTargetPage extends WizardPage {
 			final IProject[] modules = (IProject[]) _selection.getInput();
 			switch(modules.length) {
 			case 0:
-				setErrorMessage("Please select at least one project.");
+				setErrorMessage(L10N.SubcherryMergeWizardTargetPage_error_message_no_module);
 				break;
 			default:
 				setErrorMessage(null);

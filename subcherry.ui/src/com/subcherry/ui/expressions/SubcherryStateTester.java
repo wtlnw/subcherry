@@ -36,18 +36,18 @@ public class SubcherryStateTester extends PropertyTester {
 	 * The namespace of properties supported by this {@link PropertyTester}
 	 * implementation.
 	 */
-	public static final String NAMESPACE = "com.subcherry.ui.merge";
+	public static final String NAMESPACE = "com.subcherry.ui.merge"; //$NON-NLS-1$
 	
 	/**
 	 * The name of the boolean property indicating whether one of the merge jobs is
 	 * being executed or not.
 	 */
-	public static final String PROPERTY_STATE = "state";
+	public static final String PROPERTY_STATE = "state"; //$NON-NLS-1$
 	
 	/**
 	 * The name of the state indicating that the merge process is running.
 	 */
-	public static final String STATE_RUNNING = "running";
+	public static final String STATE_RUNNING = "running"; //$NON-NLS-1$
 	
 	@Override
 	public boolean test(final Object receiver, final String property, final Object[] args, final Object expected) {

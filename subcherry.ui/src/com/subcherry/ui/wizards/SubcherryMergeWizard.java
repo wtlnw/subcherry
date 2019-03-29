@@ -76,7 +76,7 @@ public class SubcherryMergeWizard extends Wizard {
 	 * Create a {@link SubcherryMergeWizard}.
 	 */
 	public SubcherryMergeWizard() {
-		setWindowTitle("Subcherry Merge");
+		setWindowTitle(L10N.SubcherryMergeWizard_title);
 	}
 	
 	@Override
@@ -179,8 +179,8 @@ public class SubcherryMergeWizard extends Wizard {
 			
 			view.getViewer().setInput(context);
 		} catch (WorkbenchException e) {
-			final IStatus status = new Status(IStatus.ERROR, SubcherryUI.id(), "Failed to open merge view", e);
-			ErrorDialog.openError(getShell(), "Subcherry Merge Wizard", "Wizard cannot be finished.", status);
+			final IStatus status = new Status(IStatus.ERROR, SubcherryUI.id(), L10N.SubcherryMergeWizard_error_status, e);
+			ErrorDialog.openError(getShell(), L10N.SubcherryMergeWizard_error_title, L10N.SubcherryMergeWizard_error_message, status);
 			
 			return false;
 		}

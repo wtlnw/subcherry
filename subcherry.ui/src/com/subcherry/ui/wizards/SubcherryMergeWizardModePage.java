@@ -26,6 +26,7 @@ import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.wizard.IWizardPage;
 import org.eclipse.jface.wizard.WizardDialog;
 import org.eclipse.jface.wizard.WizardPage;
+import org.eclipse.osgi.util.NLS;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -72,10 +73,10 @@ public class SubcherryMergeWizardModePage extends WizardPage {
 	 * Create a {@link SubcherryMergeWizardModePage}.
 	 */
 	public SubcherryMergeWizardModePage() {
-		super("Mode");
+		super(L10N.SubcherryMergeWizardModePage_name);
 		
-		setTitle("SVN Cherry Picking With Subcherry");
-		setMessage("Please review selected tickets and revisions and choose merge mode.");
+		setTitle(L10N.SubcherryMergeWizardModePage_title);
+		setMessage(L10N.SubcherryMergeWizardModePage_message);
 	}
 	
 	@Override
@@ -137,13 +138,13 @@ public class SubcherryMergeWizardModePage extends WizardPage {
 		container.setLayout(GridLayoutFactory.swtDefaults().numColumns(2).create());
 		
 		final Label sourceLabel = new Label(container, SWT.NONE);
-		sourceLabel.setText("Source branch:");
+		sourceLabel.setText(L10N.SubcherryMergeWizardModePage_label_source);
 		sourceLabel.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
 		_source = new Text(container, SWT.BORDER | SWT.READ_ONLY);
 		_source.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 		
 		final Label targetLabel = new Label(container, SWT.NONE);
-		targetLabel.setText("Target branch:");
+		targetLabel.setText(L10N.SubcherryMergeWizardModePage_label_target);
 		targetLabel.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
 		_target = new Text(container, SWT.BORDER | SWT.READ_ONLY);
 		_target.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
@@ -173,20 +174,20 @@ public class SubcherryMergeWizardModePage extends WizardPage {
 	 */
 	private void createModeSelector(final Composite parent) {
 		final LabeledComposite group = new LabeledComposite(parent, SWT.NONE);
-		group.setLabelText("Rewrite commit messages");
+		group.setLabelText(L10N.SubcherryMergeWizardModePage_mode_title);
 		group.setLabelFont(SubcherryUI.getBoldDefault());
 		group.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
 		group.setLayout(GridLayoutFactory.swtDefaults().create());
 		
 		// default behavior is porting (which is not reflected in the configuration)
 		final Button port = new Button(group, SWT.RADIO);
-		port.setText("Port");
-		port.setToolTipText("Rewrite all commit messages using 'Ported to <target> from <source>' commit type.");
+		port.setText(L10N.SubcherryMergeWizardModePage_label_mode_port);
+		port.setToolTipText(L10N.SubcherryMergeWizardModePage_tooltip_mode_port);
 		port.setSelection(true);
 		
 		final Button rebase = new Button(group, SWT.RADIO);
-		rebase.setText("Rebase");
-		rebase.setToolTipText("Rewrite branch name only, retaining the original commit type.");
+		rebase.setText(L10N.SubcherryMergeWizardModePage_label_mode_rebase);
+		rebase.setToolTipText(L10N.SubcherryMergeWizardModePage_tooltip_mode_rebase);
 		rebase.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(final SelectionEvent event) {
@@ -195,8 +196,8 @@ public class SubcherryMergeWizardModePage extends WizardPage {
 		});
 		
 		final Button preview = new Button(group, SWT.RADIO);
-		preview.setText("Preview");
-		preview.setToolTipText("Rewrite all commit messages using 'Preview on <target>' commit type.");
+		preview.setText(L10N.SubcherryMergeWizardModePage_label_mode_preview);
+		preview.setToolTipText(L10N.SubcherryMergeWizardModePage_tooltip_mode_preview);
 		preview.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(final SelectionEvent event) {
@@ -205,8 +206,8 @@ public class SubcherryMergeWizardModePage extends WizardPage {
 		});
 		
 		final Button reintegrate = new Button(group, SWT.RADIO);
-		reintegrate.setText("Reintegrate");
-		reintegrate.setToolTipText("Rewrite all commit messages using 'On <target>' commit type.");
+		reintegrate.setText(L10N.SubcherryMergeWizardModePage_label_mode_reintegrate);
+		reintegrate.setToolTipText(L10N.SubcherryMergeWizardModePage_tooltip_mode_reintegrate);
 		reintegrate.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(final SelectionEvent event) {
@@ -223,14 +224,14 @@ public class SubcherryMergeWizardModePage extends WizardPage {
 	 */
 	private void createMiscView(final Composite parent) {
 		final LabeledComposite group = new LabeledComposite(parent, SWT.NONE);
-		group.setLabelText("Additional settings");
+		group.setLabelText(L10N.SubcherryMergeWizardModePage_title_additional);
 		group.setLabelFont(SubcherryUI.getBoldDefault());
 		group.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
 		group.setLayout(GridLayoutFactory.swtDefaults().create());
 		
 		final Button button = new Button(group, SWT.CHECK);
-		button.setText("No commit");
-		button.setToolTipText("Changes are merged into the workspace but not committed.");
+		button.setText(L10N.SubcherryMergeWizardModePage_label_nocommit);
+		button.setToolTipText(L10N.SubcherryMergeWizardModePage_tooltip_nocommit);
 		button.setLayoutData(new GridData(SWT.FILL, SWT.BEGINNING, true, false));
 		button.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -249,7 +250,7 @@ public class SubcherryMergeWizardModePage extends WizardPage {
 	 */
 	private void createTicketsView(final Composite parent) {
 		final LabeledComposite group = new LabeledComposite(parent, SWT.NONE);
-		group.setLabelText("Selected tickets and revisions");
+		group.setLabelText(L10N.SubcherryMergeWizardModePage_title_selection);
 		group.setLabelFont(SubcherryUI.getBoldDefault());
 		group.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 		group.setLayout(GridLayoutFactory.fillDefaults().margins(0, 5).create());
@@ -286,7 +287,7 @@ public class SubcherryMergeWizardModePage extends WizardPage {
 			if(element instanceof SubcherryTreeTicketNode) {
 				final SubcherryTreeTicketNode node = (SubcherryTreeTicketNode) element;
 				
-				return String.format("(%d/%d) %s", node.getSelectedChanges().size(), node.getChanges().size(), label);
+				return NLS.bind(L10N.SubcherryMergeWizardModePage_label_ticket, new Object[] {node.getSelectedChanges().size(), node.getChanges().size(), label});
 			}
 			
 			return label;

@@ -42,15 +42,15 @@ public class SubcherrySkipHandler extends AbstractSubcherryHandler {
 			final SubcherryMergeView view = getView(event);
 			final Shell shell = view.getSite().getShell();
 			
-			final String title = "Skip Revision";
+			final String title = L10N.SubcherrySkipHandler_confirm_title;
 			final StringBuilder message = new StringBuilder();
-			message.append("Skipping the currently pending revision: \n\n\t");
-			message.append(entry.getMessage().getLogEntryMessage()).append("\n\n");
-			message.append("Changed resources will not be reverted. ");
-			message.append("Please revert these changes manually before resuming the merge process.");
-			message.append("\n\n").append("Skip the revision?");
+			message.append(L10N.SubcherrySkipHandler_confirm_message_1);
+			message.append(entry.getMessage().getLogEntryMessage());
+			message.append(L10N.SubcherrySkipHandler_confirm_message_2);
+			message.append(L10N.SubcherrySkipHandler_confirm_message_3);
+			message.append(L10N.SubcherrySkipHandler_confirm_message_4);
 			
-			final MessageDialog dialog = new MessageDialog(shell, title, null, message.toString(), MessageDialog.CONFIRM, 0, "Skip", IDialogConstants.CANCEL_LABEL);
+			final MessageDialog dialog = new MessageDialog(shell, title, null, message.toString(), MessageDialog.CONFIRM, 0, L10N.SubcherrySkipHandler_button_skip_label, IDialogConstants.CANCEL_LABEL);
 			
 			if (dialog.open() == IDialogConstants.OK_ID) {
 				new SubcherrySkipOperation(view).run();

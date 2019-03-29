@@ -55,6 +55,6 @@ public class SubcherryResetOperation extends AbstractSubcherryOperation {
 
 	@Override
 	protected String getTaskName() {
-		return "Reset Revision";
+		return L10N.SubcherryResetOperation_name;
 	}
 }

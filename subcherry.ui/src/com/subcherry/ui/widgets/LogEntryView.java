@@ -31,6 +31,7 @@ import org.eclipse.jface.viewers.AbstractTreeViewer;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.TreeViewer;
+import org.eclipse.osgi.util.NLS;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.custom.StyledText;
@@ -140,14 +141,14 @@ public class LogEntryView extends SashForm {
 	 */
 	private void createFields() {
 		final LabeledComposite container = new LabeledComposite(this, SWT.NONE);
-		container.setLabelText("Revision");
+		container.setLabelText(L10N.LogEntryView_title_revision);
 		container.setLabelFont(SubcherryUI.getBoldDefault());
 		container.setLayout(GridLayoutFactory.fillDefaults().numColumns(2).extendedMargins(0, 0, 5, 0).create());
 		
 		/* revision information */
 		final Label labelRev = new Label(container, SWT.NONE);
 		labelRev.setLayoutData(new GridData());
-		labelRev.setText("Revision:");
+		labelRev.setText(L10N.LogEntryView_label_revision);
 		
 		_revision = new Text(container, SWT.BORDER | SWT.READ_ONLY);
 		_revision.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
@@ -155,7 +156,7 @@ public class LogEntryView extends SashForm {
 		/* date information */
 		final Label labelTimestamp = new Label(container, SWT.NONE);
 		labelTimestamp.setLayoutData(new GridData());
-		labelTimestamp.setText("Date:");
+		labelTimestamp.setText(L10N.LogEntryView_label_date);
 		
 		_timestamp = new Text(container, SWT.BORDER | SWT.READ_ONLY);
 		_timestamp.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
@@ -163,7 +164,7 @@ public class LogEntryView extends SashForm {
 		/* author information */
 		final Label labelAuthor = new Label(container, SWT.NONE);
 		labelAuthor.setLayoutData(new GridData());
-		labelAuthor.setText("Author:");
+		labelAuthor.setText(L10N.LogEntryView_label_author);
 		
 		_author = new Text(container, SWT.BORDER | SWT.READ_ONLY);
 		_author.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
@@ -171,7 +172,7 @@ public class LogEntryView extends SashForm {
 		/* message information */
 		final Label labelMsg = new Label(container, SWT.NONE);
 		labelMsg.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false));
-		labelMsg.setText("Message:");
+		labelMsg.setText(L10N.LogEntryView_label_message);
 		
 		_message = new StyledText(container, SWT.BORDER | SWT.READ_ONLY | SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
 		_message.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
@@ -182,7 +183,7 @@ public class LogEntryView extends SashForm {
 	 */
 	private void createPaths() {
 		final LabeledComposite container = new LabeledComposite(this, SWT.NONE);
-		container.setLabelText("Resources");
+		container.setLabelText(L10N.LogEntryView_label_resources);
 		container.setLabelFont(SubcherryUI.getBoldDefault());
 		container.setLayout(GridLayoutFactory.fillDefaults().extendedMargins(0, 0, 5, 0).create());
 		
@@ -309,12 +310,7 @@ public class LogEntryView extends SashForm {
 				final LogEntryPath path = (LogEntryPath) node.value();
 				
 				if(path.getCopyPath() != null) {
-					label
-					.append(" [from ")
-					.append(path.getCopyPath())
-					.append(":")
-					.append(path.getCopyRevision())
-					.append("]");
+					label.append(NLS.bind(L10N.LogEntryView_label_copied_from, path.getCopyPath(), path.getCopyRevision()));
 				}
 			}
 			

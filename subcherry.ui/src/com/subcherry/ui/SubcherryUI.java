@@ -52,18 +52,18 @@ public class SubcherryUI extends AbstractUIPlugin {
 	/**
 	 * The locale specific path to bundle icons.
 	 */
-	public static final String ICONS_PATH = "$nl$/icons/full/";
+	public static final String ICONS_PATH = "$nl$/icons/full/"; //$NON-NLS-1$
 	
 	/**
 	 * The identifier of the {@link Image} to be used for all
 	 * {@link SubcherryMergeWizard} pages.
 	 */
-	public static final String IMG_WIZARD_DEFAULT = "com.subcherry.ui.wizards.SubcherryMergeWizard.banner";
+	public static final String IMG_WIZARD_DEFAULT = "com.subcherry.ui.wizards.SubcherryMergeWizard.banner"; //$NON-NLS-1$
 	
 	/**
 	 * The symbolic name for the default {@link Font} with bold style.
 	 */
-	public static final String DEFAULT = "default";
+	public static final String DEFAULT = "default"; //$NON-NLS-1$
 
 	/**
 	 * @see #getInstance()
@@ -149,7 +149,7 @@ public class SubcherryUI extends AbstractUIPlugin {
 		super.initializeImageRegistry(registry);
 		
 		// load the wizard banner image
-		final URL bannerUrl = FileLocator.find(getBundle(), new Path(ICONS_PATH + "wizban/mrg_wizban.png"));
+		final URL bannerUrl = FileLocator.find(getBundle(), new Path(ICONS_PATH + "wizban/mrg_wizban.png")); //$NON-NLS-1$
 		if (bannerUrl != null) {
 			final ImageDescriptor img = ImageDescriptor.createFromURL(bannerUrl);
 			registry.put(IMG_WIZARD_DEFAULT, img);
@@ -162,25 +162,25 @@ public class SubcherryUI extends AbstractUIPlugin {
 			
 			switch (state) {
 			case COMMITTED:
-				path = ICONS_PATH + "elcl16/step_done.png";
+				path = ICONS_PATH + "elcl16/step_done.png"; //$NON-NLS-1$
 				break;
 			case CONFLICT:
-				path = ICONS_PATH + "obj16/warn_tsk.png";
+				path = ICONS_PATH + "obj16/warn_tsk.png"; //$NON-NLS-1$
 				break;
 			case ERROR:
-				path = ICONS_PATH + "obj16/error_tsk.png";
+				path = ICONS_PATH + "obj16/error_tsk.png"; //$NON-NLS-1$
 				break;
 			case MERGED:
-				path = ICONS_PATH + "obj16/change_obj.png";
+				path = ICONS_PATH + "obj16/change_obj.png"; //$NON-NLS-1$
 				break;
 			case NEW:
-				path = ICONS_PATH + "obj16/generic_element.png";
+				path = ICONS_PATH + "obj16/generic_element.png"; //$NON-NLS-1$
 				break;
 			case NO_COMMIT:
-				path = ICONS_PATH + "obj16/info_tsk.png";
+				path = ICONS_PATH + "obj16/info_tsk.png"; //$NON-NLS-1$
 				break;
 			case SKIPPED:
-				path = ICONS_PATH + "elcl16/trash.png";
+				path = ICONS_PATH + "elcl16/trash.png"; //$NON-NLS-1$
 				break;
 			default:
 				path = null;

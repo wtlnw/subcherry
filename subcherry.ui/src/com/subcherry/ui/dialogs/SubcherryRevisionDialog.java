@@ -79,7 +79,7 @@ public class SubcherryRevisionDialog extends TitleAreaDialog {
 	protected void configureShell(final Shell newShell) {
 		super.configureShell(newShell);
 		
-		newShell.setText("Revision Details");
+		newShell.setText(L10N.SubcherryRevisionDialog_shell_text);
 	}
 	
 	@Override
@@ -105,7 +105,7 @@ public class SubcherryRevisionDialog extends TitleAreaDialog {
 		final Throwable error = entry().getError();
 		if (error != null) {
 			final LabeledComposite errorContents = new LabeledComposite(content, SWT.NONE);
-			errorContents.setLabelText("Error details");
+			errorContents.setLabelText(L10N.SubcherryRevisionDialog_errors_text);
 			errorContents.setLabelFont(SubcherryUI.getBoldDefault());
 			errorContents.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 			errorContents.setLayout(GridLayoutFactory.fillDefaults().margins(0, 5).create());
@@ -128,29 +128,29 @@ public class SubcherryRevisionDialog extends TitleAreaDialog {
 	 * state.
 	 */
 	private void configureTitleArea() {
-		setTitle(String.format("Revision details for r%d.", entry().getChange().getRevision()));
+		setTitle(String.format(L10N.SubcherryRevisionDialog_dialog_text, entry().getChange().getRevision()));
 
 		switch(entry().getState()) {
 		case COMMITTED:
-			setMessage("Successfully merged and committed.", IMessageProvider.NONE);
+			setMessage(L10N.SubcherryRevisionDialog_message_committed, IMessageProvider.NONE);
 			break;
 		case CONFLICT:
-			setMessage("Conflicting changes detected.", IMessageProvider.WARNING);
+			setMessage(L10N.SubcherryRevisionDialog_message_conflict, IMessageProvider.WARNING);
 			break;
 		case ERROR:
-			setMessage("Errors detected. See below for details.", IMessageProvider.ERROR);
+			setMessage(L10N.SubcherryRevisionDialog_message_error, IMessageProvider.ERROR);
 			break;
 		case MERGED:
-			setMessage("Successfully merged, commit pending.", IMessageProvider.INFORMATION);
+			setMessage(L10N.SubcherryRevisionDialog_message_merged, IMessageProvider.INFORMATION);
 			break;
 		case NEW:
-			setMessage("Merge pending.", IMessageProvider.NONE);
+			setMessage(L10N.SubcherryRevisionDialog_message_new, IMessageProvider.NONE);
 			break;
 		case NO_COMMIT:
-			setMessage("Merged without committing changes.", IMessageProvider.INFORMATION);
+			setMessage(L10N.SubcherryRevisionDialog_message_nocommit, IMessageProvider.INFORMATION);
 			break;
 		case SKIPPED:
-			setMessage("Skipped without merging.", IMessageProvider.INFORMATION);
+			setMessage(L10N.SubcherryRevisionDialog_message_skipped, IMessageProvider.INFORMATION);
 			break;
 		default:
 			break;

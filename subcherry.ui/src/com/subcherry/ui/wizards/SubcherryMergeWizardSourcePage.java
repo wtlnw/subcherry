@@ -27,6 +27,7 @@ import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.jface.layout.GridDataFactory;
 import org.eclipse.jface.layout.GridLayoutFactory;
 import org.eclipse.jface.wizard.WizardPage;
+import org.eclipse.osgi.util.NLS;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.FocusAdapter;
 import org.eclipse.swt.events.FocusEvent;
@@ -86,10 +87,10 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 	 * Create a {@link SubcherryMergeWizardSourcePage}.
 	 */
 	public SubcherryMergeWizardSourcePage() {
-		super("Source");
+		super(L10N.SubcherryMergeWizardSourcePage_name);
 		
-		setTitle("SVN Cherry Picking With Subcherry");
-		setMessage("Please select the source branch with an optional start revision.");
+		setTitle(L10N.SubcherryMergeWizardSourcePage_title);
+		setMessage(L10N.SubcherryMergeWizardSourcePage_message);
 	}
 	
 	@Override
@@ -120,11 +121,11 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 	private Text createBranchSelector(final Composite parent) {
 		final Label label = new Label(parent, SWT.NONE);
 		label.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
-		label.setText("Source branch:");
+		label.setText(L10N.SubcherryMergeWizardSourcePage_label_source);
 		
 		final Text input = new Text(parent, SWT.BORDER);
 		input.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-		input.setMessage("<Enter branch name>");
+		input.setMessage(L10N.SubcherryMergeWizardSourcePage_hint_source);
 		input.addFocusListener(new FocusAdapter() {
 			@Override
 			public void focusLost(final FocusEvent e) {
@@ -144,7 +145,7 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 	private Button createBranchButton(final Composite parent) {
 		final Button button = new Button(parent, SWT.NONE);
 		button.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
-		button.setText("Select...");
+		button.setText(L10N.SubcherryMergeWizardSourcePage_label_source_select);
 		button.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(final SelectionEvent e) {
@@ -181,11 +182,11 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 	private Text createRevisionSelector(final Composite parent) {
 		final Label label = new Label(parent, SWT.NONE);
 		label.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
-		label.setText("Start revision:");
+		label.setText(L10N.SubcherryMergeWizardSourcePage_label_start);
 		
 		final Text input = new Text(parent, SWT.BORDER);
 		input.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-		input.setMessage("HEAD");
+		input.setMessage(L10N.SubcherryMergeWizardSourcePage_hint_start);
 		input.addVerifyListener(new VerifyListener() {
 			@Override
 			public void verifyText(final VerifyEvent e) {
@@ -232,7 +233,7 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 		final Button button = new Button(parent, SWT.NONE);
 		button.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
 		button.setEnabled(!_branchInput.getText().isEmpty());
-		button.setText("Select...");
+		button.setText(L10N.SubcherryMergeWizardSourcePage_label_start_select);
 		button.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(final SelectionEvent e) {
@@ -268,8 +269,8 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 						validate();
 					}
 				} catch (final Exception ex) {
-					final Status status = new Status(IStatus.ERROR, SubcherryUI.id(), "Failed to access remote location.", ex);
-					ErrorDialog.openError(e.display.getActiveShell(), "Subcherry Merge", "Revision information not available.", status);
+					final Status status = new Status(IStatus.ERROR, SubcherryUI.id(), L10N.SubcherryMergeWizardSourcePage_error_status_svn, ex);
+					ErrorDialog.openError(e.display.getActiveShell(), L10N.SubcherryMergeWizardSourcePage_error_title_svn, L10N.SubcherryMergeWizardSourcePage_error_message_svn, status);
 				}
 			}
 		});
@@ -285,7 +286,7 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 	 */
 	private void createMergeInfoToggle(final Composite contents) {
 		final Button button = new Button(contents, SWT.CHECK);
-		button.setText("Include merged revisions");
+		button.setText(L10N.SubcherryMergeWizardSourcePage_label_include_merged);
 		button.setLayoutData(GridDataFactory
 			.swtDefaults()
 			.align(SWT.FILL, SWT.BEGINNING)
@@ -331,7 +332,7 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 		final String url = _branchInput.getText();
 		
 		if(url.isEmpty()) {
-			return "The source branch is mandatory.";
+			return L10N.SubcherryMergeWizardSourcePage_error_message_no_branch;
 		} else {
 			try {
 				final SVNProviderPlugin svn = SVNProviderPlugin.getPlugin();
@@ -346,22 +347,22 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 						try {
 							client.getInfo(new SVNUrl(url));
 						} catch (Throwable ex) {
-							return "The given branch does not exist.";
+							return L10N.SubcherryMergeWizardSourcePage_error_message_branch_invalid;
 						} finally {
 							repo.returnSVNClient(client);
 						}
 
 						final Configuration configuration = getWizard().getConfiguration();
 						configuration.setSvnURL(location);
-						configuration.setSourceBranch(url.replace(location, ""));
+						configuration.setSourceBranch(url.replace(location, "")); //$NON-NLS-1$
 
 						return null;
 					}
 				}
 				
-				return "The given repository is unkown.";
+				return L10N.SubcherryMergeWizardSourcePage_error_message_repository_invalid;
 			} catch (final Throwable ex) {
-				return "The given URL is not accessible.";
+				return L10N.SubcherryMergeWizardSourcePage_error_message_repository_no_access;
 			}
 		}
 	}
@@ -401,10 +402,10 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 
 					return null;
 				} else {
-					return String.format("The given revision must be %d <= revision <= %d", startRev, endRev);
+					return NLS.bind(L10N.SubcherryMergeWizardSourcePage_error_message_revision_range, startRev, endRev);
 				}
 			} catch (final Throwable ex) {
-				return "The given start revision is invalid.";
+				return L10N.SubcherryMergeWizardSourcePage_error_message_revision_invalid;
 			}
 		}
 	}

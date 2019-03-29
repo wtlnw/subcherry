@@ -39,6 +39,7 @@ import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.wizard.IWizardPage;
 import org.eclipse.jface.wizard.WizardDialog;
 import org.eclipse.jface.wizard.WizardPage;
+import org.eclipse.osgi.util.NLS;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -89,10 +90,10 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 	 * Create a {@link SubcherryMergeWizardTicketsPage}.
 	 */
 	public SubcherryMergeWizardTicketsPage() {
-		super("Tickets");
+		super(L10N.SubcherryMergeWizardTicketsPage_name);
 		
-		setTitle("SVN Cherry Picking With Subcherry");
-		setMessage("Please select the revisions to merge.");
+		setTitle(L10N.SubcherryMergeWizardTicketsPage_title);
+		setMessage(L10N.SubcherryMergeWizardTicketsPage_message);
 	}
 	
 	@Override
@@ -181,8 +182,8 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 				control.getDisplay().asyncExec(() -> viewer.setInput(tree));
 			});
 		} catch (Throwable ex) {
-			final Status status = new Status(IStatus.ERROR, SubcherryUI.id(), "Failed to load log entries.", ex);
-			ErrorDialog.openError(control.getShell(), "Subcherry Merge", "An error occured while reading history.", status);
+			final Status status = new Status(IStatus.ERROR, SubcherryUI.id(), L10N.SubcherryMergeWizardTicketsPage_error_status, ex);
+			ErrorDialog.openError(control.getShell(), L10N.SubcherryMergeWizardTicketsPage_error_title, L10N.SubcherryMergeWizardTicketsPage_error_message, status);
 		}
 	}
 	
@@ -255,7 +256,7 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 				return viewer;
 			}
 		};
-		tree.setInitialText("type ticket or revision filter text");
+		tree.setInitialText(L10N.SubcherryMergeWizardTicketsPage_hint_filter);
 		
 		return tree;
 	}
@@ -275,8 +276,8 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 		
 		final Button all = new Button(buttons, SWT.NONE);
 		all.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
-		all.setText("Select All");
-		all.setToolTipText("Select all tickets (including all revisions) accepted by the current filter.");
+		all.setText(L10N.SubcherryMergeWizardTicketsPage_label_select_all);
+		all.setToolTipText(L10N.SubcherryMergeWizardTicketsPage_tooltip_select_all);
 		all.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(final SelectionEvent e) {
@@ -296,8 +297,8 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 		
 		final Button none = new Button(buttons, SWT.NONE);
 		none.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
-		none.setText("Deselect All");
-		none.setToolTipText("Deselect all tickets (including all revisions) accepted by the current filter.");
+		none.setText(L10N.SubcherryMergeWizardTicketsPage_label_deselect_all);
+		none.setToolTipText(L10N.SubcherryMergeWizardTicketsPage_tooltip_deselect_all);
 		none.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(final SelectionEvent e) {
@@ -423,7 +424,7 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 		 * The label text to be used for {@link SubcherryTreeTicketNode}s without actual
 		 * {@link TracTicket}s.
 		 */
-		public static final String TICKET_NONE = "NONE";
+		public static final String TICKET_NONE = L10N.SubcherryMergeWizardTicketsPage_name_ticket_none;
 
 		@Override
 		public String getText(final Object element) {
@@ -432,13 +433,13 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 				final TracTicket ticket = node.getTicket();
 				
 				if (ticket != null) {
-					return String.format("Ticket #%d: %s", ticket.getNumber(), ticket.getSummary());
+					return NLS.bind(L10N.SubcherryMergeWizardTicketsPage_label_ticket, ticket.getNumber(), ticket.getSummary());
 				}
 			} else if(element instanceof SubcherryTreeRevisionNode) {
 				final SubcherryTreeRevisionNode node = (SubcherryTreeRevisionNode) element;
 				final LogEntry change = node.getChange();
 				
-				return String.format("Revision [%d]: %s", change.getRevision(), change.getMessage());
+				return NLS.bind(L10N.SubcherryMergeWizardTicketsPage_label_revision, change.getRevision(), change.getMessage());
 			}
 			
 			return TICKET_NONE;

@@ -46,7 +46,7 @@ public class SubcherryWizardHandler extends AbstractHandler {
 		final IPreferenceStore prefs = SubcherryUI.getInstance().getPreferenceStore();
 		final String url = prefs.getString(SubcherryPreferenceConstants.TRAC_URL);
 		if(url == null) {
-			MessageDialog.openError(window.getShell(), "Subcherry Merge Wizard", "No trac URL configured.");
+			MessageDialog.openError(window.getShell(), L10N.SubcherryWizardHandler_error_title, L10N.SubcherryWizardHandler_error_message);
 		} else {
 			final SubcherryMergeWizard wizard = new SubcherryMergeWizard();
 			final WizardDialog dialog = new WizardDialog(window.getShell(), wizard);

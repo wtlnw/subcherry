@@ -55,14 +55,14 @@ public class SubcherryPreferencePage extends FieldEditorPreferencePage implement
 		final Composite container = getFieldEditorParent();
 		
 		// detect semantic moves by default
-		addField(new BooleanFieldEditor(SubcherryPreferenceConstants.SEMANTIC_MOVES, "&Enable semantic moves", container));
+		addField(new BooleanFieldEditor(SubcherryPreferenceConstants.SEMANTIC_MOVES, L10N.SubcherryPreferencePage_label_semantic_moves, container));
 		
 		// do not wait for the timestamp
-		addField(new BooleanFieldEditor(SubcherryPreferenceConstants.SKIP_WAIT_FOR_TIMESTAMP, "&Skip waiting for timestamps", container));
+		addField(new BooleanFieldEditor(SubcherryPreferenceConstants.SKIP_WAIT_FOR_TIMESTAMP, L10N.SubcherryPreferencePage_label_skip_waiting, container));
 		
 		// assume default SVN layout
-		addField(new StringFieldEditor(SubcherryPreferenceConstants.TRUNK_PATTERN, "&Trunk pattern:", container));
-		addField(new StringFieldEditor(SubcherryPreferenceConstants.BRANCH_PATTERN, "&Brunch pattern:", container));
+		addField(new StringFieldEditor(SubcherryPreferenceConstants.TRUNK_PATTERN, L10N.SubcherryPreferencePage_label_trunk_pattern, container));
+		addField(new StringFieldEditor(SubcherryPreferenceConstants.BRANCH_PATTERN, L10N.SubcherryPreferencePage_label_branch_pattern, container));
 		
 		// trac preferences
 		addTracFields(container);
@@ -76,16 +76,16 @@ public class SubcherryPreferencePage extends FieldEditorPreferencePage implement
 	 */
 	private void addTracFields(final Composite parent) {
 		final LabeledComposite container = new LabeledComposite(parent, SWT.NONE);
-		container.setLabelText("Trac Connection Settings");
+		container.setLabelText(L10N.SubcherryPreferencePage_label_trac_settings);
 		container.setLabelFont(SubcherryUI.getBoldDefault());
 		container.setLayoutData(GridDataFactory.swtDefaults().align(SWT.FILL, SWT.CENTER).grab(true, false).span(2, 1).create());
 		
 		// add trac URL preference
-		addField(new StringFieldEditor(SubcherryPreferenceConstants.TRAC_URL, "Trac &URL:", container));
+		addField(new StringFieldEditor(SubcherryPreferenceConstants.TRAC_URL, L10N.SubcherryPreferencePage_label_trac_url, container));
 		
 		// allow users to change their credentials
 		final Button tracCredentials = new Button(container, SWT.PUSH);
-		tracCredentials.setText("Credentials...");
+		tracCredentials.setText(L10N.SubcherryPreferencePage_label_credentials);
 		tracCredentials.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(final SelectionEvent e) {
@@ -101,6 +101,6 @@ public class SubcherryPreferencePage extends FieldEditorPreferencePage implement
 	@Override
 	public void init(final IWorkbench workbench) {
 		setPreferenceStore(SubcherryUI.getInstance().getPreferenceStore());
-		setDescription("General Cherry Picking Settings:");
+		setDescription(L10N.SubcherryPreferencePage_description);
 	}
 }

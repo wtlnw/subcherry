@@ -68,7 +68,7 @@ public class SubcherryTracCredentialsDialog extends TrayDialog {
 	protected void configureShell(final Shell newShell) {
 		super.configureShell(newShell);
 
-		newShell.setText("Trac Credentials");
+		newShell.setText(L10N.SubcherryTracCredentialsDialog_title);
 	}
 	
 	@Override
@@ -77,11 +77,11 @@ public class SubcherryTracCredentialsDialog extends TrayDialog {
 		final GridLayout layout = (GridLayout) contents.getLayout();
 		layout.numColumns = 2;
 		
-		new Label(contents, SWT.NONE).setText("Username:");
+		new Label(contents, SWT.NONE).setText(L10N.SubcherryTracCredentialsDialog_username);
 		_username = new Text(contents, SWT.BORDER);
 		_username.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 		
-		new Label(contents, SWT.NONE).setText("Password:");
+		new Label(contents, SWT.NONE).setText(L10N.SubcherryTracCredentialsDialog_password);
 		_password = new Text(contents, SWT.BORDER | SWT.PASSWORD);
 		_password.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 

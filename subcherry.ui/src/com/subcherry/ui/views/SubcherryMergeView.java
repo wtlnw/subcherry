@@ -48,7 +48,7 @@ public class SubcherryMergeView extends ViewPart {
 	/**
 	 * The identifier of this view as registered in the {@code plugin.xml}.
 	 */
-	public static final String ID = "com.subcherry.ui.views.SubcherryMergeView";
+	public static final String ID = "com.subcherry.ui.views.SubcherryMergeView"; //$NON-NLS-1$
 	
 	/**
 	 * @see #getViewer()
@@ -83,7 +83,7 @@ public class SubcherryMergeView extends ViewPart {
 		});
 		
 		final TableViewerColumn stateCol = new TableViewerColumn(viewer, SWT.CENTER);
-		stateCol.getColumn().setText("State");
+		stateCol.getColumn().setText(L10N.SubcherryMergeView_state_column_label);
 		stateCol.getColumn().setWidth(24);
 		stateCol.setLabelProvider(new SubcherryMergeViewLabelProvider() {
 			@Override
@@ -97,19 +97,19 @@ public class SubcherryMergeView extends ViewPart {
 				
 				switch(entry.getState()) {
 				case COMMITTED:
-					return "Merged and committed.";
+					return L10N.SubcherryMergeView_state_column_tooltip_committed;
 				case CONFLICT:
-					return "Conflicts detected.";
+					return L10N.SubcherryMergeView_state_column_tooltip_conflict;
 				case ERROR:
-					return "Errors detected. See revision dialog for details.";
+					return L10N.SubcherryMergeView_state_column_tooltip_error;
 				case MERGED:
-					return "Merged, commit pending.";
+					return L10N.SubcherryMergeView_state_column_tooltip_merged;
 				case NEW:
-					return "Merge pending";
+					return L10N.SubcherryMergeView_state_column_tooltip_new;
 				case NO_COMMIT:
-					return "Merged without committing.";
+					return L10N.SubcherryMergeView_state_column_tooltip_nocommit;
 				case SKIPPED:
-					return "Skipped without merging.";
+					return L10N.SubcherryMergeView_state_column_tooltip_skipped;
 				default:
 					return entry.getState().toString();
 				}
@@ -124,7 +124,7 @@ public class SubcherryMergeView extends ViewPart {
 		});
 		
 		final TableViewerColumn revCol = new TableViewerColumn(viewer, SWT.RIGHT);
-		revCol.getColumn().setText("Revision");
+		revCol.getColumn().setText(L10N.SubcherryMergeView_revision_column_label);
 		revCol.getColumn().setWidth(70);
 		revCol.setLabelProvider(new SubcherryMergeViewLabelProvider() {
 			@Override
@@ -136,7 +136,7 @@ public class SubcherryMergeView extends ViewPart {
 		});
 		
 		final TableViewerColumn authorCol = new TableViewerColumn(viewer, SWT.NONE);
-		authorCol.getColumn().setText("Author");
+		authorCol.getColumn().setText(L10N.SubcherryMergeView_author_column_label);
 		authorCol.getColumn().setWidth(60);
 		authorCol.setLabelProvider(new SubcherryMergeViewLabelProvider() {
 			@Override
@@ -148,7 +148,7 @@ public class SubcherryMergeView extends ViewPart {
 		});
 		
 		final TableViewerColumn msgCol = new TableViewerColumn(viewer, SWT.NONE);
-		msgCol.getColumn().setText("Message");
+		msgCol.getColumn().setText(L10N.SubcherryMergeView_column_label_message);
 		msgCol.getColumn().setWidth(256);
 		msgCol.setLabelProvider(new SubcherryMergeViewLabelProvider() {
 			@Override

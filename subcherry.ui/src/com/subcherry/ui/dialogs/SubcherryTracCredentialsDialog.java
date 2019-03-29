@@ -61,6 +61,7 @@ public class SubcherryTracCredentialsDialog extends TrayDialog {
 		super(shell);
 		
 		setShellStyle(SWT.DIALOG_TRIM | SWT.RESIZE | SWT.APPLICATION_MODAL);
+		setHelpAvailable(false);
 	}
 
 	@Override

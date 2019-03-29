@@ -84,7 +84,7 @@ public class SubcherryMergeView extends ViewPart {
 		
 		final TableViewerColumn stateCol = new TableViewerColumn(viewer, SWT.CENTER);
 		stateCol.getColumn().setText("State");
-		stateCol.getColumn().setWidth(48);
+		stateCol.getColumn().setWidth(24);
 		stateCol.setLabelProvider(new SubcherryMergeViewLabelProvider() {
 			@Override
 			public String getText(final Object element) {

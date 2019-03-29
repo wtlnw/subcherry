@@ -54,9 +54,6 @@ public class SubcherryPreferencePage extends FieldEditorPreferencePage implement
 	public void createFieldEditors() {
 		final Composite container = getFieldEditorParent();
 		
-		// automatically detect common modules
-		addField(new BooleanFieldEditor(SubcherryPreferenceConstants.DETECT_COMMON_MODULES, "&Detect common modules", container));
-		
 		// detect semantic moves by default
 		addField(new BooleanFieldEditor(SubcherryPreferenceConstants.SEMANTIC_MOVES, "&Enable semantic moves", container));
 		

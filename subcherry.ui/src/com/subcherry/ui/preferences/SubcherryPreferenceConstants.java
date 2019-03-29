@@ -31,12 +31,6 @@ import com.subcherry.ui.SubcherryUI;
 public interface SubcherryPreferenceConstants {
 
 	/**
-	 * The name of the key in {@link Preferences} defining whether common modules
-	 * should be automatically detected or not.
-	 */
-	String DETECT_COMMON_MODULES = "detectCommonModules";
-
-	/**
 	 * The name of the key in {@link Preferences} defining whether semantic moves
 	 * should be detected or not.
 	 */

@@ -37,13 +37,6 @@ public interface SubcherryPreferenceConstants {
 	String SEMANTIC_MOVES = "semanticMoves"; //$NON-NLS-1$
 	
 	/**
-	 * The name of the key in {@link Preferences} defining whether to skip waiting
-	 * for SVN to return timestamps. Setting this property to {@code false} may
-	 * provide huge performance improvements during merging.
-	 */
-	String SKIP_WAIT_FOR_TIMESTAMP = "skipWaitForTimestamp"; //$NON-NLS-1$
-	
-	/**
 	 * The name of the key in {@link Preferences} containing the trunk name pattern.
 	 */
 	String TRUNK_PATTERN = "trunkPattern"; //$NON-NLS-1$

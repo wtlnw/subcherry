@@ -35,7 +35,6 @@ public class L10N extends NLS {
 	public static String SubcherryPreferencePage_label_branch_pattern;
 	public static String SubcherryPreferencePage_label_credentials;
 	public static String SubcherryPreferencePage_label_semantic_moves;
-	public static String SubcherryPreferencePage_label_skip_waiting;
 	public static String SubcherryPreferencePage_label_trac_settings;
 	public static String SubcherryPreferencePage_label_trac_url;
 	public static String SubcherryPreferencePage_label_trunk_pattern;

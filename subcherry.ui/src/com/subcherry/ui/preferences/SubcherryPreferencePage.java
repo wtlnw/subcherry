@@ -57,9 +57,6 @@ public class SubcherryPreferencePage extends FieldEditorPreferencePage implement
 		// detect semantic moves by default
 		addField(new BooleanFieldEditor(SubcherryPreferenceConstants.SEMANTIC_MOVES, L10N.SubcherryPreferencePage_label_semantic_moves, container));
 		
-		// do not wait for the timestamp
-		addField(new BooleanFieldEditor(SubcherryPreferenceConstants.SKIP_WAIT_FOR_TIMESTAMP, L10N.SubcherryPreferencePage_label_skip_waiting, container));
-		
 		// assume default SVN layout
 		addField(new StringFieldEditor(SubcherryPreferenceConstants.TRUNK_PATTERN, L10N.SubcherryPreferencePage_label_trunk_pattern, container));
 		addField(new StringFieldEditor(SubcherryPreferenceConstants.BRANCH_PATTERN, L10N.SubcherryPreferencePage_label_branch_pattern, container));

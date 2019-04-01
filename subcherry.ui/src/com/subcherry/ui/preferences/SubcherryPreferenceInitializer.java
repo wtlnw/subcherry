@@ -38,9 +38,6 @@ public class SubcherryPreferenceInitializer extends AbstractPreferenceInitialize
 		// detect semantic moves by default
 		node.putBoolean(SubcherryPreferenceConstants.SEMANTIC_MOVES, true);
 		
-		// do not wait for the timestamp
-		node.putBoolean(SubcherryPreferenceConstants.SKIP_WAIT_FOR_TIMESTAMP, true);
-		
 		// assume default SVN layout
 		node.put(SubcherryPreferenceConstants.TRUNK_PATTERN, "/trunk/[^/\\._]+/|/trunk/"); //$NON-NLS-1$
 		node.put(SubcherryPreferenceConstants.BRANCH_PATTERN, "/branches/[^/]+/[^/]+/|/tags/[^/]+/[^/]+/"); //$NON-NLS-1$

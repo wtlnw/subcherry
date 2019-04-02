@@ -1,0 +1,123 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<meta http-equiv="Content-Style-Type" content="text/css">
+	<link rel="stylesheet" href="PLUGINS_ROOT/org.eclipse.sdk/book.css" type="text/css">
+	<link rel="stylesheet" href="../book.css" type="text/css">
+	<title>Subcherry Preferences</title>
+</head>
+
+<body>
+<h1>Subcherry Preferences</h1>
+<p>
+Before running Subcherry for the first time, its global settings should be reviewed
+and adjusted to match the current environment. In this chapter, each global setting
+is explained in detail. To edit the global settings for Subcherry, please open the
+eclipse <b>Preferences</b> dialog and select <i>Subcherry</i>.
+
+<img class="Image" src="../images/preferences.png"/>
+</p>
+
+<h2>Enable semantic moves</h2>
+<p>
+When replaying revisions from one branch on another, <span class="Code">svn copy</span>
+operations are semantically analyzed in order to distinguish between <i>inter-branch</i> and 
+<i>intra-branch</i> copies.
+</p>
+<p>
+<i>Inter-branch</i> copies are detected when the source copy path is 
+outside the receiving branch. Usually, such copies are created when creating branches 
+(e.g. <span class="Code">svn copy /trunk /branches/feature_1234</span>).
+</p>
+
+<p>
+<i>Intra-branch</i> (or branch-local) copies however occur when resources are copied from one
+subtree of a branch to another subtree within the same branch. The typical use case for
+intra-branch copies is the <span class="Code">svn move</span> operation for moving or 
+renaming resources.
+</p>
+<p>
+Enabling this setting will force Subcherry to detect branch-local copy operations and 
+replay these in a semantically correct way. In other words, when replaying the copy 
+operation
+</p>
+<p class="Code">svn copy /branches/feature_1234/foo.txt /branches/feature_1234/bar.txt
+</p>
+<p>
+on <span class="Code">/trunk</span> Subcherry will actually execute the semantically equivalent
+</p> 
+<p class="Code">svn copy /trunk/foo.txt /trunk/bar.txt
+</p>
+<p>
+when this setting is enabled thus preserving branch-local history of <span class="Code">
+foo.txt</span> for <span class="Code">bar.txt</span>. Disabling this setting would result in
+</p> 
+<p class="Code">svn copy /branches/feature_1234/foo.txt /trunk/bar.txt
+</p>
+<p>
+being executed which will lead to <span class="Code">bar.txt</span> originating from
+another branch and thus losing its branch-local history.
+</p>
+
+<h2>Trunk pattern</h2>
+<p>
+A regular expression describing the pattern to be used for resolving the repository trunk
+layout which is crucial for identifying branch-local copy operations.
+The default value is
+<span class="Code">/trunk/[^/\._]+/|/trunk/</span>
+which assumes the default SVN repository layout of the following form:
+</p>
+<p class="Code">repository
+   trunk
+      &lt;category&gt;
+         &lt;module&gt;
+</p>
+
+<h2 id="branch_pattern">Branch pattern</h2>
+<p>
+A regular expression describing the pattern to be used for resolving the repository layout
+for branches. As with <b>Trunk pattern</b>, it is crucial for identifying branch-local 
+copy operations. The default value is 
+<span class="Code">/branches/[^/]+/[^/]+/|/tags/[^/]+/[^/]+/</span>
+which assumes the default SVN repository layout of the following form:
+</p>
+<p class="Code">repository
+   branches
+      &lt;category&gt;
+         &lt;branch&gt;
+            &lt;module&gt;
+   tags
+      &lt;category&gt;
+         &lt;tag&gt;
+            &lt;module&gt;
+</p>
+
+<h2>Trac URL</h2>
+<p>
+In order for Subcherry to be able to resolve feature issues from 
+<a href="https://trac.edgewall.org/">trac</a> the XML RPC access URL has to be
+configured. The default value 
+<span class="Code">http://&lt;myserver&gt;/trac/login/xmlrpc</span>
+is one of the most commonly used URL patterns and requires users to replace the
+<span class="Code">&lt;myserver&gt;</span> part with the appropriate host name
+or IP address of the trac server instance.
+</p>
+
+<h2>Credentials...</h2>
+<p>
+Along with the <b>Trac URL</b>, the access credentials are required in order to be
+able to access the specified trac instance. These credentials can be provided by
+pressing the <b>Credentials...</b> button.
+
+<img class="Image" src="../images/credentials.png"/>
+</p>
+
+<p class="Note">
+NOTE: The values entered in the above dialog are stored in an encrypted form using the eclipse's
+<a href="PLUGINS_ROOT/org.eclipse.platform.doc.user/reference/ref-securestorage-start.htm">
+secure storage</a> implementation.
+</p>
+</body>
+</html>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?NLS TYPE="org.eclipse.help.toc"?>
+
+<toc label="Subcherry" link_to="toc.xml/contents" topic="html/toc.html">
+   <topic href="html/concepts/concepts.html" label="Concepts">
+   </topic>
+   <topic label="Getting Started">
+      <anchor id="gettingstarted"/>
+   </topic>
+</toc>

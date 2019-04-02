@@ -1,0 +1,201 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<meta http-equiv="Content-Style-Type" content="text/css">
+	<link rel="stylesheet" href="PLUGINS_ROOT/org.eclipse.sdk/book.css" type="text/css">
+	<link rel="stylesheet" href="../book.css" type="text/css">
+	<title>Subcherry Merge Wizard</title>
+</head>
+
+<body>
+<h1>Subcherry Merge Wizard</h1>
+<p>
+This chapter deals with the Subcherry Merge Wizard which guides users through the
+process of picking the right revisions (cherries) to be replayed. However, before
+opening the wizard, several requirements have to be met to ensure smooth revision
+replay with minimal user interaction.
+</p>
+
+<h2>Prerequisites</h2>
+<p>
+In order to be able to pick revision for replay, the following conditions must be
+met prior to opening the Subcherry Merge Wizard:
+
+<ul>
+<li>
+Checkout all relevant modules <b>from the target branch</b> on which to replay the
+revisions.
+</li>
+<li>
+Make sure that <b>no outgoing</b> changes are present in the current workspace by either
+reverting or committing them.
+</li>
+<li>
+Make sure to <b>update</b> the relevant modules to the target branch's <b>HEAD</b> 
+revision in order to avoid the <i>out of date</i> error messages.
+</li>
+<li>
+It is highly recommended to switch to the <b>Synchronize Perspective</b> before opening
+the Subcherry Merge Wizard in order to avoid switch between perspective during replay. 
+</li>
+<li>
+Since revision replay is performed on revision level, the <b>Synchronize view</b> should display
+change sets by enabling the option <b>Display Change Sets</b>.
+</li>
+</ul>
+</p>
+
+<h2>Source Selection</h2>
+<p>
+In order to open the Subcherry Merge Wizard just press the <img src="../images/wizard_open.png">
+button in the eclipse toolbar.
+
+<img class="Image" src="../images/wizard_source.png"/>
+
+The newly opened dialog will prompt the user to select the source
+branch to replay the revisions from.
+</p>
+
+<h3>Source branch</h3>
+<p>
+The branch, to replay the revision history from, can be either entered directly into the input 
+field or selected using the <b>Select...</b> button. The branch name must match the branch pattern
+configured in <a href="preferences.html#branch_pattern">preference settings</a>.
+</p>
+
+<h3>Start revision</h3>
+<p>
+This field prompts users for the starting revision from which (<i>inclusive</i>) to start reading
+the commit history of the selected source branch. This is quite helpful for branches with a very
+long revision history in cases when only a part of it is to be replayed.
+</p>
+
+<h3>Include merged revisions</h3>
+<p>
+When revisions are replayed, the process is logged using the <i>svn:mergeinfo</i>
+property on the module level. When reading the commit history of the selected source branch,
+already replayed revisions are excluded automatically. In order to prevent Subcherry from
+excluding these revisions this checkbox can be activated.
+</p>
+
+<h2>Module Selection</h2>
+<p>
+The next step after choosing the source branch is to select the modules for which to replay
+the commit history. This is done on the following page.
+
+<img class="Image" src="../images/wizard_target.png"/>
+
+On the left, all open eclipse projects, checked out into the current workspace from the same SVN
+repository as the selected source branch, are listed. These projects represent modules in the 
+branch structure. For workspaces with a large number of projects, the options list can be filtered
+using regular expressions. 
+Single modules can be selected either by double-clicking the project or by selecting
+it and pressing the <b>Add</b> button. Pressing the <b>Add All</b> button selects all currently
+<i>visible</i> modules in the options list.
+</p>
+<p class="Note">
+<b>NOTE:</b> Currently, replaying commit history is supported only for a single branch.
+Thus, selecting modules from different branches will result in an error message being displayed
+next to the <b>Target branch</b> field.
+</p>
+
+<h2>Feature Selection</h2>
+<p>
+Once the source branch and target modules haven been selected, the commit history is computed
+while grouping revisions by the feature referenced in the commit message.
+
+<img class="Image" src="../images/wizard_tickets.png"/>
+
+The above wizard page allows users to choose features to be replayed on the target branch
+computed from selected modules. Initially, all features with all their respective revisions
+are selected.
+</p>
+<p>
+On the left, a tree view displays all features read from the commit history. The features'
+label is read from trac and matches the following format:
+<span class="Code">Ticket #&lt;id&gt;: &lt;summary&gt;</span>.
+Revisions, referencing features in their commit messages, are displayed as child nodes using
+the following label format: <span class="Code">Revision [&lt;number&gt;]: &lt;message&gt;</span>.
+</p>
+<h3 id="revision_details">Revision Details</h3>
+<p>
+On the right, detailed information is displayed for the revision selected in the tree on the right.
+In addition to basic revision data such as <b>id</b>, <b>date</b>, <b>author</b> and
+<b>message</b>, a compressed tree view of changed <b>Resources</b> allows users to quickly decide 
+whether the selected revision is replay-relevant or not. 
+</p>
+
+<h3>Filtering and Selection</h3>
+<p>
+For source branches with a long commit history, the feature tree on the left might become quite
+large. In such cases, a filter can be used to find and select relevant features and even revisions.
+The filter works as follows:
+<ol>
+<li>
+The filter text is first applied to the feature label. If the label matches, the feature is 
+accepted along with all its child revisions unconditionally.
+</li>
+<li>
+If the feature label does not match the filter text, the filter is applied to the revision's
+label. Only matching revisions result in them being visible under their owning feature node.
+</li>
+<li>
+If neither the feature nor any of its revisions match the filter text, the entire feature is
+invisible.
+</li>
+</ol>
+In order to select (unselect) the entire feature just check (uncheck) the checkbox next to it.
+This way, all its revisions are marked as selected (unselected) as well. To select (unselect) all
+currently visible features including their revisions the <b>Select All</b> (<b>Unselect All</b>)
+button can be used.
+</p>
+
+<h2>Mode Selection</h2>
+<p>
+This page displays the selected <b>Source branch</b> and <b>Target branch</b> along
+with the <b>Selected tickets and revisions</b>. So, now that Subcherry knows what to replay and where,
+it's time to decide on the hows.
+
+<img class="Image" src="../images/wizard_mode.png"/>
+</p>
+
+<h3>Rewrite commit messages</h3>
+<p>
+In the <b>Rewrite commit messages</b> settings group, users can choose how Subcherry will handle
+commit messages of replayed revisions.
+<ul>
+<li>
+<b>Port</b>: Commit messages will be rewritten unconditionally using the following pattern:
+<span class="Code">Ported to &lt;target branch&gt; from &lt;source branch&gt;: &lt;message&gt;.</span>
+</li>
+<li>
+<b>Rebase</b>: Only the branch referenced in the commit message will be rewritten
+to <span class="Code">&lt;target branch&gt;</span>, the commit type and message are preserved.
+</li>
+<li>
+<b>Preview</b>: Commit messages will be rewritten unconditionally using the following pattern:
+<span class="Code">Preview on &lt;target branch&gt;: &lt;message&gt;.</span>
+</li>
+<li>
+<b>Reintegrate</b>: Commit messages will be rewritten unconditionally using the following pattern:
+<span class="Code">On &lt;target branch&gt;: &lt;message&gt;.</span>
+</li>
+</ul>
+</p>
+
+<h3 id="no_commit">No commit</h3>
+<p>
+Enabling this setting will result in selected revisions being applied to the current workspace
+without being committed to the SVN repository. This way, a preview mode can be emulated in order
+to found out whether unresolvable conflicts may cause problems during replay.
+</p>
+
+<h2>Finish</h2>
+<p>
+Pressing the <b>Finish</b> button with close the dialog and open the
+<a href="merge_view.html">Subcherry Merge View</a>.
+</p>
+</body>
+</html>

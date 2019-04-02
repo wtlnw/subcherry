@@ -1,0 +1,32 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<meta http-equiv="Content-Style-Type" content="text/css">
+	<link rel="stylesheet" href="PLUGINS_ROOT/org.eclipse.sdk/book.css" type="text/css">
+	<link rel="stylesheet" href="../book.css" type="text/css">
+	<title>Feature Level Development</title>
+</head>
+
+<body>
+<h1>Feature Level Development</h1>
+<p>
+Depending on the chosen branching model, it is quite common to develop features in a separate branch
+and then re-integrate them back into the main development branch (or trunk). However,
+using the SVN's re-integrate feature results in a single (potentially large) commit on trunk. When 
+viewing the commit history of trunk, only the single bulk re-integrate commit will be seen at first 
+glance. In order to actually see what happened, one has to dig deeper which is very time consuming.
+</p>
+<p>
+That's where Subcherry comes into play. It replays the commit history of one branch on another 
+and allows users to select which changes to replay. This way the commit history on feature level
+is preserved which allows very simple blame and diff overviews all the way down to a single line 
+of code, making it very easy to understand when and why changes occurred.
+</p>
+<p>
+Additionally, when using <a href="https://trac.edgewall.org/">trac</a> to track the development progress
+it is even easier to find out which feature (ticket) has already been re-integrated and when.
+</p>
+</body>
+</html>

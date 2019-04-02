@@ -1,0 +1,197 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<meta http-equiv="Content-Style-Type" content="text/css">
+	<link rel="stylesheet" href="PLUGINS_ROOT/org.eclipse.sdk/book.css" type="text/css">
+	<link rel="stylesheet" href="../book.css" type="text/css">
+	<title>Subcherry Merge View</title>
+</head>
+
+<body>
+<h1>Subcherry Merge View</h1>
+<p>
+After successfully completing the <a href="merge_wizard.html">Subcherry Merge Wizard</a>
+the Subcherry Merge View is opened and ready to start the replay process. In this guide,
+users will learn how to use the view to replay the selected commit history.
+
+<img class="Image" src="../images/merge_view.png"/>
+
+The above screen shows a table overview of revisions which will be replayed in the course
+of the replay process. The displayed revisions are sorted in the order of their execution
+(which typically matches the ascending order by revision number). For each revision, an icon
+indicates the revision's replay state and provides a tooltip for states awaiting user
+action. The <i>Message</i> column displays a preview of the rewritten message which will
+be used when committing the revision upon replay.
+</p>
+<p>
+The replay process can be manipulated using the buttons in the view's toolbar. The buttons
+availability depends on Subcherry Merge View to be the currently active view to prevent 
+unwanted actions.
+</p>
+
+<h2>Revision Details</h2>
+<p>
+Every revision entry in the Subcherry Merge View can be double-clicked to show the revision
+details. The dialog displays the same information as the Subcherry Merge Wizard's
+<a href="merge_wizard.html#revision_details">Revision Details</a> section.
+
+<img class="Image" src="../images/merge_view_details.png"/>
+
+In addition to the revision information and changes resources the above dialog also displays 
+the revision's current replay state (and error messages if applicable).
+</p>
+
+<h2>Run/Resume</h2>
+<p>
+To start replaying commit history the <img src="../images/merge_view_run.png"/>
+button in the view's toolbar can be pressed. This button is only active if the
+Subcherry Merge View is active and at least one pending revision is available.
+
+<img class="Image" src="../images/merge_view_progress.png"/>
+
+The replay process will then be started and a progress dialog appears, reporting
+the replay progress to the user. The replay process can be cancelled using the
+dialog's <b>Cancel</b> button.
+</p>
+
+<p class="Note">
+NOTE: Cancellation will take effect upon the replay process entering specific
+cancellation points which might take several seconds (e.g. when the task is
+waiting for the SVN server to response etc.).
+</p>
+
+<p>
+Revision entries are processed in four steps:
+<ol>
+<li><b>Apply</b> changes specified by the current revision to the current workspace.</li>
+<li><b>Refresh</b> the workspace to reflect changes.</li>
+<li><b>Commit</b> changes to the SVN repository.</li>
+<li><b>Update</b> changes resources to HEAD revision.</li>
+</ol>
+
+<p class="Note">
+NOTE: If the <b>No Commit</b> setting was enabled in the Subcherry Merge Wizard's
+<a href="merge_wizard.html#no_commit">Additional settings</a> section, the last two
+steps are skipped.
+</p>
+
+Once a revision entry is processed successfully, the next one is replayed and so on.
+Successfully processed revision entries cannot be re-processed again.
+The replay process will continue running until
+<ul>
+<li>all revisions have been processed successfully or</li>
+<li>an error occurred or</li>
+<li>a conflict is detected while processing the current revision.</li>
+</ul>
+
+When conflicts or errors are detected the replay process is automatically paused and 
+the Subcherry Merge View is updated to reflect the progress up to now.
+</p>
+
+<h2>Skip</h2>
+<p>
+The currently pending revision can be skipped by pressing the
+<img src="../images/merge_view_skip.png"/> button. A dialog appears, explaining the
+consequences of revision skipping and prompting users to confirm their choice by
+pressing the <b>Skip</b> button.
+
+<img class="Image" src="../images/merge_view_skip_confirm.png"/>
+</p>
+<p class="Note">
+NOTE: Due to processing order, only the currently pending revision can be skipped,
+not an arbitrary one.
+</p>
+<p>
+Skipping a revision for a replay process cannot be undone. However, since skipping
+is not persisted, the 
+<a href="merge_wizard.html">Subcherry Merge Wizard</a>
+can be used again to select skipped revisions for processing.
+</p>
+
+<h2>Reset</h2>
+<p>
+To re-process the currently pending revision, users can press the
+<img src="../images/merge_view_reset.png"/> button and confirming their
+decision in the newly opened dialog by pressing the <b>Reset</b> button.
+
+<img class="Image" src="../images/merge_view_reset_confirm.png"/>
+
+</p>
+<p class="Note">
+NOTE: Due to processing order, only the currently pending revision can be reset,
+not an arbitrary one.
+</p>
+<p>
+Revisions are reset by setting their replay state back to <i>pending</i> thus
+allowing for error correction or change re-application. This is especially useful
+when replaying complex revisions with lots of conflicting resources requiring
+manual merging which is known to be error-prone.
+</p>
+
+<h2>Conflicts</h2>
+<p>
+In the course of replaying the revision history various conflicts may ocur
+when applying revision changes to the current workspace. In such cases the replay
+process is paused and the currently pending revision displays a warning icon.
+Conflict details can be inspected in the <b>Synchronize</b> view and resolved
+using <a href="https://github.com/subclipse/subclipse/wiki">subclipse</a>
+tooling in-place.
+</p>
+<p>
+If the <b>No Commit</b> setting was <b>not enabled</b> in the Subcherry Merge Wizard's
+<a href="merge_wizard.html#no_commit">Additional settings</a> section, the changed
+resources are grouped in a separate <b>change set</b>.
+
+<img class="Image" src="../images/merge_view_changes.png"/>
+
+The change set's name is applied using the following format:
+<span class="Code">Revision [&lt;number&gt;]</span>. To adjust the rewritten
+commit message users can open the change set's context menu by right-clicking it
+and selecting the <b>Edit Change Set...</b> option.
+
+<img class="Image" src="../images/merge_view_message.png"/>
+
+In the above dialog, the <b>commit comment</b> is the actual message which will
+be used to commit the change set. Changing the text and confirming it by pressing
+the <b>OK</b> button will store the new commit message until the change set is
+either reverted or committed.
+</p>
+<p class="Note">
+NOTE: It is not recommended to commit the generated change sets manually since there is
+currently no technically sophisticated way to detect that. Manually committed change
+sets will result in the currently pending revision being switched to the 
+<b>Merged, commit pending</b> replay state which might be quite confusing. In such
+cases, the currently pending revision can be <b>Skip</b>ed since there are no
+outgoing changes after the entire change set has been committed successfully.
+</p>
+<p>
+Resolving all conflicts detected when applying the currently pending revision
+to the workspace will cause the revision's replay state to be switched to
+<b>Merged, commit pending</b> and the automatic replay process can be resumed
+by pressing the <img src="../images/merge_view_run.png"/> button again.
+</p>
+<p class="Note">
+NOTE: Trying to resume the automatic replay process with conflicts still remaining
+will have no effect.
+</p>
+
+<h2>Errors</h2>
+<p>
+Errors occurred while accessing the SVN repository, local resources, applying 
+revision changes or committing them etc. will cause the automatic replay
+process to pause and the currently pending revision displaying an error icon.
+
+<img class="Image" src="../images/merge_view_errors.png"/>
+
+Opening the revision's details dialog will reveal the most recently encountered
+error message in the <b>Error details</b> section.
+</p>
+<p class="Note">
+NOTE: Due to the unexpected nature of this kind of errors, it's nearly impossible
+to detect when the error has been resolved. Hence, the automatic replay process can
+be resumed/retried while the currently pending revision is still in error state.
+</p>
+</body>
+</html>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<toc label="Getting Started" link_to="toc.xml#gettingstarted">
+   <topic href="html/gettingstarted/preferences.html" label="Subcherry Preferences">
+   </topic>
+   <topic href="html/gettingstarted/merge_wizard.html" label="Subcherry Merge Wizard">
+   </topic>
+   <topic href="html/gettingstarted/merge_view.html" label="Subcherry Merge View">
+   </topic>
+</toc>

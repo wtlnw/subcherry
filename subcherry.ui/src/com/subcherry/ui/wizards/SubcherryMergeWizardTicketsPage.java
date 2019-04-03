@@ -119,7 +119,7 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 		createDetailsView(contents);
 		
 		setControl(contents);
-		setPageComplete(true);
+		setPageComplete(false);
 		
 		final WizardDialog dialog = (WizardDialog) getContainer();
 		dialog.addPageChangingListener(new IPageChangingListener() {
@@ -179,7 +179,10 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 				tree.getTickets(progress);
 
 				// now update the viewer's input
-				control.getDisplay().asyncExec(() -> viewer.setInput(tree));
+				control.getDisplay().asyncExec(() -> {
+					viewer.setInput(tree);
+					setPageComplete(!tree.getSelectedTickets().isEmpty());
+				});
 			});
 		} catch (Throwable ex) {
 			final Status status = new Status(IStatus.ERROR, SubcherryUI.id(), L10N.SubcherryMergeWizardTicketsPage_error_status, ex);
@@ -382,6 +385,10 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 				_tree.getViewer().update(change, null);
 				_tree.getViewer().update(change.getTicket(), null);
 			}
+			
+			// update the page's completion state
+			final SubcherryTree input = (SubcherryTree) _tree.getViewer().getInput();
+			SubcherryMergeWizardTicketsPage.this.setPageComplete(!input.getSelectedTickets().isEmpty());
 		}
 	}
 

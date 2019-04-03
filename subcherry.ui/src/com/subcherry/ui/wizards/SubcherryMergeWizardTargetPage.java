@@ -63,13 +63,16 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.team.core.RepositoryProvider;
 import org.eclipse.ui.model.WorkbenchLabelProvider;
 import org.eclipse.ui.model.WorkbenchViewerComparator;
+import org.tigris.subversion.subclipse.core.ISVNRepositoryLocation;
 import org.tigris.subversion.subclipse.core.SVNException;
 import org.tigris.subversion.subclipse.core.SVNProviderPlugin;
 import org.tigris.subversion.subclipse.core.SVNTeamProvider;
+import org.tigris.subversion.subclipse.core.resources.SVNWorkspaceRoot;
 import org.tigris.subversion.svnclientadapter.SVNUrl;
 
 import com.subcherry.Configuration;
 import com.subcherry.ui.SubcherryUI;
+import com.subcherry.ui.operations.AbstractSubcherryOperation;
 
 /**
  * An {@link Wizard} implementation for {@link SubcherryUI} which allows users to
@@ -78,6 +81,11 @@ import com.subcherry.ui.SubcherryUI;
  * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
  */
 public class SubcherryMergeWizardTargetPage extends WizardPage {
+
+	/**
+	 * An empty {@link IProject} array indicating no input.
+	 */
+	private static final IProject[] EMPTY_INPUT = new IProject[0];
 
 	/**
 	 * The {@link Text} displaying the target branch.
@@ -129,10 +137,9 @@ public class SubcherryMergeWizardTargetPage extends WizardPage {
 		final Composite contents = new Composite(parent, SWT.NONE);
 		contents.setLayout(new FormLayout());
 		
-		final IProject[] options = getOptions();
 		final Composite top = createBranchView(contents);
-		final Composite left = createOptionsView(contents, options);
-		final Composite center = createButtonsView(contents, options);
+		final Composite left = createOptionsView(contents);
+		final Composite center = createButtonsView(contents);
 		final Composite right = createSelectionView(contents);
 		
 		final FormData topData = new FormData();
@@ -170,31 +177,79 @@ public class SubcherryMergeWizardTargetPage extends WizardPage {
 		dialog.addPageChangingListener(new IPageChangingListener() {
 			@Override
 			public void handlePageChanging(final PageChangingEvent event) {
+				final IWizardPage prevPage = SubcherryMergeWizardTargetPage.this.getPreviousPage();
 				final IWizardPage thisPage = SubcherryMergeWizardTargetPage.this;
 				final IWizardPage nextPage = SubcherryMergeWizardTargetPage.this.getNextPage();
-				
-				// switching from this page to next page -> store subcherry tree
-				if(event.getCurrentPage() == thisPage && event.getTargetPage() == nextPage) {
-					final Configuration config = getWizard().getConfiguration();
-					
-					// update modules
-					config.setModules(Arrays.stream((IProject[]) _selection.getInput())
-						.map(module -> module.getName())
-						.toArray(String[]::new));
-					
-					// update target branch
-					config.setTargetBranch(_branch.getText());
+
+				// switching from previous page to this page one -> update user interface
+				if(event.getCurrentPage() == prevPage && event.getTargetPage() == thisPage) {
+					updatePage();
 				}
-				
-				// ignore all other page changes
+				// switching from this page to next page -> store subcherry tree
+				else if (event.getCurrentPage() == thisPage && event.getTargetPage() == nextPage) {
+					storePage();
+				}
+				else {
+					// ignore all other page changes
+				}
 			}
 		});
 	}
 
 	/**
+	 * Update the user interface with values from {@link #getWizard()}'s
+	 * {@link Configuration} instance.
+	 */
+	private void updatePage() {
+		final IProject[] options = getOptions();
+		final IProject[] selection = getSelection();
+		
+		// initialize the viewers first
+		_options.setInput(options);
+		_selection.setInput(EMPTY_INPUT);
+		
+		// now filter the currently selected projects and update selection
+		final String url = getWizard().getConfiguration().getSvnURL();
+		select(Stream.of(selection)
+			.filter(project -> isSharedIn(project, url))
+			.collect(Collectors.toList()));
+		
+		// do NOT display the error message if no selection is found
+		// but mark the page as incomplete.
+		if (getSelection().length == 0) {
+			setErrorMessage(null);
+			setPageComplete(false);
+		}
+	}
+	
+	/**
+	 * Store user input in {@link #getWizard()}'s {@link Configuration} instance.
+	 */
+	private void storePage() {
+		final Configuration config = getWizard().getConfiguration();
+		
+		// update modules
+		config.setModules(Arrays.stream(getSelection())
+			.map(module -> module.getName())
+			.toArray(String[]::new));
+		
+		// update target branch
+		config.setTargetBranch(_branch.getText());
+	}
+
+	/**
+	 * @return a (possibly empty) {@link IProject} array representing modules
+	 *         selected by the user
+	 */
+	private IProject[] getSelection() {
+		return (IProject[]) _selection.getInput();
+	}
+	
+	/**
 	 * Create a view displaying the target branch.
 	 * 
-	 * @param parent the {@link Composite} to create the view in
+	 * @param parent
+	 *            the {@link Composite} to create the view in
 	 * @return the created {@link Composite} view
 	 */
 	private Composite createBranchView(final Composite parent) {
@@ -215,11 +270,11 @@ public class SubcherryMergeWizardTargetPage extends WizardPage {
 	 * Create a view displaying selectable {@link IProject}s using a
 	 * {@link TableView}.
 	 * 
-	 * @param parent  the {@link Composite} to create the view in
-	 * @param options a (possibly empty) array of available {@link IProject}s
+	 * @param parent
+	 *            the {@link Composite} to create the view in
 	 * @return the created {@link Composite} view
 	 */
-	private Composite createOptionsView(final Composite parent, final IProject[] options) {
+	private Composite createOptionsView(final Composite parent) {
 		final Composite contents = new Composite(parent, SWT.NONE);
 		contents.setLayout(GridLayoutFactory.swtDefaults().create());
 		
@@ -265,7 +320,7 @@ public class SubcherryMergeWizardTargetPage extends WizardPage {
 		_options.setLabelProvider(WorkbenchLabelProvider.getDecoratingWorkbenchLabelProvider());
 		_options.setContentProvider(ArrayContentProvider.getInstance());
 		_options.setComparator(new WorkbenchViewerComparator());
-		_options.setInput(options);
+		_options.setInput(EMPTY_INPUT);
 		_options.addSelectionChangedListener(event -> _add.setEnabled(!event.getSelection().isEmpty()));
 		_options.addDoubleClickListener(event -> select(getContents(event.getSelection())));
 		_options.addFilter(new ProjectPatternViewerFilter());
@@ -279,21 +334,46 @@ public class SubcherryMergeWizardTargetPage extends WizardPage {
 	private IProject[] getOptions() {
 		final IWorkspace workspace = ResourcesPlugin.getWorkspace();
 		final SVNProviderPlugin svn = SVNProviderPlugin.getPlugin();
+		final String url = getWizard().getConfiguration().getSvnURL();
 		
 		// add only accessible modules which are managed by SVN
 		return Stream.of(workspace.getRoot().getProjects())
 			.filter(project -> project.isAccessible() && svn.isManagedBySubversion(project))
+			.filter(project -> isSharedIn(project, url))
 			.toArray(IProject[]::new);
 	}
 
 	/**
+	 * @param project
+	 *            the {@link IProject} to be checked
+	 * @param url
+	 *            the SVN repository URL to check the project against
+	 * @return {@code true} if the given {@link IProject} is shared by the SVN
+	 *         repository with the given URL
+	 */
+	private boolean isSharedIn(final IProject project, final String url) {
+		final SVNTeamProvider provider = AbstractSubcherryOperation.getRepositoryProvider(project);
+		final SVNWorkspaceRoot root = provider.getSVNWorkspaceRoot();
+		
+		try {
+			final ISVNRepositoryLocation repository = root.getRepository();
+			
+			return repository.getLocation().equals(url);
+		} catch (SVNException e) {
+			e.printStackTrace();
+		}
+		
+		return false;
+	}
+	
+	/**
 	 * Create a view displaying {@link Button}s for selection/unselection.
 	 * 
-	 * @param parent  the {@link Composite} to create the view in
-	 * @param options a (possibly empty) array of available {@link IProject}s
+	 * @param parent
+	 *            the {@link Composite} to create the view in
 	 * @return the created {@link Composite} view
 	 */
-	private Composite createButtonsView(final Composite parent, final IProject[] options) {
+	private Composite createButtonsView(final Composite parent) {
 		final Composite contents = new Composite(parent, SWT.NONE);
 		contents.setLayout(GridLayoutFactory.swtDefaults().create());
 		
@@ -311,7 +391,7 @@ public class SubcherryMergeWizardTargetPage extends WizardPage {
 		
 		_addAll = new Button(contents, SWT.PUSH);
 		_addAll.setText(L10N.SubcherryMergeWizardTargetPage_label_add_all);
-		_addAll.setEnabled(options.length > 0);
+		_addAll.setEnabled(false);
 		_addAll.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
 		_addAll.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -361,7 +441,7 @@ public class SubcherryMergeWizardTargetPage extends WizardPage {
 		_selection.setLabelProvider(WorkbenchLabelProvider.getDecoratingWorkbenchLabelProvider());
 		_selection.setContentProvider(ArrayContentProvider.getInstance());
 		_selection.setComparator(new WorkbenchViewerComparator());
-		_selection.setInput(new IProject[0]);
+		_selection.setInput(EMPTY_INPUT);
 		_selection.addSelectionChangedListener(event -> _remove.setEnabled(!event.getSelection().isEmpty()));
 		_selection.addDoubleClickListener(event -> unselect(getContents(event.getSelection())));
 		
@@ -407,7 +487,7 @@ public class SubcherryMergeWizardTargetPage extends WizardPage {
 	 */
 	private void select(final List<IProject> projects) {
 		// update the selection input by adding the new projects
-		final Set<IProject> selection = new HashSet<>(Arrays.asList((IProject[]) _selection.getInput()));
+		final Set<IProject> selection = new HashSet<>(Arrays.asList(getSelection()));
 		selection.addAll(projects);
 		_selection.setInput(selection.toArray(new IProject[selection.size()]));
 
@@ -434,7 +514,7 @@ public class SubcherryMergeWizardTargetPage extends WizardPage {
 	 */
 	private void unselect(final List<IProject> projects) {
 		// update the selection input by removing the new projects
-		final Set<IProject> selection = new HashSet<>(Arrays.asList((IProject[]) _selection.getInput()));
+		final Set<IProject> selection = new HashSet<>(Arrays.asList(getSelection()));
 		selection.removeAll(projects);
 		_selection.setInput(selection.toArray(new IProject[selection.size()]));
 
@@ -516,7 +596,7 @@ public class SubcherryMergeWizardTargetPage extends WizardPage {
 		
 		// validate module selection
 		if(getErrorMessage() == null) {
-			final IProject[] modules = (IProject[]) _selection.getInput();
+			final IProject[] modules = getSelection();
 			switch(modules.length) {
 			case 0:
 				setErrorMessage(L10N.SubcherryMergeWizardTargetPage_error_message_no_module);

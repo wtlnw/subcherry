@@ -2,9 +2,11 @@
 <?NLS TYPE="org.eclipse.help.toc"?>
 
 <toc label="Subcherry" link_to="toc.xml/contents" topic="html/toc.html">
-   <topic href="html/concepts/concepts.html" label="Concepts">
-   </topic>
    <topic label="Getting Started">
       <anchor id="gettingstarted"/>
+   </topic>
+   <topic href="html/concepts/concepts.html" label="Concepts">
+   </topic>
+   <topic href="html/whatsnew/whatsnew.html" label="What&apos;s New">
    </topic>
 </toc>

@@ -51,6 +51,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.dialogs.FilteredTree;
 import org.eclipse.ui.dialogs.PatternFilter;
 
@@ -60,6 +61,7 @@ import com.subcherry.repository.core.LogEntry;
 import com.subcherry.trac.TracConnection;
 import com.subcherry.trac.TracTicket;
 import com.subcherry.ui.SubcherryUI;
+import com.subcherry.ui.help.IHelpContextIds;
 import com.subcherry.ui.model.SubcherryTree;
 import com.subcherry.ui.model.SubcherryTreeNode;
 import com.subcherry.ui.model.SubcherryTreeNode.Check;
@@ -72,7 +74,6 @@ import com.subcherry.ui.widgets.LogEntryView;
  * allows users to select the tickets to merge the changes for.
  * 
  * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
- * @version $Revision: $ $Author: $ $Date: $
  */
 public class SubcherryMergeWizardTicketsPage extends WizardPage {
 	
@@ -144,6 +145,9 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 				// ignore all other page changes
 			}
 		});
+		
+		// register help context
+		PlatformUI.getWorkbench().getHelpSystem().setHelp(contents, IHelpContextIds.id(IHelpContextIds.MERGE_WIZARD_TICKETS));
 	}
 
 	/**

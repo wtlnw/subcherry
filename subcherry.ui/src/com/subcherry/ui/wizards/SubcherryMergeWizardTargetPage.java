@@ -61,6 +61,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.team.core.RepositoryProvider;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.model.WorkbenchLabelProvider;
 import org.eclipse.ui.model.WorkbenchViewerComparator;
 import org.tigris.subversion.subclipse.core.ISVNRepositoryLocation;
@@ -72,6 +73,7 @@ import org.tigris.subversion.svnclientadapter.SVNUrl;
 
 import com.subcherry.Configuration;
 import com.subcherry.ui.SubcherryUI;
+import com.subcherry.ui.help.IHelpContextIds;
 import com.subcherry.ui.operations.AbstractSubcherryOperation;
 
 /**
@@ -194,6 +196,9 @@ public class SubcherryMergeWizardTargetPage extends WizardPage {
 				}
 			}
 		});
+		
+		// register help context
+		PlatformUI.getWorkbench().getHelpSystem().setHelp(contents, IHelpContextIds.id(IHelpContextIds.MERGE_WIZARD_TARGET));
 	}
 
 	/**

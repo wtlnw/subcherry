@@ -28,8 +28,10 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.ui.PlatformUI;
 
 import com.subcherry.ui.SubcherryUI;
+import com.subcherry.ui.help.IHelpContextIds;
 import com.subcherry.ui.preferences.SubcherryPreferenceConstants;
 
 /**
@@ -37,7 +39,6 @@ import com.subcherry.ui.preferences.SubcherryPreferenceConstants;
  * credentials.
  * 
  * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
- * @version $Revision: $ $Author: $ $Date: $
  */
 public class SubcherryTracCredentialsDialog extends TrayDialog {
 
@@ -61,7 +62,6 @@ public class SubcherryTracCredentialsDialog extends TrayDialog {
 		super(shell);
 		
 		setShellStyle(SWT.DIALOG_TRIM | SWT.RESIZE | SWT.APPLICATION_MODAL);
-		setHelpAvailable(false);
 	}
 
 	@Override
@@ -95,6 +95,9 @@ public class SubcherryTracCredentialsDialog extends TrayDialog {
 		if(password != null) {
 			_password.setText(password);
 		}
+		
+		// register help context
+		PlatformUI.getWorkbench().getHelpSystem().setHelp(contents, IHelpContextIds.id(IHelpContextIds.MERGE_PREFERENCES_CREDENTIALS));
 		
 		return contents;
 	}

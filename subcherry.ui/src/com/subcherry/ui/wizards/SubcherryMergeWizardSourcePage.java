@@ -39,6 +39,7 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.ui.PlatformUI;
 import org.tigris.subversion.subclipse.core.ISVNRemoteResource;
 import org.tigris.subversion.subclipse.core.ISVNRepositoryLocation;
 import org.tigris.subversion.subclipse.core.SVNClientManager;
@@ -59,6 +60,7 @@ import org.tigris.subversion.svnclientadapter.utils.SVNUrlUtils;
 
 import com.subcherry.Configuration;
 import com.subcherry.ui.SubcherryUI;
+import com.subcherry.ui.help.IHelpContextIds;
 import com.subcherry.utils.Path;
 import com.subcherry.utils.PathParser;
 
@@ -119,6 +121,9 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 		
 		setControl(contents);
 		setPageComplete(false);
+		
+		// register help context
+		PlatformUI.getWorkbench().getHelpSystem().setHelp(contents, IHelpContextIds.id(IHelpContextIds.MERGE_WIZARD_SOURCE));
 	}
 
 	/**

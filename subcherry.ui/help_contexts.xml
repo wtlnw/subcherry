@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<contexts>
+   <context id="merge_wizard_source">
+      <topic href="../de.haumacher.subcherry.help/html/gettingstarted/merge_wizard.html#source_selection" label="Subcherry Merge Wizard: Source Selection"/>
+   </context>
+   <context id="merge_wizard_target">
+      <topic href="../de.haumacher.subcherry.help/html/gettingstarted/merge_wizard.html#target_selection" label="Subcherry Merge Wizard: Module Selection"/>
+   </context>
+   <context id="merge_wizard_tickets">
+      <topic href="../de.haumacher.subcherry.help/html/gettingstarted/merge_wizard.html#ticket_selection" label="Subcherry Merge Wizard: Feature Selection"/>
+   </context>
+   <context id="merge_wizard_mode">
+      <topic href="../de.haumacher.subcherry.help/html/gettingstarted/merge_wizard.html#mode_selection" label="Subcherry Merge Wizard: Mode Selection"/>
+   </context>
+   
+   <context id="merge_view">
+      <topic href="../de.haumacher.subcherry.help/html/gettingstarted/merge_view.html" label="Subcherry Merge View"/>
+   </context>
+   <context id="merge_view_details">
+      <topic href="../de.haumacher.subcherry.help/html/gettingstarted/merge_view.html#revision_details" label="Subcherry Merge View: Revision Details"/>
+   </context>
+   
+   <context id="merge_preferences">
+      <topic href="../de.haumacher.subcherry.help/html/gettingstarted/preferences.html" label="Subcherry Preferences"/>
+   </context>
+   <context id="merge_preferences_credentials">
+      <topic href="../de.haumacher.subcherry.help/html/gettingstarted/preferences.html#credentials" label="Subcherry Preferences: Credentials"/>
+   </context>
+</contexts>

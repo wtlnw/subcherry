@@ -30,8 +30,10 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.ui.PlatformUI;
 
 import com.subcherry.ui.SubcherryUI;
+import com.subcherry.ui.help.IHelpContextIds;
 import com.subcherry.ui.views.SubcherryMergeEntry;
 import com.subcherry.ui.widgets.LabeledComposite;
 import com.subcherry.ui.widgets.LogEntryView;
@@ -65,7 +67,6 @@ public class SubcherryRevisionDialog extends TitleAreaDialog {
 		
 		// change shell style
 		setShellStyle(SWT.DIALOG_TRIM | SWT.RESIZE | SWT.APPLICATION_MODAL);
-		setHelpAvailable(false);
 	}
 	
 	/**
@@ -119,6 +120,9 @@ public class SubcherryRevisionDialog extends TitleAreaDialog {
 				errorText.setText(error.getLocalizedMessage());
 			}
 		}
+		
+		// register help context
+		PlatformUI.getWorkbench().getHelpSystem().setHelp(container, IHelpContextIds.id(IHelpContextIds.MERGE_VIEW_DETAILS));
 		
 		return container;
 	}

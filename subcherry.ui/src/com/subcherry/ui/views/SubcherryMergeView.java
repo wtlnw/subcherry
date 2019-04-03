@@ -31,17 +31,18 @@ import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Table;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.ViewPart;
 
 import com.subcherry.ui.SubcherryUI;
 import com.subcherry.ui.dialogs.SubcherryRevisionDialog;
+import com.subcherry.ui.help.IHelpContextIds;
 
 /**
  * An {@link ViewPart} implementation for {@link SubcherryUI} which allows
  * performing the actual merge process.
  * 
  * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
- * @version $Revision: $ $Author: $ $Date: $
  */
 public class SubcherryMergeView extends ViewPart {
 
@@ -58,6 +59,9 @@ public class SubcherryMergeView extends ViewPart {
 	@Override
 	public void createPartControl(final Composite parent) {
 		_viewer = createViewer(parent);
+		
+		// register help context
+		PlatformUI.getWorkbench().getHelpSystem().setHelp(parent, IHelpContextIds.id(IHelpContextIds.MERGE_VIEW));
 	}
 
 	/**

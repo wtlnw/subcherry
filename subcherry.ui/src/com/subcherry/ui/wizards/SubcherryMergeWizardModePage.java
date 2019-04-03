@@ -36,9 +36,11 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.ui.PlatformUI;
 
 import com.subcherry.Configuration;
 import com.subcherry.ui.SubcherryUI;
+import com.subcherry.ui.help.IHelpContextIds;
 import com.subcherry.ui.model.SubcherryTree;
 import com.subcherry.ui.model.SubcherryTreeRevisionNode;
 import com.subcherry.ui.model.SubcherryTreeTicketNode;
@@ -50,7 +52,6 @@ import com.subcherry.ui.wizards.SubcherryMergeWizardTicketsPage.ViewerLabelProvi
  * displays the summary of selected changes along with the desired configuration.
  * 
  * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
- * @version $Revision: $ $Author: $ $Date: $
  */
 public class SubcherryMergeWizardModePage extends WizardPage {
 
@@ -124,6 +125,9 @@ public class SubcherryMergeWizardModePage extends WizardPage {
 				// ignore all other page changes
 			}
 		});
+		
+		// register help context
+		PlatformUI.getWorkbench().getHelpSystem().setHelp(contents, IHelpContextIds.id(IHelpContextIds.MERGE_WIZARD_MODE));
 	}
 
 	/**

@@ -30,16 +30,17 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
+import org.eclipse.ui.PlatformUI;
 
 import com.subcherry.ui.SubcherryUI;
 import com.subcherry.ui.dialogs.SubcherryTracCredentialsDialog;
+import com.subcherry.ui.help.IHelpContextIds;
 import com.subcherry.ui.widgets.LabeledComposite;
 
 /**
  * An {@link IWorkbenchPreferencePage} implementation for {@link SubcherryUI}.
  * 
  * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
- * @version $Revision: $ $Author: $ $Date: $
  */
 public class SubcherryPreferencePage extends FieldEditorPreferencePage implements IWorkbenchPreferencePage {
 
@@ -63,6 +64,9 @@ public class SubcherryPreferencePage extends FieldEditorPreferencePage implement
 		
 		// trac preferences
 		addTracFields(container);
+		
+		// register help context
+		PlatformUI.getWorkbench().getHelpSystem().setHelp(container, IHelpContextIds.id(IHelpContextIds.MERGE_PREFERENCES));
 	}
 
 	/**

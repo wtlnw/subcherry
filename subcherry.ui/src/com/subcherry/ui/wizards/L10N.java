@@ -58,6 +58,7 @@ public class L10N extends NLS {
 
 	public static String SubcherryMergeWizardSourcePage_error_message_branch_invalid;
 	public static String SubcherryMergeWizardSourcePage_error_message_no_branch;
+	public static String SubcherryMergeWizardSourcePage_error_message_repository_malformed_url;
 	public static String SubcherryMergeWizardSourcePage_error_message_repository_invalid;
 	public static String SubcherryMergeWizardSourcePage_error_message_repository_no_access;
 	public static String SubcherryMergeWizardSourcePage_error_message_revision_invalid;

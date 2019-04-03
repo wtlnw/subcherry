@@ -21,7 +21,6 @@ import java.net.MalformedURLException;
 import java.util.ResourceBundle.Control;
 
 import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.jface.layout.GridDataFactory;
@@ -43,6 +42,7 @@ import org.eclipse.swt.widgets.Text;
 import org.tigris.subversion.subclipse.core.ISVNRemoteResource;
 import org.tigris.subversion.subclipse.core.ISVNRepositoryLocation;
 import org.tigris.subversion.subclipse.core.SVNClientManager;
+import org.tigris.subversion.subclipse.core.SVNException;
 import org.tigris.subversion.subclipse.core.SVNProviderPlugin;
 import org.tigris.subversion.subclipse.core.history.ILogEntry;
 import org.tigris.subversion.subclipse.core.repo.SVNRepositories;
@@ -51,12 +51,16 @@ import org.tigris.subversion.subclipse.ui.dialogs.ChooseUrlDialog;
 import org.tigris.subversion.subclipse.ui.dialogs.HistoryDialog;
 import org.tigris.subversion.svnclientadapter.ISVNClientAdapter;
 import org.tigris.subversion.svnclientadapter.ISVNInfo;
+import org.tigris.subversion.svnclientadapter.SVNClientException;
 import org.tigris.subversion.svnclientadapter.SVNRevision;
 import org.tigris.subversion.svnclientadapter.SVNRevision.Number;
 import org.tigris.subversion.svnclientadapter.SVNUrl;
+import org.tigris.subversion.svnclientadapter.utils.SVNUrlUtils;
 
 import com.subcherry.Configuration;
 import com.subcherry.ui.SubcherryUI;
+import com.subcherry.utils.Path;
+import com.subcherry.utils.PathParser;
 
 /**
  * An {@link WizardPage} implementation for {@link SubcherryMergeWizard} which
@@ -64,10 +68,14 @@ import com.subcherry.ui.SubcherryUI;
  * from.
  * 
  * @author <a href="mailto:wjatscheslaw.talanow@ascon-systems.de">Wjatscheslaw Talanow</a>
- * @version $Revision: $ $Author: $ $Date: $
  */
 public class SubcherryMergeWizardSourcePage extends WizardPage {
 	
+	/**
+	 * The slash character as {@link String}.
+	 */
+	private static final String PATH_SEPARATOR = "/"; //$NON-NLS-1$
+
 	/**
 	 * @see #createBranchSelector(Composite)
 	 */
@@ -334,35 +342,51 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 		if(url.isEmpty()) {
 			return L10N.SubcherryMergeWizardSourcePage_error_message_no_branch;
 		} else {
+			
 			try {
 				final SVNProviderPlugin svn = SVNProviderPlugin.getPlugin();
 				final SVNRepositories repos = svn.getRepositories();
-
-				for (final ISVNRepositoryLocation repo : repos.getKnownRepositories(new NullProgressMonitor())) {
-					final String location = repo.getLocation();
+				final SVNClientManager mgr = svn.getSVNClientManager();
+				final ISVNClientAdapter client = mgr.getSVNClient();
+				
+				try {
+					// 1. try url access
+					final SVNUrl branchUrl = new SVNUrl(url);
+					final ISVNInfo info = client.getInfo(branchUrl);
 					
-					if (url.startsWith(location)) {
-						final ISVNClientAdapter client = repo.getSVNClient();
-
-						try {
-							client.getInfo(new SVNUrl(url));
-						} catch (Throwable ex) {
-							return L10N.SubcherryMergeWizardSourcePage_error_message_branch_invalid;
-						} finally {
-							repo.returnSVNClient(client);
-						}
-
-						final Configuration configuration = getWizard().getConfiguration();
-						configuration.setSvnURL(location);
-						configuration.setSourceBranch(url.replace(location, "")); //$NON-NLS-1$
-
+					// 2. check if repository is known
+					final SVNUrl repoUrl = info.getRepository();
+					if (!repos.isKnownRepository(repoUrl.toString(), false)) {
+						return L10N.SubcherryMergeWizardSourcePage_error_message_repository_invalid;
+					}
+					
+					// 3. check if branch/trunk pattern match
+					String relativeUrl = SVNUrlUtils.getRelativePath(repoUrl, branchUrl, true);
+					if (!relativeUrl.endsWith(PATH_SEPARATOR)) {
+						relativeUrl += PATH_SEPARATOR;
+					}
+					
+					final Configuration configuration = getWizard().getConfiguration();
+					final PathParser parser = new PathParser(configuration);
+					final Path path = parser.parsePath(relativeUrl);
+					
+					if (path.getBranch() == null || path.getBranch().isEmpty()) {
+						return L10N.SubcherryMergeWizardSourcePage_error_message_branch_invalid;
+					} else if(path.getModule() != null && !path.getModule().isEmpty()) {
+						return L10N.SubcherryMergeWizardSourcePage_error_message_branch_invalid;
+					} else {
+						configuration.setSvnURL(repoUrl.toString());
+						configuration.setSourceBranch(path.getBranch());
+						
 						return null;
 					}
+				} finally {
+					mgr.returnSVNClient(client);
 				}
-				
-				return L10N.SubcherryMergeWizardSourcePage_error_message_repository_invalid;
-			} catch (final Throwable ex) {
+			} catch (final SVNException | SVNClientException ex) {
 				return L10N.SubcherryMergeWizardSourcePage_error_message_repository_no_access;
+			} catch (final MalformedURLException ex) {
+				return L10N.SubcherryMergeWizardSourcePage_error_message_repository_malformed_url;
 			}
 		}
 	}

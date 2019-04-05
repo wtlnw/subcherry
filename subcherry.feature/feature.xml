@@ -2,7 +2,7 @@
 <feature
       id="de.haumacher.subcherry"
       label="Subcherry"
-      version="1.9.0.qualifier">
+      version="1.9.1.qualifier">
 
    <description url="https://github.com/haumacher/subcherry">
       SubCherry enables you to manage multiple development branches

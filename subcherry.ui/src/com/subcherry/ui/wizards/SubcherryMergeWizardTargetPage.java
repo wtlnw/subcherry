@@ -75,6 +75,7 @@ import com.subcherry.Configuration;
 import com.subcherry.ui.SubcherryUI;
 import com.subcherry.ui.help.IHelpContextIds;
 import com.subcherry.ui.operations.AbstractSubcherryOperation;
+import com.subcherry.ui.util.SubcherryUtils;
 
 /**
  * An {@link Wizard} implementation for {@link SubcherryUI} which allows users to
@@ -239,7 +240,7 @@ public class SubcherryMergeWizardTargetPage extends WizardPage {
 			.toArray(String[]::new));
 		
 		// update target branch
-		config.setTargetBranch(_branch.getText());
+		config.setTargetBranch(SubcherryUtils.noTrailingSeparator(_branch.getText()));
 	}
 
 	/**

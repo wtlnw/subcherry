@@ -61,6 +61,7 @@ import org.tigris.subversion.svnclientadapter.utils.SVNUrlUtils;
 import com.subcherry.Configuration;
 import com.subcherry.ui.SubcherryUI;
 import com.subcherry.ui.help.IHelpContextIds;
+import com.subcherry.ui.util.SubcherryUtils;
 import com.subcherry.utils.Path;
 import com.subcherry.utils.PathParser;
 
@@ -73,11 +74,6 @@ import com.subcherry.utils.PathParser;
  */
 public class SubcherryMergeWizardSourcePage extends WizardPage {
 	
-	/**
-	 * The slash character as {@link String}.
-	 */
-	private static final String PATH_SEPARATOR = "/"; //$NON-NLS-1$
-
 	/**
 	 * @see #createBranchSelector(Composite)
 	 */
@@ -361,16 +357,13 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 					
 					// 2. check if repository is known
 					final SVNUrl repoUrl = info.getRepository();
-					if (!repos.isKnownRepository(repoUrl.toString(), false)) {
+					final String repoUrlString = repoUrl.toString();
+					if (!repos.isKnownRepository(repoUrlString, false)) {
 						return L10N.SubcherryMergeWizardSourcePage_error_message_repository_invalid;
 					}
 					
 					// 3. check if branch/trunk pattern match
-					String relativeUrl = SVNUrlUtils.getRelativePath(repoUrl, branchUrl, true);
-					if (!relativeUrl.endsWith(PATH_SEPARATOR)) {
-						relativeUrl += PATH_SEPARATOR;
-					}
-					
+					final String relativeUrl = SubcherryUtils.trailingSeparator(SVNUrlUtils.getRelativePath(repoUrl, branchUrl, true));
 					final Configuration configuration = getWizard().getConfiguration();
 					final PathParser parser = new PathParser(configuration);
 					final Path path = parser.parsePath(relativeUrl);
@@ -380,8 +373,8 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 					} else if(path.getModule() != null && !path.getModule().isEmpty()) {
 						return L10N.SubcherryMergeWizardSourcePage_error_message_branch_invalid;
 					} else {
-						configuration.setSvnURL(repoUrl.toString());
-						configuration.setSourceBranch(path.getBranch());
+						configuration.setSvnURL(SubcherryUtils.noTrailingSeparator(repoUrlString));
+						configuration.setSourceBranch(SubcherryUtils.noTrailingSeparator(path.getBranch()));
 						
 						return null;
 					}

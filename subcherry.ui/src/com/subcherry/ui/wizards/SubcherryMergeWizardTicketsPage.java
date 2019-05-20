@@ -17,10 +17,7 @@
  */
 package com.subcherry.ui.wizards;
 
-import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
-import org.eclipse.core.runtime.Status;
-import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.jface.dialogs.IPageChangingListener;
 import org.eclipse.jface.dialogs.PageChangingEvent;
 import org.eclipse.jface.dialogs.ProgressMonitorDialog;
@@ -189,8 +186,7 @@ public class SubcherryMergeWizardTicketsPage extends WizardPage {
 				});
 			});
 		} catch (Throwable ex) {
-			final Status status = new Status(IStatus.ERROR, SubcherryUI.id(), L10N.SubcherryMergeWizardTicketsPage_error_status, ex);
-			ErrorDialog.openError(control.getShell(), L10N.SubcherryMergeWizardTicketsPage_error_title, L10N.SubcherryMergeWizardTicketsPage_error_message, status);
+			SubcherryUI.error(L10N.SubcherryMergeWizardTicketsPage_error_status, L10N.SubcherryMergeWizardTicketsPage_error_title, L10N.SubcherryMergeWizardTicketsPage_error_message, ex);
 		}
 	}
 	

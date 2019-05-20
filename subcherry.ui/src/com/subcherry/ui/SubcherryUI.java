@@ -17,13 +17,18 @@
  */
 package com.subcherry.ui;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.UndeclaredThrowableException;
 import java.net.URL;
 
 import org.eclipse.core.runtime.FileLocator;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.equinox.security.storage.ISecurePreferences;
 import org.eclipse.equinox.security.storage.SecurePreferencesFactory;
+import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.jface.resource.FontRegistry;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.resource.ImageRegistry;
@@ -214,6 +219,39 @@ public class SubcherryUI extends AbstractUIPlugin {
 	 */
 	public static String id() {
 		return getInstance().getBundle().getSymbolicName();
+	}
+	
+	/**
+	 * Open a dialog displaying the error message with details.
+	 * 
+	 * @param statusMessage
+	 *            the localized error message
+	 * @param dialogTitle
+	 *            the localized error dialog title
+	 * @param dialogMessage
+	 *            the localized error dialog message
+	 * @param error
+	 *            the {@link Throwable} which caused the error or {@code null}
+	 */
+	public static void error(final String statusMessage, final String dialogTitle, final String dialogMessage, final Throwable error) {
+		final Throwable cause;
+		if (error instanceof UndeclaredThrowableException) {
+			cause = error.getCause();
+		} else if (error instanceof InvocationTargetException) {
+			cause = ((InvocationTargetException) error).getTargetException();
+		} else {
+			cause = error;
+		}
+		final Status status = new Status(IStatus.ERROR, SubcherryUI.id(), statusMessage, cause);
+		
+		// log the error message
+		getInstance().getLog().log(status);
+
+		// open the error dialog
+		final Display display = PlatformUI.getWorkbench().getDisplay();
+		if(display != null) {
+			display.syncExec(() -> ErrorDialog.openError(display.getActiveShell(), dialogTitle, dialogMessage, status));
+		}
 	}
 	
 	/**

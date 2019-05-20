@@ -20,9 +20,6 @@ package com.subcherry.ui.wizards;
 import java.net.MalformedURLException;
 import java.util.ResourceBundle.Control;
 
-import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.Status;
-import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.jface.layout.GridDataFactory;
 import org.eclipse.jface.layout.GridLayoutFactory;
 import org.eclipse.jface.wizard.WizardPage;
@@ -278,8 +275,7 @@ public class SubcherryMergeWizardSourcePage extends WizardPage {
 						validate();
 					}
 				} catch (final Exception ex) {
-					final Status status = new Status(IStatus.ERROR, SubcherryUI.id(), L10N.SubcherryMergeWizardSourcePage_error_status_svn, ex);
-					ErrorDialog.openError(e.display.getActiveShell(), L10N.SubcherryMergeWizardSourcePage_error_title_svn, L10N.SubcherryMergeWizardSourcePage_error_message_svn, status);
+					SubcherryUI.error(L10N.SubcherryMergeWizardSourcePage_error_status_svn, L10N.SubcherryMergeWizardSourcePage_error_title_svn, L10N.SubcherryMergeWizardSourcePage_error_message_svn, ex);
 				}
 			}
 		});

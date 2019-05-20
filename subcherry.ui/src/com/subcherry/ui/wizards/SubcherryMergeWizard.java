@@ -18,10 +18,7 @@
 package com.subcherry.ui.wizards;
 
 import org.eclipse.core.resources.ResourcesPlugin;
-import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.Status;
 import org.eclipse.equinox.security.storage.ISecurePreferences;
-import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.wizard.Wizard;
 import org.eclipse.swt.graphics.Image;
@@ -178,8 +175,7 @@ public class SubcherryMergeWizard extends Wizard {
 			
 			view.getViewer().setInput(context);
 		} catch (WorkbenchException e) {
-			final IStatus status = new Status(IStatus.ERROR, SubcherryUI.id(), L10N.SubcherryMergeWizard_error_status, e);
-			ErrorDialog.openError(getShell(), L10N.SubcherryMergeWizard_error_title, L10N.SubcherryMergeWizard_error_message, status);
+			SubcherryUI.error(L10N.SubcherryMergeWizard_error_status, L10N.SubcherryMergeWizard_error_title, L10N.SubcherryMergeWizard_error_message, e);
 			
 			return false;
 		}

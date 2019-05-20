@@ -18,8 +18,6 @@
 package com.subcherry.ui.model;
 
 import java.io.File;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -33,12 +31,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
-import org.eclipse.core.runtime.Status;
-import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.osgi.util.NLS;
-import org.eclipse.swt.widgets.Display;
 
 import com.subcherry.Configuration;
 import com.subcherry.LogReader;
@@ -143,16 +137,7 @@ public class SubcherryTree {
 			
 				_nodes = groupByTicket(entries, progress);
 			} catch(Exception e) {
-				final Throwable cause;
-				if (e instanceof UndeclaredThrowableException) {
-					cause = e.getCause();
-				} else if (e instanceof InvocationTargetException) {
-					cause = ((InvocationTargetException) e).getTargetException();
-				} else {
-					cause = e;
-				}
-				final Status status = new Status(IStatus.ERROR, SubcherryUI.id(), L10N.SubcherryTree_progress_error_trac_status, cause);
-				ErrorDialog.openError(Display.getCurrent().getActiveShell(), L10N.SubcherryTree_progress_error_trac_title, L10N.SubcherryTree_progress_error_trac_message, status);
+				SubcherryUI.error(L10N.SubcherryTree_progress_error_trac_status, L10N.SubcherryTree_progress_error_trac_title, L10N.SubcherryTree_progress_error_trac_message, e);
 				
 				// no data upon failure
 				_nodes = Collections.emptyList();
@@ -257,8 +242,7 @@ public class SubcherryTree {
 		try {
 			log.readLog(paths.toArray(new String[paths.size()]), handler);
 		} catch (RepositoryException e) {
-			final Status status = new Status(IStatus.ERROR, SubcherryUI.id(), L10N.SubcherryTree_progress_error_svn_status, e);
-			ErrorDialog.openError(Display.getCurrent().getActiveShell(), L10N.SubcherryTree_progress_error_svn_title, L10N.SubcherryTree_progress_error_svn_message, status);
+			SubcherryUI.error(L10N.SubcherryTree_progress_error_svn_status, L10N.SubcherryTree_progress_error_svn_title, L10N.SubcherryTree_progress_error_svn_message, e);
 		}
 		
 		// convert from descending to ascending order

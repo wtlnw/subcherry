@@ -12,5 +12,8 @@
    <feature url="features/de.haumacher.subcherry_1.9.1.201904051659.jar" id="de.haumacher.subcherry" version="1.9.1.201904051659">
       <category name="de.haumacher.subcherry"/>
    </feature>
+   <feature url="features/de.haumacher.subcherry_1.9.2.201906031310.jar" id="de.haumacher.subcherry" version="1.9.2.201906031310">
+      <category name="de.haumacher.subcherry"/>
+   </feature>
    <category-def name="de.haumacher.subcherry" label="Subcherry"/>
 </site>

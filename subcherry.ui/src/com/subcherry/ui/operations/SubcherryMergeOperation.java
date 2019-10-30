@@ -278,70 +278,60 @@ public class SubcherryMergeOperation extends AbstractSubcherryOperation {
 	 * 
 	 * @param message
 	 *            the commit message
-	 * @param changes
+	 * @param resources
 	 *            the {@link IResource}s to commit the changes for
 	 * @param monitor
 	 *            the {@link IProgressMonitor} to report the progress to
 	 * @throws Throwable
 	 *             if an error occurred while committing the changes
 	 */
-	private void commit(final String message, final IResource[] changes, final IProgressMonitor monitor) throws Throwable {
-		final Map<SVNTeamProvider, List<IResource>> resByProvider = groupByProvider(changes);
-		final SubMonitor progress = SubMonitor.convert(monitor, resByProvider.size());
-		
-		try {
-			for (final Entry<SVNTeamProvider, List<IResource>> entry : resByProvider.entrySet()) {
-				final SubMonitor subprogress = progress.split(1);
-				subprogress.setWorkRemaining(2);
-				
-				try {
-					final List<IResource> resources = entry.getValue();
-					final List<IResource> addedResources = new ArrayList<>();
-					final List<IResource> removedResources = new ArrayList<>();
-					
-					for (final IResource resource : resources) {
-						final ISVNLocalResource svnResource = SVNWorkspaceRoot.getSVNResourceFor(resource);
-						if (svnResource.exists() && !svnResource.isManaged()) {
-							addedResources.add(resource);
-						}
+	private void commit(final String message, final IResource[] resources, final IProgressMonitor monitor) throws Throwable {
+		final SubMonitor progress = SubMonitor.convert(monitor);
+		progress.setWorkRemaining(2);
 
-						if (svnResource.getStatus().isMissing()) {
-							removedResources.add(resource);
-						}
-					}
-					
-					final IWorkbenchPart part = getPart();
-					final Display display = part.getSite().getShell().getDisplay();
-					final IResource[] allResources = array(resources);
-					
-					// commit resources
-					final CommitOperation commit = new CommitOperation(
-						part, 
-						allResources,
-						array(addedResources),
-						array(removedResources),
-						allResources,
-						message,
-						false);
-					commit.setCanRunAsJob(false);
-					final SVNOperationRunnable commitRunnable = new SVNOperationRunnable(commit, subprogress.split(1));
-					display.syncExec(commitRunnable);
-					if (commitRunnable.error() != null) {
-						throw commitRunnable.error();
-					}
-					
-					// update committed resources
-					final UpdateOperation update = new UpdateOperation(part, allResources, SVNRevision.HEAD);
-					update.setCanRunAsJob(false);
-					update.setForce(true);
-					final SVNOperationRunnable updateRunnable = new SVNOperationRunnable(update, subprogress.split(1));
-					display.syncExec(updateRunnable);
-					if (updateRunnable.error() != null) {
-						throw updateRunnable.error();
-					}
-				} finally {
-					subprogress.done();
+		try {
+			final List<IResource> addedResources = new ArrayList<>();
+			final List<IResource> removedResources = new ArrayList<>();
+
+			for (final IResource resource : resources) {
+				final ISVNLocalResource svnResource = SVNWorkspaceRoot.getSVNResourceFor(resource);
+				
+				if (svnResource.exists() && !svnResource.isManaged()) {
+					addedResources.add(resource);
 				}
+
+				if (svnResource.getStatus().isMissing()) {
+					removedResources.add(resource);
+				}
+			}
+			
+			final IWorkbenchPart part = getPart();
+			final Display display = part.getSite().getShell().getDisplay();
+
+			// commit resources
+			final CommitOperation commit = new CommitOperation(
+					part, 
+					resources,
+					array(addedResources),
+					array(removedResources),
+					resources,
+					message,
+					false);
+			commit.setCanRunAsJob(false);
+			final SVNOperationRunnable commitRunnable = new SVNOperationRunnable(commit, progress.split(1));
+			display.syncExec(commitRunnable);
+			if (commitRunnable.error() != null) {
+				throw commitRunnable.error();
+			}
+
+			// update committed resources
+			final UpdateOperation update = new UpdateOperation(part, resources, SVNRevision.HEAD);
+			update.setCanRunAsJob(false);
+			update.setForce(true);
+			final SVNOperationRunnable updateRunnable = new SVNOperationRunnable(update, progress.split(1));
+			display.syncExec(updateRunnable);
+			if (updateRunnable.error() != null) {
+				throw updateRunnable.error();
 			}
 		} finally {
 			progress.done();

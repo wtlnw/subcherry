@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><?pde version="3.8"?><target name="eclipse-4.10+subclipse-4.3.0+javahl-1.10.4">
+	<locations>
+		<location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
+			<unit id="org.eclipse.sdk.feature.group" version="4.10.0.v20181206-1038"/>
+			<repository location="http://download.eclipse.org/releases/2018-12"/>
+		</location>
+		<location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
+			<unit id="org.tigris.subversion.clientadapter.javahl.feature.feature.group" version="1.10.4.201901162035"/>
+			<unit id="org.tigris.subversion.subclipse.feature.group" version="4.3.0.201901172050"/>
+			<repository location="https://dl.bintray.com/subclipse/releases/subclipse/4.3.x/"/>
+		</location>
+	</locations>
+</target>
